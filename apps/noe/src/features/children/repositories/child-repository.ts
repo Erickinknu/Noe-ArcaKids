@@ -1,0 +1,38 @@
+import type { ChildProfile } from '@noe-arcakids/types';
+import { DatabaseError } from '@noe-arcakids/shared';
+import { requireSupabaseClient } from '@noe-arcakids/supabase';
+
+interface ChildRow {
+  id: string;
+  family_id: string;
+  display_name: string;
+  avatar_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+function mapRow(row: ChildRow): ChildProfile {
+  return {
+    id: row.id,
+    familyId: row.family_id,
+    displayName: row.display_name,
+    avatarUrl: row.avatar_url,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export const childRepository = {
+  async listChildren(familyId: string): Promise<ChildProfile[]> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client
+      .from('children')
+      .select('*')
+      .eq('family_id', familyId);
+
+    if (error) {
+      throw new DatabaseError(error.message);
+    }
+    return (data ?? []).map((row) => mapRow(row as ChildRow));
+  },
+};
