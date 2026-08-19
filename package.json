@@ -1,0 +1,31 @@
+{
+  "name": "noe-arcakids",
+  "version": "0.1.0",
+  "private": true,
+  "description": "NOE + ARCA KIDS - parental control system (monorepo, phase 0: base architecture)",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "validate": "npm run typecheck && npm run lint",
+    "build:noe": "npm run build:android --workspace @noe-arcakids/noe",
+    "build:arcakids": "npm run build:android --workspace @noe-arcakids/arcakids",
+    "prebuild:noe": "npm run prebuild --workspace @noe-arcakids/noe",
+    "prebuild:arcakids": "npm run prebuild --workspace @noe-arcakids/arcakids"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  },
+  "overrides": {
+    "react": "19.2.3",
+    "react-dom": "19.2.3"
+  }
+}

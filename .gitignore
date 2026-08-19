@@ -1,0 +1,50 @@
+# Dependencies
+node_modules/
+
+# Expo
+.expo/
+dist/
+web-build/
+expo-env.d.ts
+*.orig.*
+*.p8
+*.p12
+*.key
+*.mobileprovision
+
+# Environment (real values never committed)
+.env
+.env.*
+!.env.example
+
+# Android / Gradle
+android/.gradle/
+android/app/build/
+android/build/
+android/local.properties
+android/.cxx/
+*.keystore
+*.jks
+
+# iOS
+ios/Pods/
+ios/build/
+*.ipa
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Supabase local
+supabase/.branches/
+supabase/.temp/
+supabase/.env
+
+# Build artifacts
+build/
+dist/
+APK/
