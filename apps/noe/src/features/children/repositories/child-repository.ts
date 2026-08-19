@@ -19,6 +19,7 @@ function mapRow(row: ChildRow): ChildProfile {
     avatarUrl: row.avatar_url,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    role: 'child',
   };
 }
 

@@ -20,6 +20,8 @@ export interface ParentProfile {
   userId: string | null;
   email: string | null;
   displayName: string;
+  avatarUrl: string | null;
+  role: Role;
   createdAt: string;
   updatedAt: string;
 }
@@ -31,11 +33,14 @@ export interface ChildProfile {
   avatarUrl: string | null;
   createdAt: string;
   updatedAt: string;
+  role: 'child';
 }
 
 export interface Device {
   id: string;
+  familyId: string;
   childId: string | null;
+  deviceUuid: string;
   name: string;
   platform: DevicePlatform;
   appVersion: string | null;
