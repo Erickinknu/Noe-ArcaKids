@@ -8,8 +8,8 @@ export const authRepository = {
   signInWithPassword(email: string, password: string) {
     return authHelpers.signInWithPassword(email, password);
   },
-  signUp(email: string, password: string) {
-    return authHelpers.signUp(email, password);
+  signUp(email: string, password: string, displayName?: string) {
+    return authHelpers.signUp(email, password, displayName);
   },
   signOut() {
     return authHelpers.signOut();

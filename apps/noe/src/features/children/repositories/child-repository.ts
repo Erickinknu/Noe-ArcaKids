@@ -36,4 +36,18 @@ export const childRepository = {
     }
     return (data ?? []).map((row) => mapRow(row as ChildRow));
   },
+
+  async addChild(familyId: string, displayName: string, avatarUrl: string | null = null): Promise<ChildProfile> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client
+      .from('children')
+      .insert({ family_id: familyId, display_name: displayName, avatar_url: avatarUrl })
+      .select('*')
+      .single();
+
+    if (error) {
+      throw new DatabaseError(error.message);
+    }
+    return mapRow(data as ChildRow);
+  },
 };

@@ -2,8 +2,8 @@
 
 | Phase | Scope | Status |
 |---|---|---|
-| FASE 0 | Base architecture: monorepo, two independent Expo apps, shared packages, Supabase base + RLS, online/offline foundation, base navigation, functioning debug APKs | [ACTUAL] |
-| FASE 1 | NOE (parent app): full auth UX, family setup, children management screens | [PENDIENTE] |
+| FASE 0 | Base architecture: monorepo, two independent Expo apps, shared packages, Supabase base + RLS, online/offline foundation, base navigation, functioning debug APKs | [COMPLETADA] |
+| FASE 1 | NOE (parent app): full auth UX, family setup, children management screens | [ACTUAL] |
 | FASE 2 | ARCA KIDS (child app): kid experience, onboarding flow shape, activity views | [PENDIENTE] |
 | FASE 3 | Vinculacion: device/child linking (anonymous auth, code, QR or device - strategy TBD) | [PENDIENTE] |
 | FASE 4 | Control parental: app control/locks, time limits, usage sessions | [PENDIENTE] |

@@ -35,7 +35,7 @@ export const authService = {
   async signUp(input: SignUpInput): Promise<void> {
     const email = normalizeEmail(input.email);
     validateCredentials(email, input.password);
-    await authRepository.signUp(email, input.password);
+    await authRepository.signUp(email, input.password, input.displayName?.trim());
   },
 
   async signOut(): Promise<void> {

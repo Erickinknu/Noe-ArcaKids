@@ -23,9 +23,13 @@ export const authHelpers = {
     }
   },
 
-  async signUp(email: string, password: string): Promise<void> {
+  async signUp(email: string, password: string, displayName?: string): Promise<void> {
     const client = requireSupabaseClient();
-    const { error } = await client.auth.signUp({ email, password });
+    const { error } = await client.auth.signUp({
+      email,
+      password,
+      options: displayName ? { data: { display_name: displayName } } : undefined,
+    });
     if (error) {
       throw mapAuthError(error);
     }
