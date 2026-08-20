@@ -3,8 +3,8 @@
 | Phase | Scope | Status |
 |---|---|---|
 | FASE 0 | Base architecture: monorepo, two independent Expo apps, shared packages, Supabase base + RLS, online/offline foundation, base navigation, functioning debug APKs | [COMPLETADA] |
-| FASE 1 | NOE (parent app): full auth UX, family setup, children management screens | [ACTUAL] |
-| FASE 2 | ARCA KIDS (child app): kid experience, onboarding flow shape, activity views | [PENDIENTE] |
+| FASE 1 | NOE (parent app): full auth UX, family setup, children management screens | [COMPLETADA] |
+| FASE 2 | ARCA KIDS (child app): kid experience, onboarding flow shape, activity views | [ACTUAL] |
 | FASE 3 | Vinculacion: device/child linking (anonymous auth, code, QR or device - strategy TBD) | [PENDIENTE] |
 | FASE 4 | Control parental: app control/locks, time limits, usage sessions | [PENDIENTE] |
 | FASE 5 | Geolocalizacion y geocercas | [PENDIENTE] |
@@ -17,3 +17,7 @@
 - Features are specified by the owner phase by phase; nothing is implemented ahead of its phase.
 - Every phase ends with: typecheck, lint, Expo validation and Android builds passing.
 - Nothing is declared done unless it compiles and is verifiable.
+
+## Known warnings (accepted by design)
+
+- `expo-doctor` reports 20/21 in both apps: the "app config fields not synced in a non-CNG project" check is expected because `android/` folders are committed on purpose (prebuilt projects) while `app.config.ts` keeps native properties for CNG. Keep `android/` in sync by running `npx expo prebuild --no-install` before builds and whenever app.config changes.
