@@ -25,6 +25,12 @@ const config: ExpoConfig = {
   plugins: [
     'expo-router',
     [
+      'expo-camera',
+      {
+        cameraPermission: 'Allow ARCA KIDS to use your camera to scan pairing QR codes.',
+      },
+    ],
+    [
       'expo-splash-screen',
       {
         backgroundColor: '#208AEF',

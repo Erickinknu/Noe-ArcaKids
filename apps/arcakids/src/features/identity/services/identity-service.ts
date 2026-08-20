@@ -1,34 +1,55 @@
-import type { Device } from '@noe-arcakids/types';
-import { ValidationError } from '@noe-arcakids/shared';
+import { ValidationError, t } from '@noe-arcakids/shared';
 
 import {
   identityRepository,
   type ChildInfo,
+  type LocalDevice,
 } from '../repositories/identity-repository';
 
 const MAX_NAME_LENGTH = 60;
 const DEFAULT_AVATAR = '🦊';
 
 export const identityService = {
-  getDevice(): Promise<Device | null> {
-    return identityRepository.getDevice();
+  getLocalDevice(): Promise<LocalDevice> {
+    return identityRepository.getLocalDevice();
   },
 
   getChildInfo(): Promise<ChildInfo | null> {
     return identityRepository.getChildInfo();
   },
 
-  async saveChildInfo(input: { name: string; avatar?: string }): Promise<void> {
+  isLinked(info: ChildInfo | null): info is ChildInfo & { childId: string; familyId: string } {
+    return Boolean(info && info.childId && info.familyId);
+  },
+
+  async saveChildProfile(input: { name: string; avatar?: string }): Promise<void> {
     const name = input.name.trim();
     if (name.length === 0) {
-      throw new ValidationError('Child name is required.');
+      throw new ValidationError(t('validation.childNameRequired'));
     }
     if (name.length > MAX_NAME_LENGTH) {
       throw new ValidationError(
-        `Child name must be at most ${MAX_NAME_LENGTH} characters.`
+        t('validation.childNameMax', { max: MAX_NAME_LENGTH })
       );
     }
     const avatar = input.avatar?.trim() || DEFAULT_AVATAR;
-    await identityRepository.saveChildInfo({ name, avatar });
+    const current = await identityRepository.getChildInfo();
+    await identityRepository.saveChildInfo({ ...(current ?? {}), name, avatar });
+  },
+
+  async saveChildLink(input: {
+    childId: string;
+    familyId: string;
+    displayName: string;
+    avatar?: string;
+  }): Promise<void> {
+    const current = await identityRepository.getChildInfo();
+    await identityRepository.saveChildInfo({
+      name: current?.name ?? input.displayName,
+      avatar: input.avatar || current?.avatar || DEFAULT_AVATAR,
+      childId: input.childId,
+      familyId: input.familyId,
+      linkedAt: new Date().toISOString(),
+    });
   },
 };

@@ -46,11 +46,9 @@ printed by `supabase start` (or the `demo` key in `config.toml`).
 
 `packages/config/src/feature-flags.ts` gates upcoming functionality:
 
-- `syncEngine` - sync engine (Phase 3+)
-- `linking` - device/child linking (Phase 3)
+- `syncEngine` - sync engine (Phase 8)
+- `linking` - device/child linking (Phase 3) - **enabled**
 - `parentalControls` - parental control features (Phase 4+)
-
-All are `false` in this phase.
 
 ## App metadata
 

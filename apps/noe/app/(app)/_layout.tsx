@@ -7,7 +7,7 @@ export default function AppLayout() {
   const status = useAuthStore((state) => state.status);
 
   if (status !== 'authenticated') {
-    return <Redirect href={ROUTES.auth} />;
+    return <Redirect href={ROUTES.login} />;
   }
 
   return <Stack screenOptions={{ headerShown: false }} />;

@@ -10,5 +10,5 @@ export default function IndexScreen() {
     return null;
   }
 
-  return <Redirect href={status === 'authenticated' ? ROUTES.app : ROUTES.auth} />;
+  return <Redirect href={status === 'authenticated' ? ROUTES.app : ROUTES.login} />;
 }
