@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -11,6 +12,7 @@ import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
 import { colors, spacing, typography } from '@noe-arcakids/shared';
 
 export default function ProfileScreen() {
+  const { t: tr } = useTranslation();
   const [familyName, setFamilyName] = useState('');
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -47,7 +49,7 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <View style={styles.screen}>
-        <Text style={styles.muted}>Loading your profile...</Text>
+        <Text style={styles.muted}>{tr('noe.profile.loading')}</Text>
       </View>
     );
   }
@@ -57,7 +59,7 @@ export default function ProfileScreen() {
       <View style={styles.screen}>
         <Text style={styles.error}>{error}</Text>
         <Button variant="outline" onPress={reload}>
-          Retry
+          {tr('common.retry')}
         </Button>
       </View>
     );
@@ -65,32 +67,32 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>Profile</Text>
+      <Text style={styles.title}>{tr('noe.profile.title')}</Text>
       {data ? (
         <>
           <Card>
-            <Text style={styles.label}>Name</Text>
+            <Text style={styles.label}>{tr('noe.profile.name')}</Text>
             <Text style={styles.value}>{data.profile.displayName || '—'}</Text>
-            <Text style={styles.label}>Email</Text>
+            <Text style={styles.label}>{tr('noe.profile.email')}</Text>
             <Text style={styles.value}>{data.profile.email || '—'}</Text>
-            <Text style={styles.label}>Family</Text>
+            <Text style={styles.label}>{tr('noe.profile.family')}</Text>
             <Text style={styles.value}>{data.family.name}</Text>
           </Card>
           <Card>
-            <Text style={styles.cardTitle}>Family name</Text>
+            <Text style={styles.cardTitle}>{tr('noe.profile.familyName')}</Text>
             <Input
-              label="Family"
+              label={tr('noe.profile.family')}
               value={familyName}
               onChangeText={setFamilyName}
-              placeholder="e.g. The Smiths"
+              placeholder={tr('noe.profile.familyPlaceholder')}
             />
             <Button onPress={handleRename} loading={saving}>
-              Save family name
+              {tr('noe.profile.saveFamilyName')}
             </Button>
           </Card>
           {actionError ? <Text style={styles.error}>{actionError}</Text> : null}
           <Button variant="outline" onPress={handleSignOut}>
-            Sign out
+            {tr('noe.profile.signOut')}
           </Button>
         </>
       ) : null}

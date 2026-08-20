@@ -1,5 +1,5 @@
 import type { ChildProfile } from '@noe-arcakids/types';
-import { ValidationError } from '@noe-arcakids/shared';
+import { ValidationError, t } from '@noe-arcakids/shared';
 
 import { childRepository } from '../repositories/child-repository';
 
@@ -13,11 +13,11 @@ export const childService = {
   async addChild(familyId: string, displayName: string): Promise<ChildProfile> {
     const trimmed = displayName.trim();
     if (trimmed.length === 0) {
-      throw new ValidationError('Child name is required.');
+      throw new ValidationError(t('validation.childNameRequired'));
     }
     if (trimmed.length > MAX_DISPLAY_NAME_LENGTH) {
       throw new ValidationError(
-        `Child name must be at most ${MAX_DISPLAY_NAME_LENGTH} characters.`
+        t('validation.childNameMax', { max: MAX_DISPLAY_NAME_LENGTH })
       );
     }
     return childRepository.addChild(familyId, trimmed);

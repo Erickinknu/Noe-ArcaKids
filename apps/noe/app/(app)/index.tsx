@@ -1,13 +1,16 @@
 import { Link } from 'expo-router';
 import { StyleSheet, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { PlaceholderScreen } from '@/components/placeholder-screen';
 import { Button } from '@/components/ui/button';
 import { authService } from '@/features/auth/services/auth-service';
-import { colors, spacing, typography } from '@noe-arcakids/shared';
+import { ROUTES } from '@/constants';
+import { colors, spacing, typography, t } from '@noe-arcakids/shared';
 import { useAuthStore } from '@/stores/auth-store';
 
 export default function DashboardScreen() {
+  const { t: tr } = useTranslation();
   const user = useAuthStore((state) => state.user);
 
   async function handleSignOut() {
@@ -16,29 +19,34 @@ export default function DashboardScreen() {
 
   return (
     <PlaceholderScreen
-      title="Parent dashboard"
+      title={tr('noe.dashboard.title')}
       description={
         user
-          ? `Signed in as ${user.email ?? 'unknown user'}. Children, activity, settings and profile arrive in Phase 1.`
-          : 'Children, activity, settings and profile arrive in Phase 1.'
+          ? `${tr('noe.dashboard.signedInAs', {
+              email: user.email ?? t('common.unknownUser'),
+            })} ${tr('noe.dashboard.description')}`
+          : tr('noe.dashboard.description')
       }
     >
       <View style={styles.links}>
-        <Link href="/children" style={styles.link}>
-          Children
+        <Link href={ROUTES.children} style={styles.link}>
+          {tr('noe.dashboard.children')}
         </Link>
-        <Link href="/activity" style={styles.link}>
-          Activity
+        <Link href={ROUTES.linking} style={styles.link}>
+          {tr('noe.dashboard.linkDevice')}
         </Link>
-        <Link href="/settings" style={styles.link}>
-          Settings
+        <Link href={ROUTES.activity} style={styles.link}>
+          {tr('noe.dashboard.activity')}
         </Link>
-        <Link href="/profile" style={styles.link}>
-          Profile
+        <Link href={ROUTES.settings} style={styles.link}>
+          {tr('noe.dashboard.settings')}
+        </Link>
+        <Link href={ROUTES.profile} style={styles.link}>
+          {tr('noe.dashboard.profile')}
         </Link>
       </View>
       <Button variant="outline" onPress={handleSignOut}>
-        Sign out
+        {tr('noe.dashboard.signOut')}
       </Button>
     </PlaceholderScreen>
   );

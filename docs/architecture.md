@@ -46,6 +46,14 @@ Zustand stores live in `apps/<app>/src/stores/`, one per domain:
 - `SyncService` is an interface (`queue`, `flush`, `sync`, `isOnline`). Current implementation logs only; the sync engine comes in a later phase.
 - Rule: remote = truth, local = cache. Never mix the two meanings.
 
+## i18n
+
+- `packages/shared/src/i18n/` owns the dictionaries (`es` / `en`), `SUPPORTED_LANGUAGES`, `LANGUAGE_NAMES`, `detectLanguage(locale)` and a non-reactive `t()` for service/package code.
+- Each app has `src/i18n/index.ts`: init order is saved preference (`<app>/language` in AsyncStorage) > system locale (`I18nManager`) > `es` fallback. Spanish is the default for any unsupported locale.
+- React screens use the reactive `useTranslation()` hook (re-renders on language change); services/packages use the shared `t()`.
+- The language selector lives in each app's Settings screen and persists the choice.
+- Known limitation: messages coming from the database (`DatabaseError(error.message)`) are server-generated and are not translated. New keys must be added to both dictionaries.
+
 ## Errors
 
 All screens do:

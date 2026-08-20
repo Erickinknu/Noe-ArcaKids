@@ -1,4 +1,4 @@
-import { ValidationError } from '@noe-arcakids/shared';
+import { ValidationError, t } from '@noe-arcakids/shared';
 
 import { familyRepository, type MyFamily } from '../repositories/family-repository';
 
@@ -12,11 +12,11 @@ export const familyService = {
   async renameFamily(familyId: string, name: string): Promise<void> {
     const trimmed = name.trim();
     if (trimmed.length === 0) {
-      throw new ValidationError('Family name is required.');
+      throw new ValidationError(t('validation.familyNameRequired'));
     }
     if (trimmed.length > MAX_FAMILY_NAME_LENGTH) {
       throw new ValidationError(
-        `Family name must be at most ${MAX_FAMILY_NAME_LENGTH} characters.`
+        t('validation.familyNameMax', { max: MAX_FAMILY_NAME_LENGTH })
       );
     }
     await familyRepository.renameFamily(familyId, trimmed);

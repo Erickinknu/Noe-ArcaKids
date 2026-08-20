@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
 import { colors, spacing, typography } from '@noe-arcakids/shared';
 
 export default function ChildrenScreen() {
+  const { t: tr } = useTranslation();
   const [displayName, setDisplayName] = useState('');
   const [adding, setAdding] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -38,7 +40,7 @@ export default function ChildrenScreen() {
   if (loading) {
     return (
       <View style={styles.screen}>
-        <Text style={styles.muted}>Loading your children...</Text>
+        <Text style={styles.muted}>{tr('noe.children.loading')}</Text>
       </View>
     );
   }
@@ -48,7 +50,7 @@ export default function ChildrenScreen() {
       <View style={styles.screen}>
         <Text style={styles.error}>{error}</Text>
         <Button variant="outline" onPress={reload}>
-          Retry
+          {tr('common.retry')}
         </Button>
       </View>
     );
@@ -56,35 +58,37 @@ export default function ChildrenScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>Children</Text>
+      <Text style={styles.title}>{tr('noe.children.title')}</Text>
       {children ? (
         <>
           {children.length === 0 ? (
-            <Text style={styles.muted}>No children yet. Add your first child below.</Text>
+            <Text style={styles.muted}>{tr('noe.children.empty')}</Text>
           ) : (
             children.map((child) => (
               <Card key={child.id}>
                 <Text style={styles.childName}>{child.displayName}</Text>
                 <Text style={styles.childMeta}>
-                  Member since {new Date(child.createdAt).toLocaleDateString()}
+                  {tr('noe.children.memberSince', {
+                    date: new Date(child.createdAt).toLocaleDateString(),
+                  })}
                 </Text>
               </Card>
             ))
           )}
           <Card>
-            <Text style={styles.cardTitle}>Add a child</Text>
+            <Text style={styles.cardTitle}>{tr('noe.children.addTitle')}</Text>
             <Input
-              label="Child name"
+              label={tr('noe.children.nameLabel')}
               value={displayName}
               onChangeText={setDisplayName}
-              placeholder="e.g. Mia"
+              placeholder={tr('noe.children.namePlaceholder')}
             />
             <Button
               onPress={handleAdd}
               loading={adding}
               disabled={displayName.trim().length === 0}
             >
-              Add child
+              {tr('noe.children.add')}
             </Button>
           </Card>
           {actionError ? <Text style={styles.error}>{actionError}</Text> : null}

@@ -1,0 +1,178 @@
+export const es = {
+  common: {
+    retry: 'Reintentar',
+    unexpected: 'Error inesperado. Int\u00e9ntalo de nuevo.',
+    unknownUser: 'usuario desconocido',
+  },
+  validation: {
+    emailRequired: 'Se requiere un correo v\u00e1lido.',
+    passwordRequired: 'Se requiere la contrase\u00f1a.',
+    familyNameRequired: 'Se requiere el nombre de la familia.',
+    familyNameMax: 'El nombre de la familia debe tener como m\u00e1ximo {{max}} caracteres.',
+    childNameRequired: 'Se requiere el nombre del ni\u00f1o.',
+    childNameMax: 'El nombre del ni\u00f1o debe tener como m\u00e1ximo {{max}} caracteres.',
+    linkCodeInvalid: 'Ingresa el c\u00f3digo de 6 d\u00edgitos que muestra la app NOE.',
+  },
+  network: {
+    connectionFailed: 'Error de conexi\u00f3n. Revisa tu conexi\u00f3n a internet.',
+  },
+  linking: {
+    codeGenerationFailed:
+      'No se pudo generar un c\u00f3digo de vinculaci\u00f3n \u00fanico. Intenta de nuevo.',
+  },
+  settings: {
+    language: 'Idioma',
+    languageDescription: 'Elige el idioma de la app',
+    spanish: 'Espa\u00f1ol',
+    english: 'Ingl\u00e9s',
+  },
+  noe: {
+    login: {
+      subtitle: 'App de padres',
+      email: 'Correo electr\u00f3nico',
+      emailPlaceholder: 'tucorreo@ejemplo.com',
+      password: 'Contrase\u00f1a',
+      passwordPlaceholder: 'Tu contrase\u00f1a',
+      signIn: 'Iniciar sesi\u00f3n',
+      createAccount: 'Crear cuenta',
+      forgotPassword: '\u00bfOlvidaste tu contrase\u00f1a?',
+    },
+    register: {
+      title: 'Crear cuenta',
+      subtitle: 'NOE - app de padres',
+      name: 'Nombre',
+      namePlaceholder: 'Tu nombre',
+      email: 'Correo electr\u00f3nico',
+      emailPlaceholder: 'tucorreo@ejemplo.com',
+      password: 'Contrase\u00f1a',
+      passwordPlaceholder: 'Tu contrase\u00f1a',
+      submit: 'Crear cuenta',
+      checkEmail:
+        'Revisa tu correo para confirmar tu cuenta y luego inicia sesi\u00f3n.',
+      haveAccount: '\u00bfYa tienes una cuenta? Inicia sesi\u00f3n',
+    },
+    forgotPassword: {
+      title: 'Restablecer contrase\u00f1a',
+      subtitle:
+        'Ingresa tu correo y te enviaremos un enlace de restablecimiento.',
+      email: 'Correo electr\u00f3nico',
+      emailPlaceholder: 'tucorreo@ejemplo.com',
+      send: 'Enviar enlace',
+      sent: 'Si ese correo existe, se envi\u00f3 un enlace de restablecimiento.',
+      back: 'Volver a iniciar sesi\u00f3n',
+    },
+    dashboard: {
+      title: 'Panel de padres',
+      signedInAs: 'Sesi\u00f3n iniciada como {{email}}.',
+      description: 'Administra tus hijos, vincula dispositivos y m\u00e1s.',
+      children: 'Hijos',
+      linkDevice: 'Vincular un dispositivo',
+      activity: 'Actividad',
+      settings: 'Ajustes',
+      profile: 'Perfil',
+      signOut: 'Cerrar sesi\u00f3n',
+    },
+    profile: {
+      title: 'Perfil',
+      loading: 'Cargando tu perfil...',
+      name: 'Nombre',
+      email: 'Correo electr\u00f3nico',
+      family: 'Familia',
+      familyName: 'Nombre de la familia',
+      familyPlaceholder: 'p. ej. Los P\u00e9rez',
+      saveFamilyName: 'Guardar nombre de la familia',
+      signOut: 'Cerrar sesi\u00f3n',
+    },
+    children: {
+      title: 'Hijos',
+      loading: 'Cargando tus hijos...',
+      empty: 'A\u00fan no hay hijos. Agrega tu primer hijo abajo.',
+      memberSince: 'Miembro desde {{date}}',
+      addTitle: 'Agregar un hijo',
+      nameLabel: 'Nombre del hijo',
+      namePlaceholder: 'p. ej. Luc\u00eda',
+      add: 'Agregar hijo',
+    },
+    linking: {
+      title: 'Vincular un dispositivo',
+      subtitle:
+        'Elige un hijo, luego abre ARCA KIDS en el dispositivo e ingresa el c\u00f3digo o escanea el QR.',
+      chooseChild: 'Elige un hijo',
+      noChildren:
+        'A\u00fan no hay hijos: agrega uno desde la pantalla de Hijos primero.',
+      generateCode: 'Generar c\u00f3digo para {{name}}',
+      codeFor: 'C\u00f3digo para {{name}}',
+      expiresAt:
+        'Ingr\u00e9salo en ARCA KIDS o escan\u00e9alo. Expira a las {{time}}.',
+      loading: 'Cargando tus hijos...',
+      somethingWentWrong: 'Algo sali\u00f3 mal.',
+    },
+    activity: {
+      title: 'Actividad',
+      description:
+        'El seguimiento de actividad a\u00fan no est\u00e1 implementado. Planificado para fases posteriores.',
+    },
+  },
+  arcakids: {
+    onboarding: {
+      welcome: 'Bienvenido a ARCA KIDS',
+      welcomeText:
+        '\u00a1Tu espacio con actividades divertidas, tu propio perfil y m\u00e1s! Empecemos.',
+      start: 'Empezar',
+      stepOf: 'Paso {{current}} de {{total}}',
+      nameQuestion: '\u00bfC\u00f3mo te llamas?',
+      pickBuddy: 'Elige tu compa\u00f1ero',
+      nameLabel: 'Nombre',
+      namePlaceholder: 'Tu nombre',
+      next: 'Siguiente',
+      finish: '\u00a1Vamos!',
+      back: 'Atr\u00e1s',
+    },
+    home: {
+      hi: '\u00a1Hola, {{name}}!',
+      whatDo: '\u00bfQu\u00e9 quieres hacer hoy?',
+      connection: 'Conexi\u00f3n:',
+      online: 'En l\u00ednea',
+      offline: 'Sin conexi\u00f3n',
+      linkBannerTitle: 'Vincular este dispositivo',
+      linkBannerText: 'Pide el c\u00f3digo a un padre',
+      activity: 'Actividad',
+      activitySubtitle: 'Tu d\u00eda en un solo lugar',
+      profile: 'Perfil',
+      profileSubtitle: 'Tu compa\u00f1ero y tu nombre',
+      settings: 'Ajustes',
+      settingsSubtitle: 'Preferencias de la app',
+    },
+    link: {
+      title: 'Vincular este dispositivo',
+      subtitle:
+        'Pide a un padre que abra NOE, elija un hijo y muestre el c\u00f3digo. Ingr\u00e9salo aqu\u00ed o escanea el QR.',
+      cancelScan: 'Cancelar escaneo',
+      enterCode: 'Ingresa el c\u00f3digo',
+      codeLabel: 'C\u00f3digo',
+      codePlaceholder: '000000',
+      linkDevice: 'Vincular dispositivo',
+      scanInstead: 'Mejor escanear el QR',
+      cameraPermission:
+        'Se necesita permiso de c\u00e1mara para escanear el c\u00f3digo QR.',
+    },
+    profile: {
+      title: 'Perfil',
+      loading: 'Cargando tu perfil...',
+      nameLabel: 'Nombre',
+      namePlaceholder: 'Tu nombre',
+      pickBuddy: 'Elige tu compa\u00f1ero',
+      save: 'Guardar',
+      saved: '\u00a1Guardado!',
+      linked: 'Este dispositivo est\u00e1 vinculado a tu familia.',
+      notLinked:
+        'Este dispositivo a\u00fan no est\u00e1 vinculado a una familia: abre NOE, genera un c\u00f3digo y vinc\u00f3lalo.',
+    },
+    activity: {
+      title: 'Actividad',
+      nothingYet: 'A\u00fan no hay nada',
+      emptyText:
+        'Tu actividad aparecer\u00e1 aqu\u00ed cuando empieces a explorar. \u00a1Vuelve pronto!',
+    },
+  },
+} as const;

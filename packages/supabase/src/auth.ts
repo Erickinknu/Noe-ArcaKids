@@ -1,12 +1,12 @@
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
-import { AuthError, NetworkError } from '@noe-arcakids/shared';
+import { AuthError, NetworkError, t } from '@noe-arcakids/shared';
 
 import { requireSupabaseClient } from './client';
 
 function mapAuthError(error: { message: string; status?: number }): AuthError | NetworkError {
   if (error.status === 0) {
-    return new NetworkError('Connection failed. Check your internet connection.', {
+    return new NetworkError(t('network.connectionFailed'), {
       code: 'network',
       cause: error,
     });

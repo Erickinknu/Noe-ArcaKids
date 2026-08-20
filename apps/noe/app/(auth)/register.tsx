@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authService } from '@/features/auth/services/auth-service';
-import { AppError, colors, spacing, typography } from '@noe-arcakids/shared';
+import { AppError, colors, spacing, typography, t } from '@noe-arcakids/shared';
 
 export default function RegisterScreen() {
+  const { t: tr } = useTranslation();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -21,10 +23,10 @@ export default function RegisterScreen() {
     setMessage(null);
     try {
       await authService.signUp({ email, password, displayName });
-      setMessage('Check your email to confirm your account, then sign in.');
+      setMessage(tr('noe.register.checkEmail'));
     } catch (cause) {
       setError(
-        cause instanceof AppError ? cause.message : 'Unexpected error. Please try again.'
+        cause instanceof AppError ? cause.message : t('common.unexpected')
       );
     } finally {
       setSubmitting(false);
@@ -37,39 +39,39 @@ export default function RegisterScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.header}>
-        <Text style={styles.title}>Create account</Text>
-        <Text style={styles.subtitle}>NOE - parent app</Text>
+        <Text style={styles.title}>{tr('noe.register.title')}</Text>
+        <Text style={styles.subtitle}>{tr('noe.register.subtitle')}</Text>
       </View>
       <Input
-        label="Name"
+        label={tr('noe.register.name')}
         value={displayName}
         onChangeText={setDisplayName}
         autoComplete="name"
-        placeholder="Your name"
+        placeholder={tr('noe.register.namePlaceholder')}
       />
       <Input
-        label="Email"
+        label={tr('noe.register.email')}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
         autoComplete="email"
         keyboardType="email-address"
-        placeholder="you@example.com"
+        placeholder={tr('noe.register.emailPlaceholder')}
       />
       <Input
-        label="Password"
+        label={tr('noe.register.password')}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
-        placeholder="Your password"
+        placeholder={tr('noe.register.passwordPlaceholder')}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {message ? <Text style={styles.message}>{message}</Text> : null}
       <Button onPress={handleSubmit} loading={submitting}>
-        Create account
+        {tr('noe.register.submit')}
       </Button>
       <Link href="/(auth)/login" style={styles.link}>
-        Already have an account? Sign in
+        {tr('noe.register.haveAccount')}
       </Link>
     </ScrollView>
   );

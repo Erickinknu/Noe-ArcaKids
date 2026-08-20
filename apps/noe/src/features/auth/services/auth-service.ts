@@ -3,6 +3,7 @@ import {
   isValidEmail,
   isNonEmptyString,
   normalizeEmail,
+  t,
 } from '@noe-arcakids/shared';
 
 import { authRepository } from '../repositories/auth-repository';
@@ -18,10 +19,10 @@ export interface SignUpInput extends SignInInput {
 
 function validateCredentials(email: string, password: string): void {
   if (!isValidEmail(email)) {
-    throw new ValidationError('A valid email is required.');
+    throw new ValidationError(t('validation.emailRequired'));
   }
   if (!isNonEmptyString(password)) {
-    throw new ValidationError('Password is required.');
+    throw new ValidationError(t('validation.passwordRequired'));
   }
 }
 
@@ -45,7 +46,7 @@ export const authService = {
   async resetPasswordForEmail(email: string): Promise<void> {
     const normalized = normalizeEmail(email);
     if (!isValidEmail(normalized)) {
-      throw new ValidationError('A valid email is required.');
+      throw new ValidationError(t('validation.emailRequired'));
     }
     await authRepository.resetPasswordForEmail(normalized);
   },

@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -12,15 +13,18 @@ import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
 const AVATARS = ['🦊', '🐼', '🦁', '🐸', '🐙', '🦄'];
 
 export default function ProfileScreen() {
+  const { t: tr } = useTranslation();
   const [name, setName] = useState('');
   const [avatar, setAvatar] = useState(AVATARS[0]);
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [linked, setLinked] = useState(false);
 
   const handleLoaded = useCallback((info: ChildInfo) => {
     setName(info.name);
     setAvatar(info.avatar);
+    setLinked(Boolean(info.childId && info.familyId));
   }, []);
   const fetchInfo = useCallback(async () => {
     const info = await identityService.getChildInfo();
@@ -33,7 +37,7 @@ export default function ProfileScreen() {
     setActionError(null);
     setSaved(false);
     try {
-      await identityService.saveChildInfo({ name, avatar });
+      await identityService.saveChildProfile({ name, avatar });
       setSaved(true);
     } catch (cause) {
       setActionError(errorMessage(cause));
@@ -45,7 +49,7 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <View style={styles.screen}>
-        <Text style={styles.muted}>Loading your profile...</Text>
+        <Text style={styles.muted}>{tr('arcakids.profile.loading')}</Text>
       </View>
     );
   }
@@ -55,7 +59,7 @@ export default function ProfileScreen() {
       <View style={styles.screen}>
         <Text style={styles.error}>{error}</Text>
         <Button variant="outline" onPress={reload}>
-          Retry
+          {tr('common.retry')}
         </Button>
       </View>
     );
@@ -63,11 +67,16 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>Profile</Text>
+      <Text style={styles.title}>{tr('arcakids.profile.title')}</Text>
       <Card>
         <Text style={styles.avatarPreview}>{avatar}</Text>
-        <Input label="Name" value={name} onChangeText={setName} placeholder="Your name" />
-        <Text style={styles.cardTitle}>Pick your buddy</Text>
+        <Input
+          label={tr('arcakids.profile.nameLabel')}
+          value={name}
+          onChangeText={setName}
+          placeholder={tr('arcakids.profile.namePlaceholder')}
+        />
+        <Text style={styles.cardTitle}>{tr('arcakids.profile.pickBuddy')}</Text>
         <View style={styles.avatarRow}>
           {AVATARS.map((item) => (
             <Pressable
@@ -80,13 +89,13 @@ export default function ProfileScreen() {
           ))}
         </View>
         <Button onPress={handleSave} loading={saving}>
-          Save
+          {tr('arcakids.profile.save')}
         </Button>
-        {saved ? <Text style={styles.message}>Saved!</Text> : null}
+        {saved ? <Text style={styles.message}>{tr('arcakids.profile.saved')}</Text> : null}
         {actionError ? <Text style={styles.error}>{actionError}</Text> : null}
       </Card>
       <Text style={styles.muted}>
-        This device is not linked to a family yet — linking arrives in a later phase.
+        {linked ? tr('arcakids.profile.linked') : tr('arcakids.profile.notLinked')}
       </Text>
     </ScrollView>
   );

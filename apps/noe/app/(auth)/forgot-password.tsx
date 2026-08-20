@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authService } from '@/features/auth/services/auth-service';
-import { AppError, colors, spacing, typography } from '@noe-arcakids/shared';
+import { AppError, colors, spacing, typography, t } from '@noe-arcakids/shared';
 
 export default function ForgotPasswordScreen() {
+  const { t: tr } = useTranslation();
   const [email, setEmail] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
@@ -19,10 +21,10 @@ export default function ForgotPasswordScreen() {
     setMessage(null);
     try {
       await authService.resetPasswordForEmail(email);
-      setMessage('If that email exists, a password reset link was sent.');
+      setMessage(tr('noe.forgotPassword.sent'));
     } catch (cause) {
       setError(
-        cause instanceof AppError ? cause.message : 'Unexpected error. Please try again.'
+        cause instanceof AppError ? cause.message : t('common.unexpected')
       );
     } finally {
       setSubmitting(false);
@@ -35,27 +37,27 @@ export default function ForgotPasswordScreen() {
       keyboardShouldPersistTaps="handled"
     >
       <View style={styles.header}>
-        <Text style={styles.title}>Reset password</Text>
+        <Text style={styles.title}>{tr('noe.forgotPassword.title')}</Text>
         <Text style={styles.subtitle}>
-          Enter your email and we will send you a reset link.
+          {tr('noe.forgotPassword.subtitle')}
         </Text>
       </View>
       <Input
-        label="Email"
+        label={tr('noe.forgotPassword.email')}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
         autoComplete="email"
         keyboardType="email-address"
-        placeholder="you@example.com"
+        placeholder={tr('noe.forgotPassword.emailPlaceholder')}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {message ? <Text style={styles.message}>{message}</Text> : null}
       <Button onPress={handleSubmit} loading={submitting}>
-        Send reset link
+        {tr('noe.forgotPassword.send')}
       </Button>
       <Link href="/(auth)/login" style={styles.link}>
-        Back to sign in
+        {tr('noe.forgotPassword.back')}
       </Link>
     </ScrollView>
   );

@@ -1,13 +1,15 @@
 import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Link } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authService } from '@/features/auth/services/auth-service';
-import { AppError, colors, spacing, typography } from '@noe-arcakids/shared';
+import { AppError, colors, spacing, typography, t } from '@noe-arcakids/shared';
 
 export default function LoginScreen() {
+  const { t: tr } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -20,7 +22,7 @@ export default function LoginScreen() {
       await authService.signIn({ email, password });
     } catch (cause) {
       setError(
-        cause instanceof AppError ? cause.message : 'Unexpected error. Please try again.'
+        cause instanceof AppError ? cause.message : t('common.unexpected')
       );
     } finally {
       setSubmitting(false);
@@ -34,34 +36,34 @@ export default function LoginScreen() {
     >
       <View style={styles.header}>
         <Text style={styles.title}>NOE</Text>
-        <Text style={styles.subtitle}>Parent app</Text>
+        <Text style={styles.subtitle}>{tr('noe.login.subtitle')}</Text>
       </View>
       <Input
-        label="Email"
+        label={tr('noe.login.email')}
         value={email}
         onChangeText={setEmail}
         autoCapitalize="none"
         autoComplete="email"
         keyboardType="email-address"
-        placeholder="you@example.com"
+        placeholder={tr('noe.login.emailPlaceholder')}
       />
       <Input
-        label="Password"
+        label={tr('noe.login.password')}
         value={password}
         onChangeText={setPassword}
         secureTextEntry
-        placeholder="Your password"
+        placeholder={tr('noe.login.passwordPlaceholder')}
       />
       {error ? <Text style={styles.error}>{error}</Text> : null}
       <Button onPress={handleSubmit} loading={submitting}>
-        Sign in
+        {tr('noe.login.signIn')}
       </Button>
       <View style={styles.links}>
         <Link href="/(auth)/register" style={styles.link}>
-          Create account
+          {tr('noe.login.createAccount')}
         </Link>
         <Link href="/(auth)/forgot-password" style={styles.link}>
-          Forgot password?
+          {tr('noe.login.forgotPassword')}
         </Link>
       </View>
     </ScrollView>

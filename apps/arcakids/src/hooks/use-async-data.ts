@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { AppError } from '@noe-arcakids/shared';
+import { AppError, t } from '@noe-arcakids/shared';
 
 export function errorMessage(cause: unknown): string {
-  return cause instanceof AppError ? cause.message : 'Unexpected error. Please try again.';
+  return cause instanceof AppError ? cause.message : t('common.unexpected');
 }
 
 /**

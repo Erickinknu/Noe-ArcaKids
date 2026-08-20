@@ -1,8 +1,10 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 import { colors, spacing, typography } from '@noe-arcakids/shared';
 
 export default function ActivityScreen() {
+  const { t: tr } = useTranslation();
   const today = new Date().toLocaleDateString(undefined, {
     weekday: 'long',
     day: 'numeric',
@@ -11,14 +13,12 @@ export default function ActivityScreen() {
 
   return (
     <View style={styles.screen}>
-      <Text style={styles.title}>Activity</Text>
+      <Text style={styles.title}>{tr('arcakids.activity.title')}</Text>
       <Text style={styles.date}>{today}</Text>
       <View style={styles.emptyCard}>
         <Text style={styles.emptyEmoji}>🌱</Text>
-        <Text style={styles.emptyTitle}>Nothing here yet</Text>
-        <Text style={styles.emptyText}>
-          Your activity will show up here once you start exploring. Check back soon!
-        </Text>
+        <Text style={styles.emptyTitle}>{tr('arcakids.activity.nothingYet')}</Text>
+        <Text style={styles.emptyText}>{tr('arcakids.activity.emptyText')}</Text>
       </View>
     </View>
   );

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +14,7 @@ import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
 const AVATARS = ['🦊', '🐼', '🦁', '🐸', '🐙', '🦄'];
 
 export default function OnboardingScreen() {
+  const { t: tr } = useTranslation();
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
   const [avatar, setAvatar] = useState(AVATARS[0]);
@@ -23,7 +25,7 @@ export default function OnboardingScreen() {
     setSaving(true);
     setError(null);
     try {
-      await identityService.saveChildInfo({ name, avatar });
+      await identityService.saveChildProfile({ name, avatar });
       await onboardingService.markCompleted();
       router.replace(ROUTES.app);
     } catch (cause) {
@@ -37,30 +39,34 @@ export default function OnboardingScreen() {
     return (
       <View style={styles.screen}>
         <Text style={styles.mascot}>🧸</Text>
-        <Text style={styles.title}>Welcome to ARCA KIDS</Text>
+        <Text style={styles.title}>{tr('arcakids.onboarding.welcome')}</Text>
         <Text style={styles.description}>
-          Your space with fun activities, your own profile and more. Let&apos;s get started!
+          {tr('arcakids.onboarding.welcomeText')}
         </Text>
-        <Button onPress={() => setStep(1)}>Start</Button>
+        <Button onPress={() => setStep(1)}>{tr('arcakids.onboarding.start')}</Button>
       </View>
     );
   }
 
   return (
     <View style={styles.screen}>
-      <Text style={styles.stepLabel}>Step {step} of 2</Text>
-      <Text style={styles.title}>{step === 1 ? "What's your name?" : 'Pick your buddy'}</Text>
+      <Text style={styles.stepLabel}>
+        {tr('arcakids.onboarding.stepOf', { current: step, total: 2 })}
+      </Text>
+      <Text style={styles.title}>
+        {step === 1 ? tr('arcakids.onboarding.nameQuestion') : tr('arcakids.onboarding.pickBuddy')}
+      </Text>
       {step === 1 ? (
         <>
           <Input
-            label="Name"
+            label={tr('arcakids.onboarding.nameLabel')}
             value={name}
             onChangeText={setName}
             autoComplete="name"
-            placeholder="Your first name"
+            placeholder={tr('arcakids.onboarding.namePlaceholder')}
           />
           <Button onPress={() => setStep(2)} disabled={name.trim().length === 0}>
-            Next
+            {tr('arcakids.onboarding.next')}
           </Button>
         </>
       ) : (
@@ -78,10 +84,10 @@ export default function OnboardingScreen() {
             ))}
           </View>
           <Button onPress={handleFinish} loading={saving}>
-            Let&apos;s go!
+            {tr('arcakids.onboarding.finish')}
           </Button>
           <Pressable onPress={() => setStep(1)}>
-            <Text style={styles.back}>Back</Text>
+            <Text style={styles.back}>{tr('arcakids.onboarding.back')}</Text>
           </Pressable>
         </>
       )}
