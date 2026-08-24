@@ -47,8 +47,9 @@ export const useAuthStore = create<AuthState>((set) => ({
     }
     try {
       const { data } = await authHelpers.getSession();
-      applySession(data.session);
-
+      if (data.session) {
+        applySession(data.session);
+      }
       unsubscribeAuth = authHelpers.onAuthStateChange((_event, session) => {
         applySession(session);
       }).data.subscription.unsubscribe;

@@ -73,7 +73,7 @@ export default function ActivityScreen() {
         />
       }
     >
-      <Text style={styles.title}>{tr('noe.activity.title')}>
+<Text style={styles.title}>{tr('noe.activity.title')}</Text>
 
       {!hasData && !hasAlerts ? (
         <EmptyState icon="📊" title={tr('noe.activity.emptyTitle')} description={tr('noe.activity.emptyDescription')} />

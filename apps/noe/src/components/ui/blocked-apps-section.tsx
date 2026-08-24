@@ -1,10 +1,12 @@
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, Pressable, Alert } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SectionHeader } from '@/components/ui/section-header';
+import { colors, radius, spacing, typography, shadows } from '@noe-arcakids/shared';
+import type { BlockedApp } from '@noe-arcakids/types';
 
 export default function BlockedAppsSection({
   childData,

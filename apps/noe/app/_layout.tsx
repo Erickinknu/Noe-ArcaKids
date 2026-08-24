@@ -18,13 +18,18 @@ export default function RootLayout() {
     let mounted = true;
     networkService.start();
     initialize().catch(() => {});
+    const timeoutId = setTimeout(() => {
+      if (mounted) setReady(true);
+    }, 5000);
     Promise.all([initI18n().catch(() => {}), new Promise((r) => setTimeout(r, 300))])
       .then(() => {
+        clearTimeout(timeoutId);
         if (mounted) setReady(true);
       });
     return () => {
       mounted = false;
       networkService.stop();
+      clearTimeout(timeoutId);
     };
   }, [initialize]);
 

@@ -14,6 +14,8 @@ export interface Geofence {
   longitude: number;
   radius: number; // meters
   triggered: boolean;
+  triggeredAt?: number | null;
+  childId: string;
 }
 
 export interface LocationStatus {
@@ -81,7 +83,7 @@ export const locationModule = {
     } catch {}
   },
 
-  async addGeofence(geofence: { id: string; name: string; latitude: number; longitude: number; radius: number }): Promise<boolean> {
+  async addGeofence(geofence: Geofence): Promise<boolean> {
     if (!native) return false;
     try {
       return await native.addGeofence(geofence);
@@ -108,7 +110,7 @@ export const locationModule = {
     }
   },
 
-  async isInsideGeofence(latitude: number, longitude: number, geofence: { latitude: number; longitude: number; radius: number }): Promise<boolean> {
+  async isInsideGeofence(latitude: number, longitude: number, geofence: Geofence): Promise<boolean> {
     if (!native) return false;
     try {
       return await native.isInsideGeofence(latitude, longitude, geofence);

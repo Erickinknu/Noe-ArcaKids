@@ -137,7 +137,7 @@ export default function RulesForm({
     );
   }
 
-  return (
+return (
     <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>{tr('noe.rules.title')}</Text>
       <Text style={styles.subtitle}>{tr('noe.rules.subtitle')}</Text>
@@ -165,94 +165,96 @@ export default function RulesForm({
       </Card>
 
       {selectedChild ? (
-        <Card style={styles.card}>
-          <SectionHeader title={tr('noe.rules.rulesFor', { name: selectedChild.displayName })} />
+        <>
+          <Card style={styles.card}>
+            <SectionHeader title={tr('noe.rules.rulesFor', { name: selectedChild.displayName })} />
 
-          <Input
-            label={tr('noe.rules.dailyLimitLabel')}
-            placeholder={tr('noe.rules.dailyLimitPlaceholder')}
-            value={dailyLimitText}
-            onChangeText={setDailyLimitText}
-            keyboardType="number-pad"
-            inputMode="numeric"
-          />
-          <Text style={styles.hint}>{tr('noe.rules.dailyLimitHint')}</Text>
-
-          <View style={styles.switchRow}>
-            <Text style={styles.switchLabel}>{tr('noe.rules.bedtimeTitle')}</Text>
-            <Switch
-              value={bedtimeEnabled}
-              onValueChange={setBedtimeEnabled}
-              trackColor={{ true: colors.primary }}
+            <Input
+              label={tr('noe.rules.dailyLimitLabel')}
+              placeholder={tr('noe.rules.dailyLimitPlaceholder')}
+              value={dailyLimitText}
+              onChangeText={setDailyLimitText}
+              keyboardType="number-pad"
+              inputMode="numeric"
             />
-          </View>
-          {bedtimeEnabled ? (
-            <View style={styles.timeRow}>
-              <Input
-                label={tr('noe.rules.bedtimeStart')}
-                placeholder="21:00"
-                value={bedtimeStart}
-                onChangeText={setBedtimeStart}
-                maxLength={5}
-                style={styles.timeInput}
-              />
-              <Input
-                label={tr('noe.rules.bedtimeEnd')}
-                placeholder="07:00"
-                value={bedtimeEnd}
-                onChangeText={setBedtimeEnd}
-                maxLength={5}
-                style={styles.timeInput}
+            <Text style={styles.hint}>{tr('noe.rules.dailyLimitHint')}</Text>
+
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>{tr('noe.rules.bedtimeTitle')}</Text>
+              <Switch
+                value={bedtimeEnabled}
+                onValueChange={setBedtimeEnabled}
+                trackColor={{ true: colors.primary }}
               />
             </View>
-          ) : null}
+            {bedtimeEnabled ? (
+              <View style={styles.timeRow}>
+                <Input
+                  label={tr('noe.rules.bedtimeStart')}
+                  placeholder="21:00"
+                  value={bedtimeStart}
+                  onChangeText={setBedtimeStart}
+                  maxLength={5}
+                  style={styles.timeInput}
+                />
+                <Input
+                  label={tr('noe.rules.bedtimeEnd')}
+                  placeholder="07:00"
+                  value={bedtimeEnd}
+                  onChangeText={setBedtimeEnd}
+                  maxLength={5}
+                  style={styles.timeInput}
+                />
+              </View>
+            ) : null}
 
-          <Button onPress={handleSave} loading={saving}>
-            {tr('noe.rules.save')}
-          </Button>
-          {savedFlash ? (
-            <Text style={styles.saved}>{tr('noe.rules.saved')}</Text>
-          ) : null}
-        </Card>
+            <Button onPress={handleSave} loading={saving}>
+              {tr('noe.rules.save')}
+            </Button>
+            {savedFlash ? (
+              <Text style={styles.saved}>{tr('noe.rules.saved')}</Text>
+            ) : null}
+          </Card>
 
-        <Card style={styles.card}>
-          <SectionHeader title={tr('noe.rules.blockedAppsTitle')} />
-          {(childData?.blockedApps.length ?? 0) === 0 ? (
-            <EmptyState icon="📱" title={tr('noe.rules.blockedAppsEmpty')} />
-          ) : (
-            <View style={styles.appList}>
-              {childData?.blockedApps.map((app) => (
-                <View key={app.id} style={styles.appRow}>
-                  <View style={styles.appInfo}>
-                    <Text style={styles.appLabel}>{app.appLabel}</Text>
-                    <Text style={styles.appPackage}>{app.packageName}</Text>
+          <Card style={styles.card}>
+            <SectionHeader title={tr('noe.rules.blockedAppsTitle')} />
+            {(childData?.blockedApps.length ?? 0) === 0 ? (
+              <EmptyState icon="📱" title={tr('noe.rules.blockedAppsEmpty')} />
+            ) : (
+              <View style={styles.appList}>
+                {childData?.blockedApps.map((app) => (
+                  <View key={app.id} style={styles.appRow}>
+                    <View style={styles.appInfo}>
+                      <Text style={styles.appLabel}>{app.appLabel}</Text>
+                      <Text style={styles.appPackage}>{app.packageName}</Text>
+                    </View>
+                    <Pressable onPress={() => handleRemoveApp(app.id)}>
+                      <Text style={styles.removeText}>{tr('noe.rules.removeApp')}</Text>
+                    </Pressable>
                   </View>
-                  <Pressable onPress={() => handleRemoveApp(app.id)}>
-                    <Text style={styles.removeText}>{tr('noe.rules.removeApp')}</Text>
-                  </Pressable>
-                </View>
-              ))}
-            </View>
-          )}
+                ))}
+              </View>
+            )}
 
-          <Input
-            label={tr('noe.rules.packageNameLabel')}
-            placeholder={tr('noe.rules.packageNamePlaceholder')}
-            value={packageName}
-            onChangeText={setPackageName}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Input
-            label={tr('noe.rules.appLabelLabel')}
-            placeholder={tr('noe.rules.appLabelPlaceholder')}
-            value={appLabel}
-            onChangeText={setAppLabel}
-          />
-          <Button variant="outline" onPress={handleAddApp} loading={addingApp}>
-            {tr('noe.rules.addApp')}
-          </Button>
-        </Card>
+            <Input
+              label={tr('noe.rules.packageNameLabel')}
+              placeholder={tr('noe.rules.packageNamePlaceholder')}
+              value={packageName}
+              onChangeText={setPackageName}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <Input
+              label={tr('noe.rules.appLabelLabel')}
+              placeholder={tr('noe.rules.appLabelPlaceholder')}
+              value={appLabel}
+              onChangeText={setAppLabel}
+            />
+            <Button variant="outline" onPress={handleAddApp} loading={addingApp}>
+              {tr('noe.rules.addApp')}
+            </Button>
+          </Card>
+        </>
       ) : null}
     </ScrollView>
   );
