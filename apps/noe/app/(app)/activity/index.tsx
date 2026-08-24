@@ -8,18 +8,50 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
-import { useAsyncData } from '@/hooks/use-async-data';
 import { WeeklyChart } from '@/components/ui/weekly-chart';
-import { AlertItem } from '@/features/activity/services/activity-service';
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { activityService } from '@/features/activity/services/activity-service';
+import { AlertItem, DailyUsage } from '@/features/activity/services/activity-service';
+import { useAsyncData } from '@/hooks/use-async-data';
+import { colors, radius, spacing, typography, shadows } from '@noe-arcakids/shared';
+
+interface DailyBar {
+  date: string;
+  label: string;
+  minutes: number;
+  color: string;
+}
+
+interface ChildUsageSummary {
+  childId: string;
+  childName: string;
+  totalMinutes: number;
+  dailyData: DailyUsage[];
+}
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('es', { day: 'numeric', month: 'short' });
+}
+
+function getBarColor(minutes: number): string {
+  if (minutes < 60) return colors.success;
+  if (minutes <= 120) return colors.warning;
+  return colors.danger;
+}
+
+function getAlertIcon(type: AlertItem['type']): string {
+  if (type === 'block') return '🚫';
+  if (type === 'time') return '⏰';
+  return '📍';
+}
 
 export default function ActivityScreen() {
   const { t: tr } = useTranslation();
   const [refreshing, setRefreshing] = useState(false);
   const fetchUsage = useCallback(() => activityService.getAllChildrenUsage(7), []);
   const fetchAlerts = useCallback(() => activityService.getRecentAlerts(), []);
-  const { data: usageData, error: usageError, loading: usageLoading, reload: reloadUsage } = useAsyncData(fetchUsage);
-  const { data: alerts, error: alertsError, loading: alertsLoading, reload: reloadAlerts } = useAsyncData(fetchAlerts);
+  const { data: usageData, error: usageError, loading: usageLoading, reload: reloadUsage } = useAsyncData<DailyUsage[]>(fetchUsage);
+  const { data: alerts, error: alertsError, loading: alertsLoading, reload: reloadAlerts } = useAsyncData<AlertItem[]>(fetchAlerts);
 
   const loading = usageLoading || alertsLoading;
   const error = usageError || alertsError;
@@ -32,7 +64,7 @@ export default function ActivityScreen() {
 
   const childSummaries = useMemo(() => {
     if (!usageData) return [];
-    const grouped = new Map<string, any>();
+    const grouped = new Map<string, ChildUsageSummary>();
     for (const e of usageData) {
       const s = grouped.get(e.childId);
       if (s) { s.totalMinutes += e.minutes; s.dailyData.push(e); }
@@ -73,8 +105,7 @@ export default function ActivityScreen() {
         />
       }
     >
-<Text style={styles.title}>{tr('noe.activity.title')}</Text>
-
+      <Text style={styles.title}>{tr('noe.activity.title')}</Text>
       {!hasData && !hasAlerts ? (
         <EmptyState icon="📊" title={tr('noe.activity.emptyTitle')} description={tr('noe.activity.emptyDescription')} />
       ) : (

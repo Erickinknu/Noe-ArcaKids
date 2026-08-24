@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { identityService } from '@/features/identity/services/identity-service';
 import type { ChildInfo } from '@/features/identity/repositories/identity-repository';
 import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
+import { useAchievements } from '@/features/achievements';
 import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
 
 const AVATARS = ['🦊', '🐼', '🦁', '🐸', '🐙', '🦄'];
@@ -65,9 +66,43 @@ export default function ProfileScreen() {
     );
   }
 
+  const { progress } = useAchievements();
+  const childInfo = useAsyncData(() => identityService.getChildInfo()).data;
+
+  useEffect(() => {
+    // Achievement progress loaded silently
+  }, [progress, childInfo?.childId]);
+
+  const childId = childInfo?.childId;
+
   return (
     <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
       <Text style={styles.title}>{tr('arcakids.profile.title')}</Text>
+
+      {/* Achievement Progress Section */}
+      {childId && progress && (
+        <Card style={{ marginTop: spacing.md }}>
+          <Text style={styles.cardTitle}>🏆 Logro actual</Text>
+          <View style={styles.progressContainer}>
+            <Text style={styles.progressName}>Progreso</Text>
+            <View style={styles.progressBarTrack}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  { width: `${progress.percentage}%` },
+                ]}
+              />
+            </View>
+            <Text style={styles.progressPercentage}>
+              {progress.percentage}%
+            </Text>
+            {progress.isAchieved ? (
+              <Text style={styles.progressCompleted}>¡Logrado!</Text>
+            ) : null}
+          </View>
+        </Card>
+      )}
+
       <Card>
         <Text style={styles.avatarPreview}>{avatar}</Text>
         <Input
@@ -159,5 +194,34 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     fontSize: typography.fontSizes.caption,
     textAlign: 'center',
+  },
+  progressContainer: {
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    gap: spacing.sm,
+  },
+  progressName: {
+    fontSize: typography.fontSizes.subtitle,
+    fontWeight: typography.fontWeights.semibold,
+    color: colors.text,
+  },
+  progressBarTrack: {
+    height: 8,
+    backgroundColor: colors.border,
+    borderRadius: radius.full,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    height: '100%',
+    backgroundColor: colors.primary,
+  },
+  progressPercentage: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+  },
+  progressCompleted: {
+    color: colors.success,
+    fontSize: typography.fontSizes.caption,
   },
 });

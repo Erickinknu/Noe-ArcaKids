@@ -1,7 +1,12 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { colors, radius, spacing, typography, shadows } from '@noe-arcakids/shared';
+import { Avatar } from '@/components/ui/avatar';
+import { Card } from '@/components/ui/card';
+import { SectionHeader } from '@/components/ui/section-header';
+import { formatDuration } from '@/features/dashboard/services/dashboard-service';
+import type { DailyUsage } from '@/features/activity/services/activity-service';
 
 const CHART_HEIGHT = 120;
 const BAR_WIDTH = 28;

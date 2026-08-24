@@ -6,7 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { StatusDot } from '@/components/ui/status-dot';
 import { ProgressBar } from '@/components/ui/progress-bar';
-import { ChildCard } from '@/components/ui/child-card';
+import ChildCard from '@/components/ui/child-card';
 import { StatCard } from '@/components/ui/stat-card';
 import { SectionHeader } from '@/components/ui/section-header';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -59,9 +59,7 @@ export default function DashboardScreen() {
 
   const handleRefresh = useCallback(() => fetchData(true), [fetchData]);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+
 
   if (loading && !data) {
     return (

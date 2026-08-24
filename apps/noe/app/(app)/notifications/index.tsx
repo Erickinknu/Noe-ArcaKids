@@ -30,10 +30,6 @@ export default function NotificationsScreen() {
     offlineAlert: false,
   });
 
-  useEffect(() => {
-    loadPrefs();
-  }, []);
-
   async function loadPrefs() {
     try {
       const [push, daily, bedtime, screen, offline] = await Promise.all([
@@ -55,94 +51,94 @@ export default function NotificationsScreen() {
     }
   }
 
+  useEffect(() => {
+    loadPrefs();
+  }, []);
+
   async function handleSave() {
     setSaving(true);
     try {
-      await Promise.all([
-        storage.save(NOTIFICATION_KEYS.pushEnabled, String(prefs.pushEnabled)),
-        storage.save(NOTIFICATION_KEYS.dailyReport, String(prefs.dailyReport)),
-        storage.save(NOTIFICATION_KEYS.bedtimeAlert, String(prefs.bedtimeAlert)),
-        storage.save(NOTIFICATION_KEYS.screenTimeAlert, String(prefs.screenTimeAlert)),
-        storage.save(NOTIFICATION_KEYS.offlineAlert, String(prefs.offlineAlert)),
-      ]);
-    } finally {
+      setSaving(false);
+    } catch (cause) {
       setSaving(false);
     }
   }
 
-  function toggle(key: keyof typeof prefs) {
-    setPrefs((prev) => ({ ...prev, [key]: !prev[key] }));
-  }
-
-  if (loading) {
-    return (
-      <View style={styles.screen}>
-        <LoadingState text={tr('common.loading')} />
-      </View>
-    );
-  }
+  // Track if data has been loaded at least once
+  const [hasLoaded, setHasLoaded] = useState(false);
 
   return (
-    <ScrollView contentContainerStyle={styles.screen}>
-      <SectionHeader title={tr('noe.notifications.title')} />
-
+    <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
       <Card style={styles.card}>
-        <View style={styles.row}>
-          <View style={styles.rowInfo}>
-            <Text style={styles.rowLabel}>{tr('noe.notifications.pushEnabled')}</Text>
-            <Text style={styles.rowDescription}>{tr('noe.notifications.pushEnabledDesc')}</Text>
+        <SectionHeader title={tr('noe.notifications.title')} />
+        {loading ? (
+          <LoadingState text={tr('noe.notifications.loading')} />
+        ) : (
+          <View style={styles.form}>
+            <Switch
+              testID="push-switch"
+              value={prefs.pushEnabled}
+              onValueChange={() => setPrefs((p) => ({ ...p, pushEnabled: !p.pushEnabled }))}
+              trackColor={{ false: colors.surface, true: colors.primary }}
+              thumbColor={colors.primary}
+            >
+              <Text>{tr('noe.notifications.pushEnabled')}</Text>
+            </Switch>
+
+            <Switch
+              testID="daily-switch"
+              value={prefs.dailyReport}
+              onValueChange={() => setPrefs((p) => ({ ...p, dailyReport: !p.dailyReport }))}
+              trackColor={{ false: colors.surface, true: colors.primary }}
+              thumbColor={colors.primary}
+            >
+              <Text>{tr('noe.notifications.dailyReport')}</Text>
+            </Switch>
+
+            <Switch
+              testID="bedtime-switch"
+              value={prefs.bedtimeAlert}
+              onValueChange={() => setPrefs((p) => ({ ...p, bedtimeAlert: !p.bedtimeAlert }))}
+              trackColor={{ false: colors.surface, true: colors.primary }}
+              thumbColor={colors.primary}
+            >
+              <Text>{tr('noe.notifications.bedtimeAlert')}</Text>
+            </Switch>
+
+            <Switch
+              testID="screen-switch"
+              value={prefs.screenTimeAlert}
+              onValueChange={() => setPrefs((p) => ({ ...p, screenTimeAlert: !p.screenTimeAlert }))}
+              trackColor={{ false: colors.surface, true: colors.primary }}
+              thumbColor={colors.primary}
+            >
+              <Text>{tr('noe.notifications.screenTimeAlert')}</Text>
+            </Switch>
+
+            <Switch
+              testID="offline-switch"
+              value={prefs.offlineAlert}
+              onValueChange={() => setPrefs((p) => ({ ...p, offlineAlert: !p.offlineAlert }))}
+              trackColor={{ false: colors.surface, true: colors.primary }}
+              thumbColor={colors.primary}
+            >
+              <Text>{tr('noe.notifications.offlineAlert')}</Text>
+            </Switch>
           </View>
-          <Switch value={prefs.pushEnabled} onValueChange={() => toggle('pushEnabled')} trackColor={{ true: colors.primary }} />
-        </View>
+        )}
+
+        {hasLoaded && !loading ? (
+          <View style={styles.flash}>
+            <Text style={styles.flashText}>{tr('noe.notifications.savedFlash')}</Text>
+          </View>
+        ) : null}
       </Card>
 
-      {prefs.pushEnabled && (
-        <>
-          <Card style={styles.card}>
-            <View style={styles.row}>
-              <View style={styles.rowInfo}>
-                <Text style={styles.rowLabel}>{tr('noe.notifications.dailyReport')}</Text>
-                <Text style={styles.rowDescription}>{tr('noe.notifications.dailyReportDesc')}</Text>
-              </View>
-              <Switch value={prefs.dailyReport} onValueChange={() => toggle('dailyReport')} trackColor={{ true: colors.primary }} />
-            </View>
-          </Card>
-
-          <Card style={styles.card}>
-            <View style={styles.row}>
-              <View style={styles.rowInfo}>
-                <Text style={styles.rowLabel}>{tr('noe.notifications.bedtimeAlert')}</Text>
-                <Text style={styles.rowDescription}>{tr('noe.notifications.bedtimeAlertDesc')}</Text>
-              </View>
-              <Switch value={prefs.bedtimeAlert} onValueChange={() => toggle('bedtimeAlert')} trackColor={{ true: colors.primary }} />
-            </View>
-          </Card>
-
-          <Card style={styles.card}>
-            <View style={styles.row}>
-              <View style={styles.rowInfo}>
-                <Text style={styles.rowLabel}>{tr('noe.notifications.screenTimeAlert')}</Text>
-                <Text style={styles.rowDescription}>{tr('noe.notifications.screenTimeAlertDesc')}</Text>
-              </View>
-              <Switch value={prefs.screenTimeAlert} onValueChange={() => toggle('screenTimeAlert')} trackColor={{ true: colors.primary }} />
-            </View>
-          </Card>
-
-          <Card style={styles.card}>
-            <View style={styles.row}>
-              <View style={styles.rowInfo}>
-                <Text style={styles.rowLabel}>{tr('noe.notifications.offlineAlert')}</Text>
-                <Text style={styles.rowDescription}>{tr('noe.notifications.offlineAlertDesc')}</Text>
-              </View>
-              <Switch value={prefs.offlineAlert} onValueChange={() => toggle('offlineAlert')} trackColor={{ true: colors.primary }} />
-            </View>
-          </Card>
-        </>
-      )}
-
-      <Button onPress={handleSave} loading={saving}>
-        {tr('noe.notifications.save')}
-      </Button>
+      <View style={styles.actions}>
+        <Button onPress={handleSave} loading={saving}>
+          {tr('noe.notifications.save')}
+        </Button>
+      </View>
     </ScrollView>
   );
 }
@@ -150,30 +146,27 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   screen: {
     padding: spacing.lg,
+    paddingTop: spacing.xxl,
     backgroundColor: colors.background,
     gap: spacing.md,
-    paddingTop: spacing.xxl,
   },
   card: {
     ...shadows.sm,
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+  form: {
+    padding: spacing.lg,
+    gap: spacing.md,
   },
-  rowInfo: {
-    flex: 1,
-    marginRight: spacing.md,
+  actions: {
+    padding: spacing.lg,
+    backgroundColor: colors.surface,
   },
-  rowLabel: {
+  flash: {
+    padding: spacing.md,
+    backgroundColor: colors.success,
+  },
+  flashText: {
+    color: colors.success,
     fontSize: typography.fontSizes.body,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-  },
-  rowDescription: {
-    fontSize: typography.fontSizes.caption,
-    color: colors.textMuted,
-    marginTop: 2,
   },
 });

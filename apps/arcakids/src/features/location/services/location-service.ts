@@ -1,5 +1,6 @@
 import { locationModule } from '@/features/location/native/location-module';
 import { identityService } from '@/features/identity/services/identity-service';
+import { notificationService } from '@/features/notifications';
 
 export interface LocationUpdate {
   id: string;
@@ -152,6 +153,16 @@ export class LocationService {
   private async handleGeofenceTrigger(geofence: Geofence, location: LocationUpdate) {
     // TODO: Could trigger notification, log event, etc.
     console.log('Geofence triggered:', geofence.name, 'at', location);
+
+    // Schedule push notification
+    try {
+      await notificationService.scheduleGeofenceEnterNotification(
+        geofence.name,
+        geofence.childId ? 'Niño' : 'Usuario'
+      );
+    } catch (e) {
+      console.error('Failed to schedule geofence notification:', e);
+    }
 
     // Update in storage
     // await geofenceRepository.update(geofence.id, { triggered: true, triggeredAt: Date.now() });

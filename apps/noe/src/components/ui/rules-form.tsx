@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useState, useEffect } from 'react';
 import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -8,12 +8,18 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
+import { ErrorState } from '@/components/ui/error-state';
 import { parentalService } from '@/features/parental/services/parental-service';
 import { errorMessage } from '@/hooks/use-async-data';
 import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
 
+interface ChildRulesData {
+  rules: import('@noe-arcakids/types').ParentalRules | null;
+  blockedApps: import('@noe-arcakids/types').BlockedApp[];
+}
+
 interface RulesFormProps {
-  selectedChild: ChildProfile | null;
+  selectedChild: import('@noe-arcakids/types').ChildProfile | null;
   familyId: string | null;
   childData: ChildRulesData | null;
   loadingChild: boolean;
@@ -29,11 +35,6 @@ interface RulesFormProps {
   setBedtimeStart: (value: string) => void;
   bedtimeEnd: string;
   setBedtimeEnd: (value: string) => void;
-}
-
-interface ChildRulesData {
-  rules: ParentalRules | null;
-  blockedApps: BlockedApp[];
 }
 
 export default function RulesForm({
@@ -55,14 +56,21 @@ export default function RulesForm({
   setBedtimeEnd,
 }: RulesFormProps) {
   const { t: tr } = useTranslation();
+  const [saving, setSaving] = useState(false);
+  const [addingApp, setAddingApp] = useState(false);
+  const [packageName, setPackageName] = useState('');
+  const [appLabel, setAppLabel] = useState('');
+  const [actionErrorLocal, setActionErrorLocal] = useState<string | null>(null);
+  const [savedFlashLocal, setSavedFlashLocal] = useState(false);
+  // Use childData directly from props - component re-renders when props change
 
   async function handleSave() {
     if (!familyId || !selectedChild) {
       return;
     }
     setSaving(true);
-    setActionError(null);
-    setSavedFlash(false);
+    setActionErrorLocal(null);
+    setSavedFlashLocal(false);
     try {
       const trimmedLimit = dailyLimitText.trim();
       const rules = await parentalService.saveRules(familyId, selectedChild.id, {
@@ -71,21 +79,21 @@ export default function RulesForm({
         bedtimeStart: bedtimeEnabled ? bedtimeStart.trim() : null,
         bedtimeEnd: bedtimeEnabled ? bedtimeEnd.trim() : null,
       });
-      setChildData((current) => (current ? { ...current, rules } : current));
-      setSavedFlash(true);
+      setSavedFlashLocal(true);
+      setSavedFlashLocal(true);
     } catch (cause) {
-      setActionError(errorMessage(cause));
+      setActionErrorLocal(errorMessage(cause));
     } finally {
       setSaving(false);
     }
   }
 
-  function handleAddApp() {
+  async function handleAddApp() {
     if (!familyId || !selectedChild) {
       return;
     }
     setAddingApp(true);
-    setActionError(null);
+    setActionErrorLocal(null);
     try {
       const app = await parentalService.addBlockedApp(
         familyId,
@@ -93,269 +101,152 @@ export default function RulesForm({
         packageName,
         appLabel
       );
-      setChildData((current) =>
-        current ? { ...current, blockedApps: [...current.blockedApps, app] } : current
-      );
+      setPackageName('');
+      setAppLabel('');
       setPackageName('');
       setAppLabel('');
     } catch (cause) {
-      setActionError(errorMessage(cause));
+      setActionErrorLocal(errorMessage(cause));
     } finally {
       setAddingApp(false);
     }
   }
 
   async function handleRemoveApp(id: string) {
-    setActionError(null);
+    setActionErrorLocal(null);
     try {
       await parentalService.removeBlockedApp(id);
-      setChildData((current) =>
-        current
-          ? {
-              ...current,
-              blockedApps: current.blockedApps.filter((app) => app.id !== id),
-            }
-          : current
-      );
+
     } catch (cause) {
-      setActionError(errorMessage(cause));
+      setActionErrorLocal(errorMessage(cause));
     }
   }
 
   if (loadingChild) {
-    return <LoadingState text={tr('common.loading')} />;
-  }
-
-  if (error || !data) {
     return (
       <View style={styles.screen}>
-        <ErrorState
-          message={error ?? tr('noe.rules.somethingWentWrong')}
-          onRetry={reload}
-        />
+        <LoadingState text={tr('noe.rules.loading')} />
       </View>
     );
   }
 
-return (
-    <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>{tr('noe.rules.title')}</Text>
-      <Text style={styles.subtitle}>{tr('noe.rules.subtitle')}</Text>
+  return (
+    <View style={styles.container}>
+      {actionError ? (
+        <ErrorState message={actionError} />
+      ) : null}
 
       <Card style={styles.card}>
         <SectionHeader title={tr('noe.rules.chooseChild')} />
-        {data.children.length === 0 ? (
-          <EmptyState icon="规则" title={tr('noe.rules.noChildren')} />
-        ) : (
-          <View style={styles.childList}>
-            {data.children.map((child) => (
-              <Pressable
-                key={child.id}
-                onPress={() => handleSelect(child)}
-                style={[
-                  styles.childRow,
-                  child.id === selectedChild?.id && styles.childSelected,
-                ]}
-              >
-                <Text style={styles.childName}>{child.displayName}</Text>
-              </Pressable>
-            ))}
+
+        {selectedChild ? (
+          <View style={styles.childSection}>
+            <Text style={styles.childName}>{selectedChild.displayName}</Text>
+
+            <Text style={styles.dailyLimitText}>
+              {tr('noe.rules.dailyLimit', {
+                limit: dailyLimitText,
+              })}
+            </Text>
+
+            <Switch
+              testID="bedtime-switch"
+              value={bedtimeEnabled}
+              onValueChange={(value) => setBedtimeEnabled(value)}
+              trackColor={{ false: colors.surface, true: colors.primary }}
+              thumbColor={colors.primary}
+            >
+              <Text>{tr('noe.rules.bedtimeEnabled')}</Text>
+            </Switch>
+
+            <View style={styles.timeRow}>
+              <Text style={styles.timeLabel}>{tr('noe.rules.bedtimeStart')}</Text>
+              <Input
+                style={styles.timeInput}
+                value={bedtimeStart}
+                onChangeText={(text) => setBedtimeStart(text)}
+                placeholder={tr('noe.rules.bedtimeStartPlaceholder')}
+              />
+              <Text style={styles.timeLabel}>{tr('noe.rules.bedtimeEnd')}</Text>
+              <Input
+                style={styles.timeInput}
+                value={bedtimeEnd}
+                onChangeText={(text) => setBedtimeEnd(text)}
+                placeholder={tr('noe.rules.bedtimeEndPlaceholder')}
+              />
+            </View>
           </View>
+        ) : (
+          <EmptyState
+            icon="reglas"
+            title={tr('noe.rules.selectChild')}
+            description={tr('noe.rules.selectChildDesc')}
+          />
         )}
       </Card>
 
-      {selectedChild ? (
-        <>
-          <Card style={styles.card}>
-            <SectionHeader title={tr('noe.rules.rulesFor', { name: selectedChild.displayName })} />
-
-            <Input
-              label={tr('noe.rules.dailyLimitLabel')}
-              placeholder={tr('noe.rules.dailyLimitPlaceholder')}
-              value={dailyLimitText}
-              onChangeText={setDailyLimitText}
-              keyboardType="number-pad"
-              inputMode="numeric"
-            />
-            <Text style={styles.hint}>{tr('noe.rules.dailyLimitHint')}</Text>
-
-            <View style={styles.switchRow}>
-              <Text style={styles.switchLabel}>{tr('noe.rules.bedtimeTitle')}</Text>
-              <Switch
-                value={bedtimeEnabled}
-                onValueChange={setBedtimeEnabled}
-                trackColor={{ true: colors.primary }}
-              />
-            </View>
-            {bedtimeEnabled ? (
-              <View style={styles.timeRow}>
-                <Input
-                  label={tr('noe.rules.bedtimeStart')}
-                  placeholder="21:00"
-                  value={bedtimeStart}
-                  onChangeText={setBedtimeStart}
-                  maxLength={5}
-                  style={styles.timeInput}
-                />
-                <Input
-                  label={tr('noe.rules.bedtimeEnd')}
-                  placeholder="07:00"
-                  value={bedtimeEnd}
-                  onChangeText={setBedtimeEnd}
-                  maxLength={5}
-                  style={styles.timeInput}
-                />
-              </View>
-            ) : null}
-
-            <Button onPress={handleSave} loading={saving}>
-              {tr('noe.rules.save')}
-            </Button>
-            {savedFlash ? (
-              <Text style={styles.saved}>{tr('noe.rules.saved')}</Text>
-            ) : null}
-          </Card>
-
-          <Card style={styles.card}>
-            <SectionHeader title={tr('noe.rules.blockedAppsTitle')} />
-            {(childData?.blockedApps.length ?? 0) === 0 ? (
-              <EmptyState icon="📱" title={tr('noe.rules.blockedAppsEmpty')} />
-            ) : (
-              <View style={styles.appList}>
-                {childData?.blockedApps.map((app) => (
-                  <View key={app.id} style={styles.appRow}>
-                    <View style={styles.appInfo}>
-                      <Text style={styles.appLabel}>{app.appLabel}</Text>
-                      <Text style={styles.appPackage}>{app.packageName}</Text>
-                    </View>
-                    <Pressable onPress={() => handleRemoveApp(app.id)}>
-                      <Text style={styles.removeText}>{tr('noe.rules.removeApp')}</Text>
-                    </Pressable>
-                  </View>
-                ))}
-              </View>
-            )}
-
-            <Input
-              label={tr('noe.rules.packageNameLabel')}
-              placeholder={tr('noe.rules.packageNamePlaceholder')}
-              value={packageName}
-              onChangeText={setPackageName}
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            <Input
-              label={tr('noe.rules.appLabelLabel')}
-              placeholder={tr('noe.rules.appLabelPlaceholder')}
-              value={appLabel}
-              onChangeText={setAppLabel}
-            />
-            <Button variant="outline" onPress={handleAddApp} loading={addingApp}>
-              {tr('noe.rules.addApp')}
-            </Button>
-          </Card>
-        </>
-      ) : null}
-    </ScrollView>
+      {savedFlashLocal && (
+        <View style={styles.flash}>
+          <Text style={styles.flashText}>{tr('noe.rules.savedFlash')}</Text>
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: {
+  container: {
     padding: spacing.lg,
-    paddingTop: spacing.xxl,
-    backgroundColor: colors.background,
     gap: spacing.md,
   },
   card: {
     ...shadows.sm,
   },
-  title: {
+  screen: {
+    flex: 1,
+    padding: spacing.lg,
+    paddingTop: spacing.xxl,
+    backgroundColor: colors.background,
+    gap: spacing.md,
+  },
+  childSection: {
+    padding: spacing.lg,
+  },
+  childName: {
     fontSize: typography.fontSizes.heading,
     fontWeight: typography.fontWeights.bold,
     color: colors.text,
   },
-  subtitle: {
+  dailyLimitText: {
     fontSize: typography.fontSizes.body,
     color: colors.textMuted,
-    lineHeight: 24,
-  },
-  childList: {
-    gap: spacing.xs,
-  },
-  childRow: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  childSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.surface,
-  },
-  childName: {
-    fontSize: typography.fontSizes.body,
-    color: colors.text,
-  },
-  hint: {
-    color: colors.textMuted,
-    fontSize: typography.fontSizes.caption,
-    marginBottom: spacing.md,
-    marginTop: -spacing.sm,
-  },
-  switchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
     marginVertical: spacing.sm,
   },
-  switchLabel: {
+  flash: {
+    padding: spacing.md,
+    backgroundColor: colors.success,
+  },
+  flashText: {
+    color: colors.success,
     fontSize: typography.fontSizes.body,
-    color: colors.text,
-    flex: 1,
   },
   timeRow: {
     flexDirection: 'row',
     gap: spacing.sm,
+    alignItems: 'center',
+  },
+  timeLabel: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    marginRight: spacing.xs,
   },
   timeInput: {
     flex: 1,
-  },
-  saved: {
-    color: colors.success,
-    fontSize: typography.fontSizes.caption,
-    textAlign: 'center',
-    marginTop: spacing.sm,
-  },
-  appList: {
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  appRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.lg,
-    borderWidth: 1,
+    height: 40,
     borderColor: colors.border,
-  },
-  appInfo: {
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  appLabel: {
-    fontSize: typography.fontSizes.body,
-    color: colors.text,
-  },
-  appPackage: {
-    fontSize: typography.fontSizes.caption,
-    color: colors.textMuted,
-  },
-  removeText: {
-    color: colors.danger,
-    fontSize: typography.fontSizes.caption,
+    borderWidth: 1,
+    borderRadius: radius.sm,
+    paddingHorizontal: spacing.sm,
+    backgroundColor: colors.surface,
   },
 });

@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, RefreshControl, Alert, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { Avatar } from '@/components/ui/avatar';
@@ -16,6 +16,14 @@ import {
 import { formatDuration } from '@/features/dashboard/services/dashboard-service';
 import { useAsyncData } from '@/hooks/use-async-data';
 import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
+import { useRouter } from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
+import { ProgressBar } from '@/components/ui/progress-bar';
+import { StatusDot } from '@/components/ui/status-dot';
+import { relativeTime } from '@/features/dashboard/services/dashboard-service';
+import type { FamilySummary, ChildSummary } from '@/features/dashboard/types';
+import { parentalService } from '@/features/parental/services/parental-service';
+import { ROUTES } from '@/constants';
 
 const CHART_HEIGHT = 120;
 const BAR_WIDTH = 28;

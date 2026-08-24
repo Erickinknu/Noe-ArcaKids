@@ -18,14 +18,14 @@ import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { useAsyncData } from '@/hooks/use-async-data';
+import { errorMessage } from '@noe-arcakids/shared';
+import RulesForm from '@/components/ui/rules-form';
+import BlockedAppsSection from '@/components/ui/blocked-apps-section';
 import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
-import { BlockedAppsSection } from '@/components/ui/blocked-apps-section';
-
 import type { BlockedApp, ChildProfile, ParentalRules } from '@noe-arcakids/types';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
 import { parentalService } from '@/features/parental/services/parental-service';
-import { RulesForm } from '@/components/ui/rules-form';
 
 interface FamilyWithChildren {
   familyId: string;
