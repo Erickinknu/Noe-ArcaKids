@@ -1,4 +1,5 @@
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
+import { DatabaseError } from '@noe-arcakids/shared';
 
 import type { ChildSummary, FamilySummary } from '../types';
 
@@ -13,17 +14,7 @@ export const dashboardRepository = {
     const client = requireSupabaseClient();
 
     const { data: { user } } = await client.auth.getUser();
-    if (!user) {
-      return {
-        parentName: 'Parent',
-        children: [],
-        connectedCount: 0,
-        totalChildren: 0,
-        totalMinutesToday: 0,
-        totalLimitMinutes: null,
-        alertsCount: 0,
-      };
-    }
+    if (!user) throw new DatabaseError('No authenticated user');
 
     const { data: family } = await client
       .from('families')
@@ -31,34 +22,14 @@ export const dashboardRepository = {
       .limit(1)
       .single();
 
-    if (!family) {
-      return {
-        parentName: user.user_metadata?.name ?? user.email?.split('@')[0] ?? 'Parent',
-        children: [],
-        connectedCount: 0,
-        totalChildren: 0,
-        totalMinutesToday: 0,
-        totalLimitMinutes: null,
-        alertsCount: 0,
-      };
-    }
+    if (!family) throw new DatabaseError('No family found');
 
     const { data: children } = await client
       .from('children')
       .select('id, display_name, avatar_url, created_at')
       .eq('family_id', family.id);
 
-    if (!children || children.length === 0) {
-      return {
-        parentName: user.user_metadata?.name ?? user.email?.split('@')[0] ?? 'Parent',
-        children: [],
-        connectedCount: 0,
-        totalChildren: 0,
-        totalMinutesToday: 0,
-        totalLimitMinutes: null,
-        alertsCount: 0,
-      };
-    }
+    if (!children || children.length === 0) throw new DatabaseError('No children found');
 
     const childIds = children.map((c) => c.id);
 

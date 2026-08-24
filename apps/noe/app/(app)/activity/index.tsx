@@ -8,55 +8,10 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
-import {
-  activityService,
-  type AlertItem,
-  type DailyUsage,
-} from '@/features/activity/services/activity-service';
-import { formatDuration } from '@/features/dashboard/services/dashboard-service';
 import { useAsyncData } from '@/hooks/use-async-data';
-import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
-
-const CHART_HEIGHT = 120;
-const BAR_WIDTH = 28;
-
-function getBarColor(minutes: number): string {
-  if (minutes < 60) return colors.success;
-  if (minutes <= 120) return colors.warning;
-  return colors.danger;
-}
-
-function formatDate(dateStr: string): string {
-  const now = new Date();
-  const date = new Date(dateStr);
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const diffDays = Math.round((today.getTime() - target.getTime()) / 86400000);
-  if (diffDays === 0) return 'Hoy';
-  if (diffDays === 1) return 'Ayer';
-  if (diffDays < 7) return `${diffDays}d`;
-  return date.toLocaleDateString('es', { day: 'numeric', month: 'short' });
-}
-
-function getAlertIcon(type: AlertItem['type']): string {
-  if (type === 'block') return '🚫';
-  if (type === 'time') return '⏰';
-  return '📍';
-}
-
-interface ChildUsageSummary {
-  childId: string;
-  childName: string;
-  totalMinutes: number;
-  dailyData: DailyUsage[];
-}
-
-interface DailyBar {
-  date: string;
-  label: string;
-  minutes: number;
-  color: string;
-}
+import { WeeklyChart } from '@/components/ui/weekly-chart';
+import { AlertItem } from '@/features/activity/services/activity-service';
+import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
 
 export default function ActivityScreen() {
   const { t: tr } = useTranslation();
@@ -75,9 +30,9 @@ export default function ActivityScreen() {
     Promise.all([reloadUsage(), reloadAlerts()]).finally(() => setRefreshing(false));
   }, [reloadUsage, reloadAlerts]);
 
-  const childSummaries = useMemo<ChildUsageSummary[]>(() => {
+  const childSummaries = useMemo(() => {
     if (!usageData) return [];
-    const grouped = new Map<string, ChildUsageSummary>();
+    const grouped = new Map<string, any>();
     for (const e of usageData) {
       const s = grouped.get(e.childId);
       if (s) { s.totalMinutes += e.minutes; s.dailyData.push(e); }
@@ -86,7 +41,7 @@ export default function ActivityScreen() {
     return Array.from(grouped.values()).sort((a, b) => b.totalMinutes - a.totalMinutes);
   }, [usageData]);
 
-  const weeklyBars = useMemo<DailyBar[]>(() => {
+  const weeklyBars = useMemo(() => {
     if (!usageData || usageData.length === 0) return [];
     const dayMap = new Map<string, number>();
     for (const e of usageData) dayMap.set(e.reportDate, (dayMap.get(e.reportDate) ?? 0) + e.minutes);
@@ -118,7 +73,8 @@ export default function ActivityScreen() {
         />
       }
     >
-      <Text style={styles.title}>{tr('noe.activity.title')}</Text>
+      <Text style={styles.title}>{tr('noe.activity.title')}>
+
       {!hasData && !hasAlerts ? (
         <EmptyState icon="📊" title={tr('noe.activity.emptyTitle')} description={tr('noe.activity.emptyDescription')} />
       ) : (
@@ -126,29 +82,11 @@ export default function ActivityScreen() {
           {hasData && (
             <>
               <SectionHeader title={tr('noe.activity.usagePerChild')} />
-              {childSummaries.map((child) => (
-                <Card key={child.childId} style={styles.card}>
-                  <View style={styles.childRow}>
-                    <Avatar name={child.childName} size={40} />
-                    <View style={styles.childInfo}>
-                      <Text style={styles.childName}>{child.childName}</Text>
-                      <Text style={styles.childTotal}>{formatDuration(child.totalMinutes)}</Text>
-                    </View>
-                  </View>
-                </Card>
-              ))}
-              <SectionHeader title={tr('noe.activity.last7Days')} />
-              <Card style={styles.card}>
-                <View style={styles.chartContainer}>
-                  {weeklyBars.map((bar) => (
-                    <View key={bar.date} style={styles.barColumn}>
-                      <Text style={styles.barValue}>{bar.minutes > 0 ? formatDuration(bar.minutes) : ''}</Text>
-                      <View style={[styles.bar, { height: Math.max((bar.minutes / maxMinutes) * CHART_HEIGHT, 4), backgroundColor: bar.color }]} />
-                      <Text style={styles.barLabel}>{bar.label}</Text>
-                    </View>
-                  ))}
-                </View>
-              </Card>
+              <WeeklyChart
+                childSummaries={childSummaries}
+                weeklyBars={weeklyBars}
+                maxMinutes={maxMinutes}
+              />
             </>
           )}
           {hasAlerts && (
@@ -178,15 +116,6 @@ const styles = StyleSheet.create({
   screen: { paddingTop: spacing.xxl, padding: spacing.lg, backgroundColor: colors.background, gap: spacing.md },
   title: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
   card: { ...shadows.sm },
-  childRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  childInfo: { flex: 1 },
-  childName: { fontSize: typography.fontSizes.subtitle, fontWeight: typography.fontWeights.semibold, color: colors.text },
-  childTotal: { fontSize: typography.fontSizes.body, color: colors.textMuted, marginTop: 2 },
-  chartContainer: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: CHART_HEIGHT + spacing.xl, paddingTop: spacing.xs },
-  barColumn: { alignItems: 'center', flex: 1 },
-  barValue: { fontSize: 10, color: colors.textMuted, marginBottom: 4 },
-  bar: { width: BAR_WIDTH, borderRadius: radius.sm, minHeight: 4 },
-  barLabel: { fontSize: 10, color: colors.textMuted, marginTop: 4 },
   alertRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   alertIcon: { fontSize: 20 },
   alertInfo: { flex: 1 },

@@ -17,36 +17,27 @@ import { ErrorState } from '@/components/ui/error-state';
 import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
+import { useAsyncData } from '@/hooks/use-async-data';
+import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
+import { BlockedAppsSection } from '@/components/ui/blocked-apps-section';
+
+import type { BlockedApp, ChildProfile, ParentalRules } from '@noe-arcakids/types';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
 import { parentalService } from '@/features/parental/services/parental-service';
-import {
-  errorMessage,
-  useAsyncData,
-} from '@/hooks/use-async-data';
-import type {
-  BlockedApp,
-  ChildProfile,
-  ParentalRules,
-} from '@noe-arcakids/types';
-import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
+import { RulesForm } from '@/components/ui/rules-form';
 
 interface FamilyWithChildren {
   familyId: string;
   children: ChildProfile[];
 }
 
-interface ChildRulesData {
-  rules: ParentalRules | null;
-  blockedApps: BlockedApp[];
-}
-
 export default function RulesScreen() {
   const { t: tr } = useTranslation();
   const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
-  const [childData, setChildData] = useState<ChildRulesData | null>(null);
+  const [childData, setChildData] = useState<{ rules: ParentalRules | null; blockedApps: BlockedApp[] } | null>(null);
   const [loadingChild, setLoadingChild] = useState(false);
-
+  const [refreshing, setRefreshing] = useState(false);
   const [dailyLimitText, setDailyLimitText] = useState('');
   const [bedtimeEnabled, setBedtimeEnabled] = useState(false);
   const [bedtimeStart, setBedtimeStart] = useState('');
@@ -54,11 +45,9 @@ export default function RulesScreen() {
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-
   const [packageName, setPackageName] = useState('');
   const [appLabel, setAppLabel] = useState('');
   const [addingApp, setAddingApp] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
 
   const fetchFamily = useCallback(async (): Promise<FamilyWithChildren> => {
     const { family } = await familyService.getMyFamily();
@@ -98,12 +87,11 @@ export default function RulesScreen() {
   function handleSelect(child: ChildProfile) {
     setSelectedChild(child);
     setChildData(null);
-    setSavedFlash(false);
     loadChildData(child);
   }
 
   async function handleSave() {
-    if (!data || !selectedChild) {
+    if (!selectedChild || !childData) {
       return;
     }
     setSaving(true);
@@ -111,12 +99,16 @@ export default function RulesScreen() {
     setSavedFlash(false);
     try {
       const trimmedLimit = dailyLimitText.trim();
-      const rules = await parentalService.saveRules(data.familyId, selectedChild.id, {
-        dailyLimitMinutes: trimmedLimit === '' ? null : Number(trimmedLimit),
-        bedtimeEnabled,
-        bedtimeStart: bedtimeEnabled ? bedtimeStart.trim() : null,
-        bedtimeEnd: bedtimeEnabled ? bedtimeEnd.trim() : null,
-      });
+      const rules = await parentalService.saveRules(
+        childData.rules?.familyId ?? '',
+        selectedChild.id,
+        {
+          dailyLimitMinutes: trimmedLimit === '' ? null : Number(trimmedLimit),
+          bedtimeEnabled,
+          bedtimeStart: bedtimeEnabled ? bedtimeStart.trim() : null,
+          bedtimeEnd: bedtimeEnabled ? bedtimeEnd.trim() : null,
+        }
+      );
       setChildData((current) => (current ? { ...current, rules } : current));
       setSavedFlash(true);
     } catch (cause) {
@@ -127,14 +119,14 @@ export default function RulesScreen() {
   }
 
   async function handleAddApp() {
-    if (!data || !selectedChild) {
+    if (!selectedChild || !childData) {
       return;
     }
     setAddingApp(true);
     setActionError(null);
     try {
       const app = await parentalService.addBlockedApp(
-        data.familyId,
+        childData.rules?.familyId ?? '',
         selectedChild.id,
         packageName,
         appLabel
@@ -224,102 +216,31 @@ export default function RulesScreen() {
       </Card>
 
       {selectedChild ? (
-        loadingChild ? (
-          <LoadingState text={tr('common.loading')} />
-        ) : (
-          <>
-            <Card style={styles.card}>
-              <SectionHeader
-                title={tr('noe.rules.rulesFor', { name: selectedChild.displayName })}
-              />
+        <RulesForm
+          selectedChild={selectedChild}
+          familyId={data?.familyId ?? null}
+          childData={childData}
+          loadingChild={loadingChild}
+          onSave={handleSave}
+          onAction={handleRefresh}
+          savedFlash={savedFlash}
+          actionError={actionError}
+          dailyLimitText={dailyLimitText}
+          setDailyLimitText={setDailyLimitText}
+          bedtimeEnabled={bedtimeEnabled}
+          setBedtimeEnabled={setBedtimeEnabled}
+          bedtimeStart={bedtimeStart}
+          setBedtimeStart={setBedtimeStart}
+          bedtimeEnd={bedtimeEnd}
+          setBedtimeEnd={setBedtimeEnd}
+        />
+      ) : null}
 
-              <Input
-                label={tr('noe.rules.dailyLimitLabel')}
-                placeholder={tr('noe.rules.dailyLimitPlaceholder')}
-                value={dailyLimitText}
-                onChangeText={setDailyLimitText}
-                keyboardType="number-pad"
-                inputMode="numeric"
-              />
-              <Text style={styles.hint}>{tr('noe.rules.dailyLimitHint')}</Text>
-
-              <View style={styles.switchRow}>
-                <Text style={styles.switchLabel}>{tr('noe.rules.bedtimeTitle')}</Text>
-                <Switch
-                  value={bedtimeEnabled}
-                  onValueChange={setBedtimeEnabled}
-                  trackColor={{ true: colors.primary }}
-                />
-              </View>
-              {bedtimeEnabled ? (
-                <View style={styles.timeRow}>
-                  <Input
-                    label={tr('noe.rules.bedtimeStart')}
-                    placeholder="21:00"
-                    value={bedtimeStart}
-                    onChangeText={setBedtimeStart}
-                    maxLength={5}
-                    style={styles.timeInput}
-                  />
-                  <Input
-                    label={tr('noe.rules.bedtimeEnd')}
-                    placeholder="07:00"
-                    value={bedtimeEnd}
-                    onChangeText={setBedtimeEnd}
-                    maxLength={5}
-                    style={styles.timeInput}
-                  />
-                </View>
-              ) : null}
-
-              <Button onPress={handleSave} loading={saving}>
-                {tr('noe.rules.save')}
-              </Button>
-              {savedFlash ? (
-                <Text style={styles.saved}>{tr('noe.rules.saved')}</Text>
-              ) : null}
-            </Card>
-
-            <Card style={styles.card}>
-              <SectionHeader title={tr('noe.rules.blockedAppsTitle')} />
-              {(childData?.blockedApps.length ?? 0) === 0 ? (
-                <EmptyState icon="📱" title={tr('noe.rules.blockedAppsEmpty')} />
-              ) : (
-                <View style={styles.appList}>
-                  {childData?.blockedApps.map((app) => (
-                    <View key={app.id} style={styles.appRow}>
-                      <View style={styles.appInfo}>
-                        <Text style={styles.appLabel}>{app.appLabel}</Text>
-                        <Text style={styles.appPackage}>{app.packageName}</Text>
-                      </View>
-                      <Pressable onPress={() => handleRemoveApp(app.id)}>
-                        <Text style={styles.removeText}>{tr('noe.rules.removeApp')}</Text>
-                      </Pressable>
-                    </View>
-                  ))}
-                </View>
-              )}
-
-              <Input
-                label={tr('noe.rules.packageNameLabel')}
-                placeholder={tr('noe.rules.packageNamePlaceholder')}
-                value={packageName}
-                onChangeText={setPackageName}
-                autoCapitalize="none"
-                autoCorrect={false}
-              />
-              <Input
-                label={tr('noe.rules.appLabelLabel')}
-                placeholder={tr('noe.rules.appLabelPlaceholder')}
-                value={appLabel}
-                onChangeText={setAppLabel}
-              />
-              <Button variant="outline" onPress={handleAddApp} loading={addingApp}>
-                {tr('noe.rules.addApp')}
-              </Button>
-            </Card>
-          </>
-        )
+      {selectedChild ? (
+        <BlockedAppsSection
+          childData={childData}
+          onRemoveApp={handleRemoveApp}
+        />
       ) : null}
 
       {actionError ? <Text style={styles.error}>{actionError}</Text> : null}
@@ -388,42 +309,6 @@ const styles = StyleSheet.create({
   },
   timeInput: {
     flex: 1,
-  },
-  saved: {
-    color: colors.success,
-    fontSize: typography.fontSizes.caption,
-    textAlign: 'center',
-    marginTop: spacing.sm,
-  },
-  appList: {
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  appRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  appInfo: {
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  appLabel: {
-    fontSize: typography.fontSizes.body,
-    color: colors.text,
-  },
-  appPackage: {
-    fontSize: typography.fontSizes.caption,
-    color: colors.textMuted,
-  },
-  removeText: {
-    color: colors.danger,
-    fontSize: typography.fontSizes.caption,
   },
   error: {
     color: colors.danger,

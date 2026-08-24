@@ -1,5 +1,5 @@
 export const FEATURE_FLAGS = {
   syncEngine: false,
   linking: true,
-  parentalControls: false,
+  parentalControls: true,
 } as const;
