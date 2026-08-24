@@ -1,4 +1,6 @@
-import { Platform, type ViewStyle } from 'react-native';
+import { Platform, type ViewStyle, TypeColorScheme } from 'react-native';
+
+export type AppColorTheme = 'light' | 'dark' | 'system';
 
 const lightColors = {
   primary: '#2F6BFF',
@@ -112,3 +114,51 @@ const lightShadows = Platform.select({
 }) as { sm: ViewStyle; md: ViewStyle; lg: ViewStyle };
 
 export const shadows = lightShadows;
+
+export const colorThemes = {
+  light: lightColors,
+  dark: darkColors,
+};
+
+export const getColors = (theme: AppColorTheme) => {
+  if (theme === 'dark') return darkColors;
+  return lightColors;
+};
+
+export const getShadows = (theme: AppColorTheme) => {
+  if (theme === 'dark') {
+    return Platform.select({
+      ios: {
+        sm: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 1 },
+          shadowOpacity: 0.1,
+          shadowRadius: 4,
+        } as ViewStyle,
+        md: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.12,
+          shadowRadius: 6,
+        } as ViewStyle,
+        lg: {
+          shadowColor: '#000',
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.15,
+          shadowRadius: 12,
+        } as ViewStyle,
+      },
+      android: {
+        sm: { elevation: 2 },
+        md: { elevation: 4 },
+        lg: { elevation: 8 },
+      },
+      default: {
+        sm: { elevation: 2 },
+        md: { elevation: 4 },
+        lg: { elevation: 8 },
+      },
+    });
+  }
+  return shadows;
+};

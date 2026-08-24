@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { StyleSheet, View, Image } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -37,6 +38,30 @@ export default function RootLayout() {
     <>
       <Stack screenOptions={{ headerShown: false }} />
       <StatusBar style="auto" />
+      {i18nReady ? null : (
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: '#208AEF',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
+          <Image
+            source={require('@/assets/images/arca-kids.png')}
+            style={styles.logo}
+            width={150}
+            height={150}
+          />
+        </View>
+      )}
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  logo: {
+    width: '100%',
+    height: '100%',
+  },
+});
