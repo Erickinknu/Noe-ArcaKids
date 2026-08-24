@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/ui/card';
 import { useNetworkStatus } from '@/hooks/use-network-status';
 import { useAsyncData } from '@/hooks/use-async-data';
+import { useParentalStatus } from '@/hooks/use-parental-status';
 import { identityService } from '@/features/identity/services/identity-service';
 import { ROUTES } from '@/constants';
 import { colors, spacing, typography } from '@noe-arcakids/shared';
@@ -13,10 +14,34 @@ export default function HomeScreen() {
   const { t: tr } = useTranslation();
   const { isOnline } = useNetworkStatus();
   const { data: childInfo } = useAsyncData(() => identityService.getChildInfo());
+  const isLinked = Boolean(childInfo?.childId && childInfo?.familyId);
+  const { reason } = useParentalStatus(isLinked);
 
   const name = childInfo?.name?.split(' ')[0] ?? 'kid';
   const avatar = childInfo?.avatar ?? '🧸';
-  const isLinked = Boolean(childInfo?.childId && childInfo?.familyId);
+
+  if (reason) {
+    const isBedtime = reason === 'bedtime';
+    return (
+      <View style={[styles.screen, styles.blockedScreen]}>
+        <Text style={styles.blockedEmoji}>{isBedtime ? '🌙' : '⏰'}</Text>
+        <Text style={styles.blockedTitle}>
+          {tr(
+            isBedtime
+              ? 'arcakids.parental.blockedBedtimeTitle'
+              : 'arcakids.parental.blockedDailyTitle'
+          )}
+        </Text>
+        <Text style={styles.blockedText}>
+          {tr(
+            isBedtime
+              ? 'arcakids.parental.blockedBedtimeText'
+              : 'arcakids.parental.blockedDailyText'
+          )}
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={styles.screen}>
@@ -45,6 +70,21 @@ export default function HomeScreen() {
         </Link>
       ) : null}
       <View style={styles.cards}>
+        {isLinked ? (
+          <Link href={ROUTES.launcher} asChild>
+            <Card style={styles.card}>
+              <Text style={styles.cardEmoji}>🎮</Text>
+              <View>
+                <Text style={styles.cardTitle}>
+                  {tr('arcakids.launcher.title')}
+                </Text>
+                <Text style={styles.cardSubtitle}>
+                  {tr('arcakids.launcher.subtitle')}
+                </Text>
+              </View>
+            </Card>
+          </Link>
+        ) : null}
         <Link href={ROUTES.activity} asChild>
           <Card style={styles.card}>
             <Text style={styles.cardEmoji}>⭐</Text>
@@ -140,6 +180,25 @@ const styles = StyleSheet.create({
   linkBannerText: {
     fontSize: typography.fontSizes.caption,
     color: colors.textMuted,
+  },
+  blockedScreen: {
+    justifyContent: 'center',
+    paddingTop: spacing.lg,
+  },
+  blockedEmoji: {
+    fontSize: 72,
+    textAlign: 'center',
+  },
+  blockedTitle: {
+    fontSize: typography.fontSizes.heading,
+    fontWeight: typography.fontWeights.bold,
+    color: colors.text,
+    textAlign: 'center',
+  },
+  blockedText: {
+    fontSize: typography.fontSizes.body,
+    color: colors.textMuted,
+    textAlign: 'center',
   },
   card: {
     flexDirection: 'row',

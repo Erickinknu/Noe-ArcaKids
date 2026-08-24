@@ -50,4 +50,31 @@ export const childRepository = {
     }
     return mapRow(data as ChildRow);
   },
+
+  async updateChild(childId: string, displayName: string, avatarUrl: string | null): Promise<ChildProfile> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client
+      .from('children')
+      .update({ display_name: displayName, avatar_url: avatarUrl, updated_at: new Date().toISOString() })
+      .eq('id', childId)
+      .select('*')
+      .single();
+
+    if (error) {
+      throw new DatabaseError(error.message);
+    }
+    return mapRow(data as ChildRow);
+  },
+
+  async removeChild(childId: string): Promise<void> {
+    const client = requireSupabaseClient();
+    const { error } = await client
+      .from('children')
+      .delete()
+      .eq('id', childId);
+
+    if (error) {
+      throw new DatabaseError(error.message);
+    }
+  },
 };

@@ -1,48 +1,114 @@
-import type { ReactNode } from 'react';
-import { ActivityIndicator, Pressable, StyleSheet, Text } from 'react-native';
-import type { PressableProps, StyleProp, ViewStyle } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import {
+  Pressable,
+  StyleSheet,
+  Text,
+  ActivityIndicator,
+  type ViewStyle,
+  type TextStyle,
+} from 'react-native';
 
 import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
 
-type Variant = 'primary' | 'outline' | 'ghost';
+type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
+type ButtonSize = 'sm' | 'md' | 'lg';
 
-export interface ButtonProps extends Omit<PressableProps, 'style'> {
-  variant?: Variant;
+interface ButtonProps {
+  label?: string;
+  children?: ReactNode;
+  onPress?: () => void;
+  variant?: ButtonVariant;
+  size?: ButtonSize;
+  disabled?: boolean;
   loading?: boolean;
-  style?: StyleProp<ViewStyle>;
-  children: ReactNode;
+  icon?: ReactNode;
+  style?: ViewStyle;
+  textStyle?: TextStyle;
 }
 
+const variantStyles: Record<ButtonVariant, { container: ViewStyle; text: TextStyle }> = {
+  primary: {
+    container: { backgroundColor: colors.primary },
+    text: { color: colors.onPrimary },
+  },
+  secondary: {
+    container: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+    text: { color: colors.text },
+  },
+  danger: {
+    container: { backgroundColor: colors.danger },
+    text: { color: colors.onPrimary },
+  },
+  ghost: {
+    container: { backgroundColor: 'transparent' },
+    text: { color: colors.primary },
+  },
+  outline: {
+    container: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
+    text: { color: colors.text },
+  },
+};
+
+const sizeStyles: Record<ButtonSize, { container: ViewStyle; text: TextStyle }> = {
+  sm: {
+    container: { paddingVertical: spacing.sm, paddingHorizontal: spacing.md },
+    text: { fontSize: typography.fontSizes.caption },
+  },
+  md: {
+    container: { paddingVertical: spacing.md, paddingHorizontal: spacing.lg },
+    text: { fontSize: typography.fontSizes.body },
+  },
+  lg: {
+    container: { paddingVertical: spacing.md + 2, paddingHorizontal: spacing.xl },
+    text: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold },
+  },
+};
+
 export function Button({
-  variant = 'primary',
-  loading = false,
-  style,
-  disabled,
+  label,
   children,
-  ...rest
+  onPress,
+  variant = 'primary',
+  size = 'md',
+  disabled = false,
+  loading = false,
+  icon,
+  style,
+  textStyle,
 }: ButtonProps) {
-  const isDisabled = disabled || loading;
+  const [pressed, setPressed] = useState(false);
+  const v = variantStyles[variant];
+  const s = sizeStyles[size];
+  const content = children ?? label;
 
   return (
     <Pressable
-      {...rest}
-      disabled={isDisabled}
-      style={({ pressed }) => [
+      onPress={onPress}
+      disabled={disabled || loading}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      style={[
         styles.base,
-        styles[variant],
+        v.container,
+        s.container,
+        (disabled || loading) && styles.disabled,
         pressed && styles.pressed,
-        isDisabled && styles.disabled,
         style,
       ]}
     >
       {loading ? (
-        <ActivityIndicator
-          color={variant === 'primary' ? colors.onPrimary : colors.primary}
-        />
+        <ActivityIndicator size="small" color={v.text.color} />
       ) : (
-        <Text style={[styles.label, variant !== 'primary' && styles.labelOutline]}>
-          {children}
-        </Text>
+        <>
+          {icon ? <>{icon}</> : null}
+          {typeof content === 'string' ? (
+            <Text style={[styles.text, v.text, s.text, icon ? { marginLeft: spacing.sm } : undefined, textStyle]}>
+              {content}
+            </Text>
+          ) : (
+            content
+          )}
+        </>
       )}
     </Pressable>
   );
@@ -50,35 +116,18 @@ export function Button({
 
 const styles = StyleSheet.create({
   base: {
-    minHeight: 48,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
+    flexDirection: 'row',
   },
-  primary: {
-    backgroundColor: colors.primary,
-  },
-  outline: {
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  ghost: {
-    backgroundColor: 'transparent',
-  },
-  pressed: {
-    opacity: 0.8,
+  text: {
+    fontWeight: typography.fontWeights.medium,
   },
   disabled: {
     opacity: 0.5,
   },
-  label: {
-    color: colors.onPrimary,
-    fontSize: typography.fontSizes.body,
-    fontWeight: typography.fontWeights.semibold,
-  },
-  labelOutline: {
-    color: colors.primary,
+  pressed: {
+    opacity: 0.7,
   },
 });

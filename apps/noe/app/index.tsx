@@ -1,14 +1,17 @@
 import { Redirect } from 'expo-router';
 
-import { ROUTES } from '@/constants';
 import { useAuthStore } from '@/stores/auth-store';
+import { ROUTES } from '@/constants';
+import { LoadingState } from '@/components/ui/loading-state';
 
 export default function IndexScreen() {
   const status = useAuthStore((state) => state.status);
 
-  if (status === 'initializing') {
-    return null;
+  if (status === 'authenticated') {
+    return <Redirect href={ROUTES.app} />;
   }
-
-  return <Redirect href={status === 'authenticated' ? ROUTES.app : ROUTES.login} />;
+  if (status === 'unauthenticated') {
+    return <Redirect href={ROUTES.login} />;
+  }
+  return <LoadingState text="" />;
 }

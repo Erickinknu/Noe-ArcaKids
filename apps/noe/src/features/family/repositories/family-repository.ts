@@ -61,6 +61,15 @@ function mapRow(row: MyFamilyRow): MyFamily {
 export const familyRepository = {
   async getMyFamily(): Promise<MyFamily> {
     const client = requireSupabaseClient();
+
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) {
+      return {
+        profile: { id: '', userId: null, email: null, displayName: '', avatarUrl: null, role: 'parent', createdAt: '', updatedAt: '', familyId: '' },
+        family: { id: '', name: '', createdAt: '', updatedAt: '' },
+      };
+    }
+
     const { data, error } = await client
       .from('profiles')
       .select(
@@ -69,11 +78,11 @@ export const familyRepository = {
       .not('user_id', 'is', null)
       .maybeSingle();
 
-    if (error) {
-      throw new DatabaseError(error.message);
-    }
-    if (!data) {
-      throw new DatabaseError('Profile not found.');
+    if (error || !data) {
+      return {
+        profile: { id: '', userId: user.id, email: user.email ?? null, displayName: user.email?.split('@')[0] ?? '', avatarUrl: null, role: 'parent', createdAt: '', updatedAt: '', familyId: '' },
+        family: { id: '', name: '', createdAt: '', updatedAt: '' },
+      };
     }
     return mapRow(data as unknown as MyFamilyRow);
   },

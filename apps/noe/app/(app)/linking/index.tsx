@@ -5,13 +5,17 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { EmptyState } from '@/components/ui/empty-state';
+import { ErrorState } from '@/components/ui/error-state';
+import { LoadingState } from '@/components/ui/loading-state';
+import { SectionHeader } from '@/components/ui/section-header';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
 import { linkingService } from '@/features/linking/services/linking-service';
 import type { PairingCode } from '@/features/linking/repositories/linking-repository';
 import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
 import type { ChildProfile } from '@noe-arcakids/types';
-import { colors, spacing, typography } from '@noe-arcakids/shared';
+import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
 
 interface FamilyWithChildren {
   familyId: string;
@@ -60,7 +64,7 @@ export default function LinkingScreen() {
   if (loading) {
     return (
       <View style={styles.screen}>
-        <Text style={styles.muted}>{tr('noe.linking.loading')}</Text>
+        <LoadingState text={tr('noe.linking.loading')} />
       </View>
     );
   }
@@ -68,12 +72,10 @@ export default function LinkingScreen() {
   if (error || !data) {
     return (
       <View style={styles.screen}>
-        <Text style={styles.error}>
-          {error ?? tr('noe.linking.somethingWentWrong')}
-        </Text>
-        <Button variant="outline" onPress={reload}>
-          {tr('common.retry')}
-        </Button>
+        <ErrorState
+          message={error ?? tr('noe.linking.somethingWentWrong')}
+          onRetry={reload}
+        />
       </View>
     );
   }
@@ -83,10 +85,13 @@ export default function LinkingScreen() {
       <Text style={styles.title}>{tr('noe.linking.title')}</Text>
       <Text style={styles.subtitle}>{tr('noe.linking.subtitle')}</Text>
 
-      <Card>
-        <Text style={styles.cardTitle}>{tr('noe.linking.chooseChild')}</Text>
+      <Card style={styles.card}>
+        <SectionHeader title={tr('noe.linking.chooseChild')} />
         {data.children.length === 0 ? (
-          <Text style={styles.muted}>{tr('noe.linking.noChildren')}</Text>
+          <EmptyState
+            icon="👨‍👩‍👧"
+            title={tr('noe.linking.noChildren')}
+          />
         ) : (
           <View style={styles.childList}>
             {data.children.map((child) => (
@@ -111,7 +116,7 @@ export default function LinkingScreen() {
       {actionError ? <Text style={styles.error}>{actionError}</Text> : null}
 
       {pairing && selectedChild ? (
-        <Card style={styles.pairingCard}>
+        <Card style={[styles.pairingCard, shadows.sm]}>
           <Text style={styles.pairingLabel}>
             {tr('noe.linking.codeFor', { name: selectedChild.displayName })}
           </Text>
@@ -133,7 +138,7 @@ export default function LinkingScreen() {
 const styles = StyleSheet.create({
   screen: {
     padding: spacing.lg,
-    paddingTop: 80,
+    paddingTop: spacing.xxl,
     backgroundColor: colors.background,
     gap: spacing.md,
   },
@@ -147,11 +152,8 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     lineHeight: 24,
   },
-  cardTitle: {
-    fontSize: typography.fontSizes.subtitle,
-    fontWeight: typography.fontWeights.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
+  card: {
+    ...shadows.sm,
   },
   childList: {
     gap: spacing.xs,
@@ -159,7 +161,7 @@ const styles = StyleSheet.create({
   childRow: {
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
-    borderRadius: 12,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
   },
@@ -188,7 +190,7 @@ const styles = StyleSheet.create({
   qrBox: {
     padding: spacing.md,
     backgroundColor: colors.surface,
-    borderRadius: 12,
+    borderRadius: radius.lg,
   },
   error: {
     color: colors.danger,

@@ -1,39 +1,22 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { buildKey, StorageError, type Storage } from './storage';
+const STORAGE_PREFIX = '@noe-arcakids';
 
-export class AsyncStorageStorage implements Storage {
-  async save(key: string, value: string): Promise<void> {
-    try {
-      await AsyncStorage.setItem(buildKey(key), value);
-    } catch (cause) {
-      throw new StorageError('save', key, cause);
-    }
-  }
-
-  async get(key: string): Promise<string | null> {
-    try {
-      return await AsyncStorage.getItem(buildKey(key));
-    } catch (cause) {
-      throw new StorageError('get', key, cause);
-    }
-  }
-
-  async remove(key: string): Promise<void> {
-    try {
-      await AsyncStorage.removeItem(buildKey(key));
-    } catch (cause) {
-      throw new StorageError('remove', key, cause);
-    }
-  }
-
-  async clear(): Promise<void> {
-    try {
-      await AsyncStorage.clear();
-    } catch (cause) {
-      throw new StorageError('clear', undefined, cause);
-    }
-  }
+function buildKey(key: string): string {
+  return `${STORAGE_PREFIX}/${key}`;
 }
 
-export const storage: Storage = new AsyncStorageStorage();
+export const storage = {
+  async save(key: string, value: string): Promise<void> {
+    await AsyncStorage.setItem(buildKey(key), value);
+  },
+  async get(key: string): Promise<string | null> {
+    return AsyncStorage.getItem(buildKey(key));
+  },
+  async remove(key: string): Promise<void> {
+    await AsyncStorage.removeItem(buildKey(key));
+  },
+  async clear(): Promise<void> {
+    await AsyncStorage.clear();
+  },
+};

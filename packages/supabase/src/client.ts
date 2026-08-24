@@ -8,7 +8,7 @@ import { UnknownError, logger } from '@noe-arcakids/shared';
 
 let client: SupabaseClient | null = null;
 
-export function getSupabaseClient(): SupabaseClient | null {
+function getSupabaseClient(): SupabaseClient | null {
   if (!env.isSupabaseConfigured) {
     logger.warn(
       'Supabase is not configured (EXPO_PUBLIC_SUPABASE_URL / EXPO_PUBLIC_SUPABASE_ANON_KEY).'

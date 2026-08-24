@@ -1,5 +1,4 @@
 export type Role = 'parent' | 'child';
-export type DevicePlatform = 'android' | 'ios';
 
 export interface Family {
   id: string;
@@ -36,24 +35,40 @@ export interface ChildProfile {
   role: 'child';
 }
 
-export interface Device {
+export interface ParentalRules {
   id: string;
   familyId: string;
-  childId: string | null;
-  deviceUuid: string;
-  name: string;
-  platform: DevicePlatform;
-  appVersion: string | null;
-  lastSeenAt: string | null;
+  childId: string;
+  dailyLimitMinutes: number | null;
+  bedtimeEnabled: boolean;
+  bedtimeStart: string | null;
+  bedtimeEnd: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
-export interface Session {
+export interface BlockedApp {
   id: string;
+  familyId: string;
   childId: string;
-  deviceId: string | null;
-  startedAt: string;
-  endedAt: string | null;
+  packageName: string;
+  appLabel: string;
   createdAt: string;
 }
+
+export interface DeviceRules {
+  childId: string;
+  displayName: string;
+  dailyLimitMinutes: number | null;
+  bedtimeEnabled: boolean;
+  bedtimeStart: string | null;
+  bedtimeEnd: string | null;
+  blockedPackages: string[];
+}
+
+export interface UsageEntry {
+  packageName: string;
+  minutes: number;
+}
+
+export type RestrictionReason = 'dailyLimit' | 'bedtime' | 'blockedApp' | null;

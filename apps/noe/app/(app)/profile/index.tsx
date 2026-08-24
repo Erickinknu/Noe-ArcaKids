@@ -4,12 +4,15 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { ErrorState } from '@/components/ui/error-state';
 import { Input } from '@/components/ui/input';
+import { LoadingState } from '@/components/ui/loading-state';
+import { SectionHeader } from '@/components/ui/section-header';
 import { authService } from '@/features/auth/services/auth-service';
 import { familyService } from '@/features/family/services/family-service';
 import type { MyFamily } from '@/features/family/repositories/family-repository';
 import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
-import { colors, spacing, typography } from '@noe-arcakids/shared';
+import { colors, shadows, spacing, typography } from '@noe-arcakids/shared';
 
 export default function ProfileScreen() {
   const { t: tr } = useTranslation();
@@ -49,7 +52,7 @@ export default function ProfileScreen() {
   if (loading) {
     return (
       <View style={styles.screen}>
-        <Text style={styles.muted}>{tr('noe.profile.loading')}</Text>
+        <LoadingState text={tr('noe.profile.loading')} />
       </View>
     );
   }
@@ -57,17 +60,14 @@ export default function ProfileScreen() {
   if (error && !data) {
     return (
       <View style={styles.screen}>
-        <Text style={styles.error}>{error}</Text>
-        <Button variant="outline" onPress={reload}>
-          {tr('common.retry')}
-        </Button>
+        <ErrorState message={error} onRetry={reload} />
       </View>
     );
   }
 
   return (
     <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>{tr('noe.profile.title')}</Text>
+      <SectionHeader title={tr('noe.profile.title')} />
       {data ? (
         <>
           <Card>
@@ -78,8 +78,8 @@ export default function ProfileScreen() {
             <Text style={styles.label}>{tr('noe.profile.family')}</Text>
             <Text style={styles.value}>{data.family.name}</Text>
           </Card>
+          <SectionHeader title={tr('noe.profile.familyName')} />
           <Card>
-            <Text style={styles.cardTitle}>{tr('noe.profile.familyName')}</Text>
             <Input
               label={tr('noe.profile.family')}
               value={familyName}
@@ -90,7 +90,7 @@ export default function ProfileScreen() {
               {tr('noe.profile.saveFamilyName')}
             </Button>
           </Card>
-          {actionError ? <Text style={styles.error}>{actionError}</Text> : null}
+          {actionError ? <ErrorState message={actionError} /> : null}
           <Button variant="outline" onPress={handleSignOut}>
             {tr('noe.profile.signOut')}
           </Button>
@@ -105,18 +105,7 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     backgroundColor: colors.background,
     gap: spacing.md,
-    paddingTop: 80,
-  },
-  title: {
-    fontSize: typography.fontSizes.heading,
-    fontWeight: typography.fontWeights.bold,
-    color: colors.text,
-  },
-  cardTitle: {
-    fontSize: typography.fontSizes.subtitle,
-    fontWeight: typography.fontWeights.semibold,
-    color: colors.text,
-    marginBottom: spacing.sm,
+    paddingTop: spacing.xxl,
   },
   label: {
     fontSize: typography.fontSizes.caption,
@@ -127,14 +116,5 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSizes.body,
     color: colors.text,
     marginBottom: spacing.xs,
-  },
-  error: {
-    color: colors.danger,
-    fontSize: typography.fontSizes.caption,
-  },
-  muted: {
-    color: colors.textMuted,
-    fontSize: typography.fontSizes.body,
-    textAlign: 'center',
   },
 });

@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -11,20 +12,16 @@ SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const initialize = useAuthStore((state) => state.initialize);
-  const initialized = useAuthStore((state) => state.initialized);
-  const [i18nReady, setI18nReady] = useState(false);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     let mounted = true;
-    initI18n()
-      .catch(() => {})
-      .finally(() => {
-        if (mounted) {
-          setI18nReady(true);
-        }
-      });
     networkService.start();
-    initialize();
+    initialize().catch(() => {});
+    Promise.all([initI18n().catch(() => {}), new Promise((r) => setTimeout(r, 300))])
+      .then(() => {
+        if (mounted) setReady(true);
+      });
     return () => {
       mounted = false;
       networkService.stop();
@@ -32,10 +29,18 @@ export default function RootLayout() {
   }, [initialize]);
 
   useEffect(() => {
-    if (initialized && i18nReady) {
+    if (ready) {
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [initialized, i18nReady]);
+  }, [ready]);
+
+  if (!ready) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color="#208AEF" />
+      </View>
+    );
+  }
 
   return (
     <>
@@ -44,3 +49,12 @@ export default function RootLayout() {
     </>
   );
 }
+
+const styles = StyleSheet.create({
+  loading: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#208AEF',
+  },
+});

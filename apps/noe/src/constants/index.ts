@@ -6,7 +6,9 @@ export const ROUTES = {
   forgotPassword: '/(auth)/forgot-password',
   children: '/children',
   linking: '/linking',
+  rules: '/rules',
   activity: '/activity',
   settings: '/settings',
   profile: '/profile',
+  notifications: '/notifications',
 } as const;

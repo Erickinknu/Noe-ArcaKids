@@ -7,7 +7,7 @@
 | FASE 2 | ARCA KIDS (child app): kid experience, onboarding flow shape, activity views | [COMPLETADA] |
 | FASE 3 | Vinculacion: device/child linking via 6-digit pairing code + QR, redeemed anonymously by ARCA KIDS (one-shot, 10 min expiry) | [COMPLETADA] |
 | — | i18n transversal: espanol por defecto + ingles, deteccion del idioma del SO, selector manual persistente en Settings (ambas apps) | [COMPLETADA] |
-| FASE 4 | Control parental: app control/locks, time limits, usage sessions | [PENDIENTE] |
+| FASE 4 | Control parental: app control/locks, time limits, usage sessions | [EN PROGRESO: 4A + 4B1 + 4B2 completadas (schema, Rules NOE, RPCs, módulo nativo UsageStats, launcher grid, EnforcementService FGS). FASE 1 del Dashboard NOE (tabs + design system + dashboard UI híbrido) completada] |
 | FASE 5 | Geolocalizacion y geocercas | [PENDIENTE] |
 | FASE 6 | Notificaciones, pasos, gamificacion, modo estudio | [PENDIENTE] |
 | FASE 7 | Permisos avanzados, servicios Android en segundo plano, foreground services, overlays | [PENDIENTE] |

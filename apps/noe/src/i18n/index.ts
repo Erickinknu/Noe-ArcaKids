@@ -32,6 +32,9 @@ export async function initI18n(): Promise<void> {
     resources,
     lng,
     fallbackLng: DEFAULT_LANGUAGE,
+    // When a key is missing, avoid returning the raw key string to the UI.
+    // Instead return an empty string so components show safe fallbacks.
+    parseMissingKeyHandler: () => '',
     interpolation: { escapeValue: false },
     react: { useSuspense: false },
   });

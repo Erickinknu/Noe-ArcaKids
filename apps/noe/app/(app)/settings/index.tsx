@@ -3,12 +3,14 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { Card } from '@/components/ui/card';
+import { SectionHeader } from '@/components/ui/section-header';
 import { setLanguage } from '@/i18n';
 import {
   LANGUAGE_NAMES,
   SUPPORTED_LANGUAGES,
   colors,
   radius,
+  shadows,
   spacing,
   typography,
   type SupportedLanguage,
@@ -26,8 +28,7 @@ export default function SettingsScreen() {
   return (
     <View style={styles.screen}>
       <Text style={styles.title}>{tr('noe.dashboard.settings')}</Text>
-      <Card>
-        <Text style={styles.cardTitle}>{tr('settings.language')}</Text>
+      <Card style={shadows.sm}>
         <Text style={styles.cardDescription}>
           {tr('settings.languageDescription')}
         </Text>
@@ -57,7 +58,7 @@ const styles = StyleSheet.create({
   screen: {
     flex: 1,
     padding: spacing.lg,
-    paddingTop: 80,
+    paddingTop: spacing.xxl,
     backgroundColor: colors.background,
     gap: spacing.md,
   },

@@ -4,6 +4,10 @@ import { useTranslation } from 'react-i18next';
 
 import { Card } from '@/components/ui/card';
 import { setLanguage } from '@/i18n';
+import { useAsyncData } from '@/hooks/use-async-data';
+import { useParentalStatus } from '@/hooks/use-parental-status';
+import { identityService } from '@/features/identity/services/identity-service';
+import { parentalBridge } from '@/features/parental/native/parental-bridge';
 import {
   LANGUAGE_NAMES,
   SUPPORTED_LANGUAGES,
@@ -17,15 +21,113 @@ import {
 export default function SettingsScreen() {
   const { t: tr, i18n } = useTranslation();
   const [current, setCurrent] = useState<SupportedLanguage>(i18n.language as SupportedLanguage);
+  const { data: childInfo } = useAsyncData(() => identityService.getChildInfo());
+  const isLinked = Boolean(childInfo?.childId && childInfo?.familyId);
+  const {
+    rules,
+    snapshot,
+    hasUsagePermission,
+    isLauncher,
+  } = useParentalStatus(isLinked);
 
   function handleSelect(lng: SupportedLanguage) {
     setLanguage(lng);
     setCurrent(lng);
   }
 
+  function handleOpenUsageSettings() {
+    void parentalBridge.openUsageAccessSettings();
+  }
+
+  function handleOpenLauncherSettings() {
+    void parentalBridge.openDefaultAppsSettings();
+  }
+
   return (
     <View style={styles.screen}>
       <Text style={styles.title}>{tr('arcakids.home.settings')}</Text>
+      {isLinked ? (
+        <Card>
+          <Text style={styles.cardTitle}>{tr('arcakids.parental.title')}</Text>
+          <Text style={styles.cardDescription}>
+            {tr('arcakids.parental.description')}
+          </Text>
+
+          <View style={styles.statusRow}>
+            <View style={styles.statusLabels}>
+              <Text style={styles.statusText}>
+                {tr('arcakids.parental.usagePermission')}
+              </Text>
+              <Text
+                style={[
+                  styles.statusDetail,
+                  hasUsagePermission ? styles.statusOk : styles.statusPending,
+                ]}
+              >
+                {hasUsagePermission
+                  ? tr('arcakids.parental.usagePermissionGranted')
+                  : tr('arcakids.parental.usagePermissionMissing')}
+              </Text>
+            </View>
+            {!hasUsagePermission ? (
+              <Pressable
+                onPress={handleOpenUsageSettings}
+                style={[styles.actionButton, styles.actionButtonPrimary]}
+              >
+                <Text style={styles.actionButtonText}>
+                  {tr('arcakids.parental.grantUsage')}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+
+          <View style={styles.statusRow}>
+            <View style={styles.statusLabels}>
+              <Text style={styles.statusText}>
+                {tr('arcakids.parental.launcherTitle')}
+              </Text>
+              <Text
+                style={[
+                  styles.statusDetail,
+                  isLauncher ? styles.statusOk : styles.statusPending,
+                ]}
+              >
+                {isLauncher
+                  ? tr('arcakids.parental.launcherActive')
+                  : tr('arcakids.parental.launcherInactive')}
+              </Text>
+            </View>
+            {!isLauncher ? (
+              <Pressable
+                onPress={handleOpenLauncherSettings}
+                style={[styles.actionButton, styles.actionButtonPrimary]}
+              >
+                <Text style={styles.actionButtonText}>
+                  {tr('arcakids.parental.setLauncher')}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+
+          <View style={styles.statusRow}>
+            <View style={styles.statusLabels}>
+              <Text style={styles.statusText}>
+                {tr('arcakids.parental.todayUsage')}
+              </Text>
+              <Text style={styles.statusDetail}>
+                {rules?.dailyLimitMinutes != null
+                  ? tr('arcakids.parental.minutesOfLimit', {
+                      minutes: snapshot?.totalMinutes ?? 0,
+                      limit: rules.dailyLimitMinutes,
+                    })
+                  : tr('arcakids.parental.minutesValue', {
+                      minutes: snapshot?.totalMinutes ?? 0,
+                    })}
+              </Text>
+            </View>
+          </View>
+        </Card>
+      ) : null}
       <Card>
         <Text style={styles.cardTitle}>{tr('settings.language')}</Text>
         <Text style={styles.cardDescription}>
@@ -76,6 +178,47 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     marginTop: spacing.xs,
     marginBottom: spacing.md,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  statusLabels: {
+    flex: 1,
+    gap: 2,
+  },
+  statusText: {
+    fontSize: typography.fontSizes.body,
+    color: colors.text,
+  },
+  statusDetail: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+  },
+  statusOk: {
+    color: colors.success,
+  },
+  statusPending: {
+    color: colors.warning,
+  },
+  actionButton: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    alignItems: 'center',
+  },
+  actionButtonPrimary: {
+    backgroundColor: colors.primary,
+  },
+  actionButtonText: {
+    fontSize: typography.fontSizes.caption,
+    fontWeight: typography.fontWeights.semibold,
+    color: '#FFFFFF',
   },
   options: {
     gap: spacing.sm,

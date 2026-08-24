@@ -34,18 +34,24 @@ function applySession(session: SupabaseSession | null) {
   });
 }
 
+let unsubscribeAuth: (() => void) | null = null;
+
 export const useAuthStore = create<AuthState>((set) => ({
   status: 'initializing',
   initialized: false,
   session: null,
   user: null,
   initialize: async () => {
+    if (unsubscribeAuth) {
+      return;
+    }
     try {
-      authHelpers.onAuthStateChange((_event, session) => {
-        applySession(session);
-      });
       const { data } = await authHelpers.getSession();
       applySession(data.session);
+
+      unsubscribeAuth = authHelpers.onAuthStateChange((_event, session) => {
+        applySession(session);
+      }).data.subscription.unsubscribe;
     } catch (error) {
       logger.warn('Auth initialization failed', error);
       set({ status: 'unauthenticated', session: null, user: null });

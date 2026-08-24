@@ -1,13 +1,2 @@
-import { create } from 'zustand';
-
-export interface ConnectionState {
-  isOnline: boolean;
-  isInternetReachable: boolean;
-  initialized: boolean;
-}
-
-export const useConnectionStore = create<ConnectionState>(() => ({
-  isOnline: true,
-  isInternetReachable: true,
-  initialized: false,
-}));
+export { useConnectionStore } from '@noe-arcakids/shared';
+export type { ConnectionState } from '@noe-arcakids/shared';

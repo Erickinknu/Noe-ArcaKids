@@ -6,7 +6,8 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authService } from '@/features/auth/services/auth-service';
-import { AppError, colors, spacing, typography, t } from '@noe-arcakids/shared';
+import { errorMessage } from '@noe-arcakids/shared';
+import { colors, spacing, typography } from '@noe-arcakids/shared';
 
 export default function LoginScreen() {
   const { t: tr } = useTranslation();
@@ -21,9 +22,7 @@ export default function LoginScreen() {
     try {
       await authService.signIn({ email, password });
     } catch (cause) {
-      setError(
-        cause instanceof AppError ? cause.message : t('common.unexpected')
-      );
+      setError(errorMessage(cause));
     } finally {
       setSubmitting(false);
     }

@@ -1,4 +1,4 @@
-export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
+type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent';
 
 const LEVEL_ORDER: Record<LogLevel, number> = {
   debug: 10,
@@ -12,7 +12,7 @@ const DEFAULT_LEVEL: LogLevel = process.env.NODE_ENV !== 'production' ? 'debug' 
 
 let currentLevel: LogLevel = DEFAULT_LEVEL;
 
-export function setLogLevel(level: LogLevel): void {
+function setLogLevel(level: LogLevel): void {
   currentLevel = level;
 }
 

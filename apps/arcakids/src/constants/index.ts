@@ -5,4 +5,5 @@ export const ROUTES = {
   profile: '/profile',
   activity: '/activity',
   settings: '/settings',
+  launcher: '/launcher',
 } as const;
