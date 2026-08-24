@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, ActivityIndicator, Image, StyleSheet } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -42,7 +42,12 @@ export default function RootLayout() {
   if (!ready) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#208AEF" />
+        <Image
+          source={require('@/assets/images/splashscreen_logo.png')}
+          style={styles.splashLogo}
+          resizeMode="contain"
+        />
+        <ActivityIndicator size="large" color="#208AEF" style={styles.activityIndicator} />
       </View>
     );
   }
@@ -61,5 +66,13 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#208AEF',
+  },
+  splashLogo: {
+    width: 80,
+    height: 80,
+    marginBottom: 20,
+  },
+  activityIndicator: {
+    marginTop: 20,
   },
 });
