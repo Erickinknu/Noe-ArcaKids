@@ -1,5 +1,4 @@
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
 
 export enum AdvancedPermission {
   POST_NOTIFICATIONS = 'post_notifications',
@@ -27,34 +26,23 @@ export class PermissionHandler {
   static async requestPermission(
     permission: AdvancedPermission
   ): Promise<{ granted: boolean; status: PermissionStatus }> {
-    // @ts-ignore - expo-notifications API may vary by version
     if (permission === AdvancedPermission.POST_NOTIFICATIONS) {
-      const { status: existingStatus } =
-        // @ts-ignore
-        Notifications.getNotificationPermissionsAsync?.() ?? {};
-      let finalStatus = existingStatus ?? 'denied';
-
-      if (finalStatus !== 'granted') {
-        // @ts-ignore
-        const { status } = // @ts-ignore
-        Notifications.requestNotificationPermissionsAsync?.() ?? {};
-        finalStatus = status ?? 'denied';
-      }
-
+      // requestPermissionsAsync checks existing status first and only
+      // prompts the OS dialog when not decided yet.
+      const { status } = await Notifications.requestPermissionsAsync();
+      const granted = status === 'granted';
       return {
-        granted: finalStatus === 'granted',
-        status: finalStatus === 'granted'
-          ? PermissionStatus.GRANTED
-          : PermissionStatus.DENIED,
+        granted,
+        status: granted ? PermissionStatus.GRANTED : PermissionStatus.DENIED,
       };
     }
 
-    // @ts-ignore - usage stats permission checking is platform-specific
     if (permission === AdvancedPermission.USAGE_STATS) {
-return {
-      granted: false,
-      status: PermissionStatus.UNKNOWN,
-    } as const;
+      // Usage stats permission checking is platform-specific.
+      return {
+        granted: false,
+        status: PermissionStatus.UNKNOWN,
+      };
     }
 
     return { granted: false, status: PermissionStatus.UNKNOWN };
@@ -63,10 +51,8 @@ return {
   static async checkPermission(
     permission: AdvancedPermission
   ): Promise<PermissionStatus> {
-    // @ts-ignore
     if (permission === AdvancedPermission.POST_NOTIFICATIONS) {
-      // @ts-ignore
-      const { status } = Notifications.getNotificationPermissionsAsync?.() ?? {};
+      const { status } = await Notifications.getPermissionsAsync();
       return status === 'granted'
         ? PermissionStatus.GRANTED
         : PermissionStatus.DENIED;

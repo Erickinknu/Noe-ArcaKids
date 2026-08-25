@@ -1,4 +1,3 @@
-import { DatabaseError } from '@noe-arcakids/shared';
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
 
 export interface OfflineAction {
@@ -199,7 +198,7 @@ export class OfflineSyncEngine {
             .eq('id', action.id);
           success++;
           retried++;
-        } catch (e) {
+        } catch {
           stillFailed++;
         }
       }

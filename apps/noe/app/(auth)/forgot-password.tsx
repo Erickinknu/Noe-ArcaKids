@@ -6,8 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authService } from '@/features/auth/services/auth-service';
-import { errorMessage } from '@noe-arcakids/shared';
-import { colors, spacing, typography } from '@noe-arcakids/shared';
+import { errorMessage, colors, spacing, typography } from '@noe-arcakids/shared';
 
 export default function ForgotPasswordScreen() {
   const { t: tr } = useTranslation();

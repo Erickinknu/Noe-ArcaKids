@@ -3,16 +3,23 @@ import type { PostgrestError } from '@supabase/supabase-js';
 import { DatabaseError, t } from '@noe-arcakids/shared';
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
 
+import { getRandomValues } from 'expo-crypto';
+
 const CODE_LIFESPAN_MS = 10 * 60 * 1000;
 const MAX_CODE_ATTEMPTS = 5;
+const CODE_LENGTH = 8;
+const CODE_CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I
 
 export interface PairingCode {
   code: string;
   expiresAt: string;
 }
 
+/** Cryptographically secure 8-char alphanumeric pairing code. */
 export function generatePairingCode(): string {
-  return String(Math.floor(100000 + Math.random() * 900000));
+  const bytes = new Uint8Array(CODE_LENGTH);
+  getRandomValues(bytes);
+  return Array.from(bytes, (b) => CODE_CHARSET[b % CODE_CHARSET.length]).join('');
 }
 
 function isUniqueViolation(error: PostgrestError | null): boolean {

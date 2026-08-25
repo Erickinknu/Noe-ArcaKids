@@ -4,11 +4,10 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { storage } from '@noe-arcakids/storage';
-import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
+import { colors, shadows, spacing, typography } from '@noe-arcakids/shared';
 
 const NOTIFICATION_KEYS = {
   pushEnabled: 'noe/notifications/pushEnabled',
@@ -59,13 +58,13 @@ export default function NotificationsScreen() {
     setSaving(true);
     try {
       setSaving(false);
-    } catch (cause) {
+    } catch {
       setSaving(false);
     }
   }
 
   // Track if data has been loaded at least once
-  const [hasLoaded, setHasLoaded] = useState(false);
+  const [hasLoaded] = useState(false);
 
   return (
     <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">

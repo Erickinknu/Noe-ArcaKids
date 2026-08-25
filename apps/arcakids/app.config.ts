@@ -14,6 +14,7 @@ const config: ExpoConfig = {
   },
   android: {
     package: 'com.arcakids.child',
+    allowBackup: false,
     adaptiveIcon: {
       backgroundColor: '#208AEF',
       foregroundImage: './assets/images/arca-kids.png',

@@ -20,6 +20,7 @@
     "node": ">=20"
   },
   "devDependencies": {
+    "@eslint-community/eslint-utils": "^4.10.1",
     "@types/node": "^26.2.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"

@@ -11,24 +11,6 @@ import type { DailyUsage } from '@/features/activity/services/activity-service';
 const CHART_HEIGHT = 120;
 const BAR_WIDTH = 28;
 
-function getBarColor(minutes: number): string {
-  if (minutes < 60) return colors.success;
-  if (minutes <= 120) return colors.warning;
-  return colors.danger;
-}
-
-function formatDate(dateStr: string): string {
-  const now = new Date();
-  const date = new Date(dateStr);
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const diffDays = Math.round((today.getTime() - target.getTime()) / 86400000);
-  if (diffDays === 0) return 'Hoy';
-  if (diffDays === 1) return 'Ayer';
-  if (diffDays < 7) return `${diffDays}d`;
-  return date.toLocaleDateString('es', { day: 'numeric', month: 'short' });
-}
-
 interface DailyBar {
   date: string;
   label: string;

@@ -1,16 +1,13 @@
-import { useCallback, useState, useEffect } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, Switch, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { ErrorState } from '@/components/ui/error-state';
-import { parentalService } from '@/features/parental/services/parental-service';
-import { errorMessage } from '@/hooks/use-async-data';
 import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
 
 interface ChildRulesData {
@@ -56,71 +53,8 @@ export default function RulesForm({
   setBedtimeEnd,
 }: RulesFormProps) {
   const { t: tr } = useTranslation();
-  const [saving, setSaving] = useState(false);
-  const [addingApp, setAddingApp] = useState(false);
-  const [packageName, setPackageName] = useState('');
-  const [appLabel, setAppLabel] = useState('');
-  const [actionErrorLocal, setActionErrorLocal] = useState<string | null>(null);
-  const [savedFlashLocal, setSavedFlashLocal] = useState(false);
+  const [savedFlashLocal] = useState(false);
   // Use childData directly from props - component re-renders when props change
-
-  async function handleSave() {
-    if (!familyId || !selectedChild) {
-      return;
-    }
-    setSaving(true);
-    setActionErrorLocal(null);
-    setSavedFlashLocal(false);
-    try {
-      const trimmedLimit = dailyLimitText.trim();
-      const rules = await parentalService.saveRules(familyId, selectedChild.id, {
-        dailyLimitMinutes: trimmedLimit === '' ? null : Number(trimmedLimit),
-        bedtimeEnabled,
-        bedtimeStart: bedtimeEnabled ? bedtimeStart.trim() : null,
-        bedtimeEnd: bedtimeEnabled ? bedtimeEnd.trim() : null,
-      });
-      setSavedFlashLocal(true);
-      setSavedFlashLocal(true);
-    } catch (cause) {
-      setActionErrorLocal(errorMessage(cause));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleAddApp() {
-    if (!familyId || !selectedChild) {
-      return;
-    }
-    setAddingApp(true);
-    setActionErrorLocal(null);
-    try {
-      const app = await parentalService.addBlockedApp(
-        familyId,
-        selectedChild.id,
-        packageName,
-        appLabel
-      );
-      setPackageName('');
-      setAppLabel('');
-      setPackageName('');
-      setAppLabel('');
-    } catch (cause) {
-      setActionErrorLocal(errorMessage(cause));
-    } finally {
-      setAddingApp(false);
-    }
-  }
-
-  async function handleRemoveApp(id: string) {
-    setActionErrorLocal(null);
-    try {
-      await parentalService.removeBlockedApp(id);
-
-    } catch (cause) {
-      setActionErrorLocal(errorMessage(cause));
-    }
-  }
 
   if (loadingChild) {
     return (

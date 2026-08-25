@@ -14,6 +14,7 @@ const config: ExpoConfig = {
   },
   android: {
     package: 'com.noe.parent',
+    allowBackup: false,
     adaptiveIcon: {
       backgroundColor: '#E6F4FE',
       foregroundImage: './assets/images/noe-adaptive-foreground.png',

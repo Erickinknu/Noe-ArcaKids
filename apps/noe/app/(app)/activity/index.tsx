@@ -2,17 +2,15 @@ import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { Avatar } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { WeeklyChart } from '@/components/ui/weekly-chart';
-import { activityService } from '@/features/activity/services/activity-service';
-import { AlertItem, DailyUsage } from '@/features/activity/services/activity-service';
+import { activityService, AlertItem, DailyUsage } from '@/features/activity/services/activity-service';
 import { useAsyncData } from '@/hooks/use-async-data';
-import { colors, radius, spacing, typography, shadows } from '@noe-arcakids/shared';
+import { colors, spacing, typography, shadows } from '@noe-arcakids/shared';
 
 interface DailyBar {
   date: string;

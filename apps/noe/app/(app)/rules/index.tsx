@@ -3,29 +3,25 @@ import {
   Pressable,
   ScrollView,
   StyleSheet,
-  Switch,
   Text,
   View,
   RefreshControl,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
-import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { useAsyncData } from '@/hooks/use-async-data';
-import { errorMessage } from '@noe-arcakids/shared';
 import RulesForm from '@/components/ui/rules-form';
 import BlockedAppsSection from '@/components/ui/blocked-apps-section';
-import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
 import type { BlockedApp, ChildProfile, ParentalRules } from '@noe-arcakids/types';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
 import { parentalService } from '@/features/parental/services/parental-service';
+import { errorMessage, colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
 
 interface FamilyWithChildren {
   familyId: string;
@@ -42,12 +38,9 @@ export default function RulesScreen() {
   const [bedtimeEnabled, setBedtimeEnabled] = useState(false);
   const [bedtimeStart, setBedtimeStart] = useState('');
   const [bedtimeEnd, setBedtimeEnd] = useState('');
-  const [saving, setSaving] = useState(false);
+  const [, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [packageName, setPackageName] = useState('');
-  const [appLabel, setAppLabel] = useState('');
-  const [addingApp, setAddingApp] = useState(false);
 
   const fetchFamily = useCallback(async (): Promise<FamilyWithChildren> => {
     const { family } = await familyService.getMyFamily();
@@ -115,31 +108,6 @@ export default function RulesScreen() {
       setActionError(errorMessage(cause));
     } finally {
       setSaving(false);
-    }
-  }
-
-  async function handleAddApp() {
-    if (!selectedChild || !childData) {
-      return;
-    }
-    setAddingApp(true);
-    setActionError(null);
-    try {
-      const app = await parentalService.addBlockedApp(
-        childData.rules?.familyId ?? '',
-        selectedChild.id,
-        packageName,
-        appLabel
-      );
-      setChildData((current) =>
-        current ? { ...current, blockedApps: [...current.blockedApps, app] } : current
-      );
-      setPackageName('');
-      setAppLabel('');
-    } catch (cause) {
-      setActionError(errorMessage(cause));
-    } finally {
-      setAddingApp(false);
     }
   }
 

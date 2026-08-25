@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { getColors, colorThemes, AppColorTheme } from '@noe-arcakids/shared';
+import { AppColorTheme } from '@noe-arcakids/shared';
 
 interface ThemeToggleProps {
   size?: number;
@@ -30,8 +30,6 @@ export function ThemeToggle({ size = 28 }: ThemeToggleProps) {
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
-
-  const themeColor = getColors(theme);
 
   return (
     <TouchableOpacity style={styles.container} onPress={toggleTheme}>

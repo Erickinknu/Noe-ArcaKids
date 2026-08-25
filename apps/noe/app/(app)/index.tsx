@@ -1,11 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, Alert, RefreshControl } from 'react-native';
+import { useState, useCallback } from 'react';
+import { View, Text, ScrollView, Pressable, StyleSheet, RefreshControl } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { StatusDot } from '@/components/ui/status-dot';
-import { ProgressBar } from '@/components/ui/progress-bar';
 import ChildCard from '@/components/ui/child-card';
 import { StatCard } from '@/components/ui/stat-card';
 import { SectionHeader } from '@/components/ui/section-header';
@@ -13,19 +11,21 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import {
+  colors,
   errorMessage,
+  radius,
+  shadows,
+  spacing,
+  typography,
   useNetworkStatus,
 } from '@noe-arcakids/shared';
 import {
   dashboardService,
   formatDuration,
-  relativeTime,
 } from '@/features/dashboard/services/dashboard-service';
-import type { FamilySummary, ChildSummary } from '@/features/dashboard/types';
-import { parentalService } from '@/features/parental/services/parental-service';
+import type { FamilySummary } from '@/features/dashboard/types';
 import { familyService } from '@/features/family/services/family-service';
 import { ROUTES } from '@/constants';
-import { colors, radius, spacing, typography, shadows } from '@noe-arcakids/shared';
 
 export default function DashboardScreen() {
   const { t: tr } = useTranslation();

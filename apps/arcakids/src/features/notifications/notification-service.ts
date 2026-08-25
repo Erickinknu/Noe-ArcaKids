@@ -1,8 +1,4 @@
 import * as Notifications from 'expo-notifications';
-import { Platform } from 'react-native';
-import { locationService } from '@/features/location';
-import { identityService } from '@/features/identity/services/identity-service';
-import { parentalService } from '@/features/parental/services/parental-service';
 
 export enum NotificationType {
   GEOFENCE_ENTER = 'geofence_enter',
@@ -22,24 +18,10 @@ export interface NotificationContent {
 export class NotificationService {
   private readonly NOTIFICATION_ID_PREFIX = 'aracakids_';
 
-  constructor() {
-    // Listeners set up optionally.
-  }
-
-  /** Request notification permissions for Android or iOS. */
+  /** Check current notification permissions for Android or iOS. */
   async requestPermissions(): Promise<{ granted: boolean }> {
-    // @ts-ignore - expo-notifications API may vary by version
-    let getPermissions;
-    if (Platform.OS === 'android') {
-      // @ts-ignore
-      getPermissions = Notifications.getNotificationPermissionsAsync;
-    } else {
-      // @ts-ignore
-      getPermissions = Notifications.getNotificationPermissionsAsync;
-    }
-    const { status } = await getPermissions();
-    const granted = status === 'granted';
-    return { granted };
+    const { status } = await Notifications.getPermissionsAsync();
+    return { granted: status === 'granted' };
   }
 
   /** Get the Expo push token for this device. */

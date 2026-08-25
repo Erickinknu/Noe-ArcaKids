@@ -18,8 +18,17 @@ export function usePermission(permission: AdvancedPermission): UsePermissionRetu
 
   // Check if already granted on mount
   useEffect(() => {
-    void request();
-  }, [request]);
+    let active = true;
+    void permissionHandler
+      .requestPermission(permission)
+      .then((result) => {
+        if (active) setStatus(result.status);
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, [permission]);
 
   return {
     status,

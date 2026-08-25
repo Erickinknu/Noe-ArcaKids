@@ -1,7 +1,6 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import type { ReactNode } from 'react';
 import { colors, spacing, radius, typography } from '@noe-arcakids/shared';
-import { Pressable } from 'react-native';
 
 interface EmptyStateProps {
   icon?: ReactNode | string;

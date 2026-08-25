@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
 
 import { locationModule } from '@/features/location/native/location-module';
@@ -22,13 +22,8 @@ export interface UseLocationReturn {
 
 export function useLocation(): UseLocationReturn {
   const [state, setState] = useState<LocationState>(locationService.getState());
-  const [isTracking, setIsTracking] = useState(false);
-  const lastCheckRef = useRef<number>(Date.now());
+  const [isTracking, setIsTracking] = useState(true);
   const [geofenceTriggeredAt, setGeofenceTriggeredAt] = useState<Record<string, number>>({});
-
-  const refresh = useCallback(() => {
-    void checkLocationAndGeofences();
-  }, []);
 
   const checkLocationAndGeofences = useCallback(async () => {
     const reading = await locationModule.getCurrentLocation();
@@ -93,14 +88,17 @@ export function useLocation(): UseLocationReturn {
     }
   }, [geofenceTriggeredAt, state.geofences]);
 
+  const refresh = useCallback(() => {
+    void checkLocationAndGeofences();
+  }, [checkLocationAndGeofences]);
+
   useEffect(() => {
     // Initialize location service
     void locationService.initialize();
 
-    // Start tracking when hook mounts
+    // Tracking starts on mount; cleanup stops it on unmount.
     // @ts-ignore - startTracking exists on instance
     locationService.startTracking();
-    setIsTracking(true);
 
     // Cleanup on unmount
     return () => {

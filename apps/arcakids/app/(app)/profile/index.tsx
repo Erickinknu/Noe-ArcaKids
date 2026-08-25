@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -32,7 +32,9 @@ export default function ProfileScreen() {
     const info = await identityService.getChildInfo();
     return info ?? { name: '', avatar: AVATARS[0] };
   }, []);
-  const { error, loading, reload } = useAsyncData(fetchInfo, handleLoaded);
+  const { progress } = useAchievements();
+  const { error, loading, reload, data } = useAsyncData(fetchInfo, handleLoaded);
+  const childId = data?.childId;
 
   async function handleSave() {
     setSaving(true);
@@ -66,15 +68,6 @@ export default function ProfileScreen() {
       </View>
     );
   }
-
-  const { progress } = useAchievements();
-  const childInfo = useAsyncData(() => identityService.getChildInfo()).data;
-
-  useEffect(() => {
-    // Achievement progress loaded silently
-  }, [progress, childInfo?.childId]);
-
-  const childId = childInfo?.childId;
 
   return (
     <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">

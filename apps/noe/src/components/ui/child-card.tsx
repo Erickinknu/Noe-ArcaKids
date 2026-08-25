@@ -1,70 +1,16 @@
-import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, RefreshControl, Alert, Pressable } from 'react-native';
+import { StyleSheet, Text, View, Alert, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { Avatar } from '@/components/ui/avatar';
-import { Card } from '@/components/ui/card';
-import { EmptyState } from '@/components/ui/empty-state';
-import { ErrorState } from '@/components/ui/error-state';
-import { LoadingState } from '@/components/ui/loading-state';
-import { SectionHeader } from '@/components/ui/section-header';
-import {
-  activityService,
-  type AlertItem,
-  type DailyUsage,
-} from '@/features/activity/services/activity-service';
-import { formatDuration } from '@/features/dashboard/services/dashboard-service';
-import { useAsyncData } from '@/hooks/use-async-data';
+import { formatDuration, relativeTime } from '@/features/dashboard/services/dashboard-service';
 import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { StatusDot } from '@/components/ui/status-dot';
-import { relativeTime } from '@/features/dashboard/services/dashboard-service';
-import type { FamilySummary, ChildSummary } from '@/features/dashboard/types';
+import type { ChildSummary } from '@/features/dashboard/types';
 import { parentalService } from '@/features/parental/services/parental-service';
 import { ROUTES } from '@/constants';
-
-const CHART_HEIGHT = 120;
-const BAR_WIDTH = 28;
-
-function getBarColor(minutes: number): string {
-  if (minutes < 60) return colors.success;
-  if (minutes <= 120) return colors.warning;
-  return colors.danger;
-}
-
-function formatDate(dateStr: string): string {
-  const now = new Date();
-  const date = new Date(dateStr);
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const target = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-  const diffDays = Math.round((today.getTime() - target.getTime()) / 86400000);
-  if (diffDays === 0) return 'Hoy';
-  if (diffDays === 1) return 'Ayer';
-  if (diffDays < 7) return `${diffDays}d`;
-  return date.toLocaleDateString('es', { day: 'numeric', month: 'short' });
-}
-
-function getAlertIcon(type: AlertItem['type']): string {
-  if (type === 'block') return '🚫';
-  if (type === 'time') return '⏰';
-  return '📍';
-}
-
-interface ChildUsageSummary {
-  childId: string;
-  childName: string;
-  totalMinutes: number;
-  dailyData: DailyUsage[];
-}
-
-interface DailyBar {
-  date: string;
-  label: string;
-  minutes: number;
-  color: string;
-}
 
 export default function ChildCard({
   child,

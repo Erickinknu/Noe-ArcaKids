@@ -15,7 +15,6 @@ interface AchievementBarProps {
 
 export function AchievementBar({ achievement, onCheckProgress }: AchievementBarProps) {
   const { t: tr } = useTranslation();
-  const percentage = Math.round((achievement.currentValue / achievement.targetValue) * 100);
 
   return (
     <View style={styles.container}>

@@ -6,7 +6,6 @@ import { Card } from '@/components/ui/card';
 import { useAsyncData } from '@/hooks/use-async-data';
 import { useParentalStatus } from '@/hooks/use-parental-status';
 import { identityService } from '@/features/identity/services/identity-service';
-import { parentalService } from '@/features/parental/services/parental-service';
 import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
 
 const APP_COLORS = [

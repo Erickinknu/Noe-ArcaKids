@@ -12,7 +12,7 @@ import { authService } from '@/features/auth/services/auth-service';
 import { familyService } from '@/features/family/services/family-service';
 import type { MyFamily } from '@/features/family/repositories/family-repository';
 import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
-import { colors, shadows, spacing, typography } from '@noe-arcakids/shared';
+import { colors, spacing, typography } from '@noe-arcakids/shared';
 
 export default function ProfileScreen() {
   const { t: tr } = useTranslation();

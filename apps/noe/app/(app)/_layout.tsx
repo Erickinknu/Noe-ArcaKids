@@ -15,6 +15,12 @@ export default function AppLayout() {
     return <Redirect href={ROUTES.login} />;
   }
 
+  // During init the native splash is visible; return null to avoid
+  // flashing protected Tabs before auth resolves.
+  if (status === 'initializing') {
+    return null;
+  }
+
   return (
     <Tabs
       screenOptions={{

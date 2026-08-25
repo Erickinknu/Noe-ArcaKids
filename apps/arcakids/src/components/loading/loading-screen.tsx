@@ -1,12 +1,9 @@
 import React from 'react';
 import { View, ActivityIndicator, StyleSheet, Image, Dimensions } from 'react-native';
-import { useTranslation } from 'react-i18next';
 
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
 export default function LoadingScreen() {
-  const { t: tr } = useTranslation();
-
   return (
     <View style={styles.container}>
       <View style={styles.logoContainer}>
