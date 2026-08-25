@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { identityService } from '@/features/identity/services/identity-service';
 import type { ChildInfo } from '@/features/identity/repositories/identity-repository';
 import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
@@ -77,7 +78,10 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
-      <Text style={styles.title}>{tr('arcakids.profile.title')}</Text>
+      <View style={styles.headerBar}>
+        <Text style={styles.title}>{tr('arcakids.profile.title')}</Text>
+        <ThemeToggle />
+      </View>
 
       {/* Achievement Progress Section */}
       {childId && progress && (
@@ -142,6 +146,12 @@ const styles = StyleSheet.create({
     paddingTop: 80,
     backgroundColor: colors.background,
     gap: spacing.md,
+  },
+  headerBar: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
   },
   title: {
     fontSize: typography.fontSizes.heading,

@@ -3,9 +3,9 @@ import type { ExpoConfig } from 'expo/config';
 const config: ExpoConfig = {
   name: 'NOE',
   slug: 'noe',
-  version: '0.1.0',
+  version: '0.1.0.4',
   orientation: 'portrait',
-  icon: './assets/images/icon.png',
+  icon: './assets/images/noe-icon.png',
   scheme: 'noe',
   userInterfaceStyle: 'automatic',
   ios: {
@@ -16,7 +16,7 @@ const config: ExpoConfig = {
     package: 'com.noe.parent',
     adaptiveIcon: {
       backgroundColor: '#E6F4FE',
-      foregroundImage: './assets/images/android-icon-foreground.png',
+      foregroundImage: './assets/images/noe-adaptive-foreground.png',
       backgroundImage: './assets/images/android-icon-background.png',
       monochromeImage: './assets/images/android-icon-monochrome.png',
     },
@@ -27,9 +27,9 @@ const config: ExpoConfig = {
     [
       'expo-splash-screen',
       {
-        backgroundColor: '#208AEF',
-        image: './assets/images/splash-icon.png',
-        imageWidth: 76,
+        backgroundColor: '#E6F4FE',
+        image: './assets/images/noe-splash.png',
+        imageWidth: 160,
       },
     ],
   ],

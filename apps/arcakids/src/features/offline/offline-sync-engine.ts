@@ -124,14 +124,12 @@ export class OfflineSyncEngine {
           try {
             await client
               .from('offline_actions')
-              .update(
-                {
-                  status: 'failed',
-                  attempts: action.attempts + 1,
-                  last_error: e instanceof Error ? e.message : String(e),
-                },
-                { id: action.id }
-              );
+              .update({
+                status: 'failed',
+                attempts: action.attempts + 1,
+                last_error: e instanceof Error ? e.message : String(e),
+              })
+              .eq('id', action.id);
           } catch (e2) {
             console.error('Failed to mark action as failed:', e2);
           }

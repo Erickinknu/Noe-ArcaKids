@@ -1,4 +1,4 @@
-import { Platform, type ViewStyle, TypeColorScheme } from 'react-native';
+import { Platform, type ViewStyle } from 'react-native';
 
 export type AppColorTheme = 'light' | 'dark' | 'system';
 
