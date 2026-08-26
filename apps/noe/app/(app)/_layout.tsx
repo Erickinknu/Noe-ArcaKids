@@ -89,6 +89,7 @@ export default function AppLayout() {
       <Tabs.Screen name="linking" options={{ href: null }} />
       <Tabs.Screen name="settings" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
+      <Tabs.Screen name="children/[childId]" options={{ href: null }} />
     </Tabs>
   );
 }
