@@ -7,9 +7,7 @@ import {
   View,
   RefreshControl,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { MaterialIcons } from '@expo/vector-icons';
 
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -33,7 +31,6 @@ interface FamilyWithChildren {
 
 export default function RulesScreen() {
   const { t: tr } = useTranslation();
-  const router = useRouter();
   const screenPadding = useScreenPadding();
   const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
   const [childData, setChildData] = useState<{ rules: ParentalRules | null; blockedApps: BlockedApp[] } | null>(null);
@@ -165,29 +162,6 @@ export default function RulesScreen() {
     >
       <Text style={styles.title}>{tr('noe.rules.title')}</Text>
       <Text style={styles.subtitle}>{tr('noe.rules.subtitle')}</Text>
-
-      {/* ── Control submenu ── */}
-      <View style={styles.controlMenu}>
-        {[
-          { icon: 'schedule' as const, title: 'Horarios de uso', subtitle: 'Define cuándo puede usar el dispositivo', path: '/rules/horarios' },
-          { icon: 'school' as const, title: 'Modo estudio', subtitle: 'Bloquea apps durante clases', path: '/rules/modo-estudio' },
-          { icon: 'location-on' as const, title: 'Zonas seguras', subtitle: 'Alertas al salir de una zona', path: '/rules/geofencing' },
-          { icon: 'language' as const, title: 'Filtrado web', subtitle: 'Bloquear sitios inapropiados', path: '/rules/filtrado-web' },
-        ].map((item, i) => (
-          <Pressable
-            key={item.title}
-            style={({ pressed }) => [styles.controlItem, pressed && styles.controlItemPressed]}
-            onPress={() => router.push(item.path as any)}
-          >
-            <MaterialIcons name={item.icon} size={22} color={colors.primary} />
-            <View style={styles.controlTextGroup}>
-              <Text style={styles.controlTitle}>{item.title}</Text>
-              <Text style={styles.controlSubtitle}>{item.subtitle}</Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
-          </Pressable>
-        ))}
-      </View>
 
       <Card style={styles.card}>
         <SectionHeader title={tr('noe.rules.chooseChild')} />
