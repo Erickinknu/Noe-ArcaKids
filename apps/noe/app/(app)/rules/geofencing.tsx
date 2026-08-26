@@ -35,7 +35,7 @@ export default function GeofencingScreen() {
 
   return (
     <ScrollView contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]}>
-      <Pressable style={styles.headerRow} onPress={() => router.back()}>
+      <Pressable style={styles.headerRow} onPress={() => router.replace('/(app)/rules')}>
         <MaterialIcons name="arrow-back" size={24} color={colors.text} />
         <Text style={styles.headerTitle}>Zonas seguras</Text>
       </Pressable>

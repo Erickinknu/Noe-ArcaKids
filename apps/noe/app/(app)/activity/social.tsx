@@ -21,7 +21,7 @@ export default function SocialScreen() {
 
   return (
     <ScrollView contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]}>
-      <Pressable style={styles.headerRow} onPress={() => router.back()}>
+      <Pressable style={styles.headerRow} onPress={() => router.replace('/(app)/activity')}>
         <MaterialIcons name="arrow-back" size={24} color={colors.text} />
         <Text style={styles.headerTitle}>Redes sociales</Text>
       </Pressable>

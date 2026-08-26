@@ -39,7 +39,7 @@ export default function SuscripcionScreen() {
     <ScrollView
       contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]}
     >
-      <Pressable style={styles.headerRow} onPress={() => router.back()}>
+      <Pressable style={styles.headerRow} onPress={() => router.replace('/(app)/profile')}>
         <MaterialIcons name="arrow-back" size={24} color={colors.text} />
         <Text style={styles.headerTitle}>Suscripción</Text>
       </Pressable>

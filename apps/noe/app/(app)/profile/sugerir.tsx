@@ -27,7 +27,7 @@ export default function SugerirScreen() {
     setSent(true);
     setTimeout(() => {
       Alert.alert('Gracias', 'Tu idea ha sido enviada. ¡Nos encanta escuchar tus sugerencias!');
-      router.back();
+      router.replace('/(app)/profile');
     }, 500);
   }
 
@@ -36,7 +36,7 @@ export default function SugerirScreen() {
       contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]}
       keyboardShouldPersistTaps="handled"
     >
-      <Pressable style={styles.headerRow} onPress={() => router.back()}>
+      <Pressable style={styles.headerRow} onPress={() => router.replace('/(app)/profile')}>
         <MaterialIcons name="arrow-back" size={24} color={colors.text} />
         <Text style={styles.headerTitle}>Sugiere una idea</Text>
       </Pressable>

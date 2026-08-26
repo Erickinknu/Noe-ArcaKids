@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { MaterialIcons } from '@expo/vector-icons';
 
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -115,6 +116,11 @@ export default function ChildDetailScreen() {
 
   return (
     <ScrollView contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]} keyboardShouldPersistTaps="handled">
+      <Pressable style={styles.headerRow} onPress={() => router.replace('/(app)/children')}>
+        <MaterialIcons name="arrow-back" size={24} color={colors.text} />
+        <Text style={styles.headerTitle}>{tr('noe.children.editTitle')}</Text>
+      </Pressable>
+
       <SectionHeader title={tr('noe.children.editTitle')} />
 
       <Card style={styles.card}>
@@ -163,6 +169,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
     gap: spacing.md,
     paddingTop: spacing.xxl,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  headerTitle: {
+    fontSize: typography.fontSizes.heading,
+    fontWeight: typography.fontWeights.bold,
+    color: colors.text,
   },
   card: {
     ...shadows.sm,
