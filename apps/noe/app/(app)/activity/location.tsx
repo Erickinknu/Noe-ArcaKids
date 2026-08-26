@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
+import { OSMMap, type MapMarker } from '@/components/ui/osm-map';
 
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { deviceControlService, type ChildLocation } from '@/features/device-control/services/device-control-service';
@@ -90,30 +90,19 @@ export default function LocationScreen() {
       ) : (
         <>
           {/* Map */}
-          <MapView
+          <OSMMap
             style={styles.map}
-            provider={PROVIDER_GOOGLE}
             region={region}
-            showsUserLocation={false}
-            showsMyLocationButton={false}
-          >
-            {locations.map((loc) => (
-              <Marker
-                key={loc.childId}
-                coordinate={{
-                  latitude: loc.latitude,
-                  longitude: loc.longitude,
-                }}
-                title={loc.displayName}
-                description={
-                  loc.isOnline
-                    ? 'En línea'
-                    : `Última ubicación: ${loc.locationUpdatedAt ? new Date(loc.locationUpdatedAt).toLocaleTimeString() : 'Desconocido'}`
-                }
-                pinColor={loc.isOnline ? colors.success : colors.textMuted}
-              />
-            ))}
-          </MapView>
+            markers={locations.map((loc) => ({
+              id: loc.childId,
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+              title: loc.displayName,
+              description: loc.isOnline ? 'En línea' : `Última ubicación: ${loc.locationUpdatedAt ? new Date(loc.locationUpdatedAt).toLocaleTimeString() : 'Desconocido'}`,
+              color: loc.isOnline ? colors.success : colors.textMuted,
+            }))}
+            onMarkerPress={(id) => setSelectedChild(id)}
+          />
 
           {/* Child selector chips */}
           <View style={styles.chipBar}>
