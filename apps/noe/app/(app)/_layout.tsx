@@ -1,5 +1,5 @@
 import { Redirect, Tabs } from 'expo-router';
-import { StyleSheet, type ColorValue } from 'react-native';
+import { StyleSheet, View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -123,6 +123,7 @@ export default function AppLayout() {
       <Tabs.Screen name="activity/social" options={{ href: null }} />
       <Tabs.Screen name="activity/media" options={{ href: null }} />
       <Tabs.Screen name="activity/conversations" options={{ href: null }} />
+      <Tabs.Screen name="activity/location" options={{ href: null }} />
     </Tabs>
     </ThemeProvider>
   );

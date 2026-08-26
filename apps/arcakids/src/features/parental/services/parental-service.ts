@@ -111,4 +111,26 @@ export const parentalService = {
       parentalService.buildEnforcementState(rules, snapshot)
     );
   },
+
+  async checkDeviceState(
+    childId: string
+  ): Promise<{
+    isBlocked: boolean;
+    alertActive: boolean;
+    alertStartedAt: string | null;
+  } | null> {
+    return parentalRepository.getDeviceState(childId);
+  },
+
+  async dismissAlert(childId: string): Promise<void> {
+    return parentalRepository.dismissAlert(childId);
+  },
+
+  async reportLocation(
+    childId: string,
+    latitude: number,
+    longitude: number
+  ): Promise<void> {
+    return parentalRepository.reportLocation(childId, latitude, longitude);
+  },
 };

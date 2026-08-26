@@ -7,6 +7,8 @@ import {
   StyleSheet,
   RefreshControl,
   Alert,
+  Modal,
+  FlatList,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
@@ -39,6 +41,7 @@ import type { ChildSummary, FamilySummary } from '@/features/dashboard/types';
 import { activityService, type AlertItem } from '@/features/activity/services/activity-service';
 import { familyService } from '@/features/family/services/family-service';
 import { parentalService } from '@/features/parental/services/parental-service';
+import { deviceControlService } from '@/features/device-control/services/device-control-service';
 import { ROUTES } from '@/constants';
 
 export default function DashboardScreen() {
@@ -53,6 +56,8 @@ export default function DashboardScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [familyId, setFamilyId] = useState<string | null>(null);
+  const [childSelectVisible, setChildSelectVisible] = useState(false);
+  const [childSelectAction, setChildSelectAction] = useState<'block' | 'alert' | null>(null);
 
   const fetchData = useCallback(async (isRefresh = false) => {
     if (isRefresh) setRefreshing(true);
@@ -103,6 +108,29 @@ export default function DashboardScreen() {
       );
     },
     [familyId, fetchData, tr],
+  );
+
+  const handleChildSelect = useCallback(
+    async (childId: string) => {
+      setChildSelectVisible(false);
+      if (childSelectAction === 'block') {
+        try {
+          await deviceControlService.blockChild(childId);
+          Alert.alert('Dispositivo bloqueado', 'El dispositivo del hijo ha sido bloqueado exitosamente.');
+        } catch {
+          Alert.alert('Error', 'No se pudo bloquear el dispositivo. Intenta de nuevo.');
+        }
+      } else if (childSelectAction === 'alert') {
+        try {
+          await deviceControlService.triggerAlert(childId);
+          Alert.alert('Alerta sonora activada', 'Sonará por 5 minutos.');
+        } catch {
+          Alert.alert('Error', 'No se pudo activar la alerta. Intenta de nuevo.');
+        }
+      }
+      setChildSelectAction(null);
+    },
+    [childSelectAction],
   );
 
   const handleAddTime = useCallback(
@@ -222,12 +250,9 @@ export default function DashboardScreen() {
       <Text style={styles.sectionTitle}>Acciones rápidas</Text>
       <View style={styles.quickActionsRow}>
         {[
-          { icon: 'lock' as const, label: 'Bloquear\ntodos', color: '#DC2626', onPress: () => Alert.alert('Bloquear todos', '¿Bloquear el dispositivo de todos los hijos?', [
-            { text: 'Cancelar', style: 'cancel' },
-            { text: 'Bloquear', style: 'destructive', onPress: () => {} },
-          ])},
-          { icon: 'notifications-active' as const, label: 'Enviar\nalerta', color: '#D97706', onPress: () => Alert.alert('Enviar alerta', 'Se enviará una notificación a todos los dispositivos hijos.') },
-          { icon: 'location-search' as const, label: 'Ubicar\nhijos', color: '#059669', onPress: () => router.push('/rules/geofencing' as any) },
+          { icon: 'lock' as const, label: 'Bloquear\ntodos', color: '#DC2626', onPress: () => { setChildSelectAction('block'); setChildSelectVisible(true); } },
+          { icon: 'notifications-active' as const, label: 'Enviar\nalerta', color: '#D97706', onPress: () => { setChildSelectAction('alert'); setChildSelectVisible(true); } },
+          { icon: 'location-searching' as const, label: 'Ubicar\nhijos', color: '#059669', onPress: () => router.push('/activity/location' as any) },
           { icon: 'school' as const, label: 'Modo\nestudio', color: '#6366F1', onPress: () => router.push('/rules/modo-estudio' as any) },
         ].map((action) => (
           <Pressable
@@ -337,6 +362,14 @@ export default function DashboardScreen() {
         </>
       )}
 
+      {/* ── Child select modal ── */}
+      <ChildSelectModal
+        visible={childSelectVisible}
+        children={data.children}
+        onClose={() => { setChildSelectVisible(false); setChildSelectAction(null); }}
+        onSelect={handleChildSelect}
+        actionType={childSelectAction}
+      />
 
     </ScrollView>
   );
@@ -366,6 +399,51 @@ function SummaryCard({
       <Text style={styles.summaryValue}>{value}</Text>
       <Text style={styles.summaryLabel}>{label}</Text>
     </View>
+  );
+}
+
+/** Modal to select a child for block/alert actions. */
+function ChildSelectModal({
+  visible,
+  children,
+  onClose,
+  onSelect,
+  actionType,
+}: {
+  visible: boolean;
+  children: ChildSummary[];
+  onClose: () => void;
+  onSelect: (childId: string) => void;
+  actionType: 'block' | 'alert' | null;
+}) {
+  const title = actionType === 'block' ? 'Seleccionar hijo a bloquear' : 'Seleccionar hijo para alerta';
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      <Pressable style={styles.modalOverlay} onPress={onClose}>
+        <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+          <Text style={styles.modalTitle}>{title}</Text>
+          <FlatList
+            data={children}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <Pressable
+                style={styles.modalChildRow}
+                onPress={() => onSelect(item.id)}
+              >
+                <Avatar name={item.name} emoji={item.avatarUrl ?? undefined} size={40} />
+                <Text style={styles.modalChildName}>{item.name}</Text>
+                <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
+              </Pressable>
+            )}
+            ItemSeparatorComponent={() => <View style={styles.modalSeparator} />}
+          />
+          <Pressable style={styles.modalCancelButton} onPress={onClose}>
+            <Text style={styles.modalCancelText}>Cancelar</Text>
+          </Pressable>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -788,5 +866,56 @@ const styles = StyleSheet.create({
     width: 1,
     height: 36,
     backgroundColor: colors.border,
+  },
+
+  /* ── Child select modal ── */
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: colors.overlay,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: colors.background,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    width: '100%',
+    maxWidth: 400,
+    maxHeight: '70%',
+  },
+  modalTitle: {
+    fontSize: typography.fontSizes.subtitle,
+    fontWeight: typography.fontWeights.semibold,
+    color: colors.text,
+    marginBottom: spacing.md,
+    textAlign: 'center',
+  },
+  modalChildRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  modalChildName: {
+    flex: 1,
+    fontSize: typography.fontSizes.body,
+    color: colors.text,
+  },
+  modalSeparator: {
+    height: 1,
+    backgroundColor: colors.border,
+  },
+  modalCancelButton: {
+    marginTop: spacing.md,
+    paddingVertical: spacing.sm,
+    alignItems: 'center',
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+  },
+  modalCancelText: {
+    fontSize: typography.fontSizes.body,
+    color: colors.textMuted,
+    fontWeight: typography.fontWeights.medium,
   },
 });

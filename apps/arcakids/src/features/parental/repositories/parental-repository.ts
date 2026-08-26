@@ -61,4 +61,47 @@ export const parentalRepository = {
       throw new DatabaseError(error.message);
     }
   },
+
+  async getDeviceState(
+    childId: string
+  ): Promise<{
+    isBlocked: boolean;
+    alertActive: boolean;
+    alertStartedAt: string | null;
+  } | null> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client.rpc('get_device_state', {
+      p_child_id: childId,
+    });
+    if (error) throw new DatabaseError(error.message);
+    const row = (data as any[])?.[0];
+    if (!row) return null;
+    return {
+      isBlocked: row.is_blocked,
+      alertActive: row.alert_active,
+      alertStartedAt: row.alert_started_at,
+    };
+  },
+
+  async dismissAlert(childId: string): Promise<void> {
+    const client = requireSupabaseClient();
+    const { error } = await client.rpc('dismiss_device_alert', {
+      p_child_id: childId,
+    });
+    if (error) throw new DatabaseError(error.message);
+  },
+
+  async reportLocation(
+    childId: string,
+    latitude: number,
+    longitude: number
+  ): Promise<void> {
+    const client = requireSupabaseClient();
+    const { error } = await client.rpc('update_device_location', {
+      p_child_id: childId,
+      p_latitude: latitude,
+      p_longitude: longitude,
+    });
+    if (error) throw new DatabaseError(error.message);
+  },
 };

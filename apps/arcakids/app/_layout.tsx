@@ -1,16 +1,20 @@
 import { useEffect, useState } from 'react';
 import { StyleSheet, View, Image } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 
 import { initI18n } from '@/i18n';
 import { networkService } from '@/services/network-service';
+import { useDevicePoller } from '@/hooks/use-device-poller';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
 export default function RootLayout() {
   const [i18nReady, setI18nReady] = useState(false);
+  const router = useRouter();
+  const segments = useSegments();
+  const { isBlocked } = useDevicePoller();
 
   useEffect(() => {
     let mounted = true;
@@ -33,6 +37,17 @@ export default function RootLayout() {
       SplashScreen.hideAsync().catch(() => {});
     }
   }, [i18nReady]);
+
+  // Redirect to blocked screen when device is blocked
+  useEffect(() => {
+    if (!i18nReady) return;
+    const currentRoute = segments.join('/');
+    if (isBlocked && currentRoute !== 'blocked') {
+      router.replace('/blocked');
+    } else if (!isBlocked && currentRoute === 'blocked') {
+      router.replace('/');
+    }
+  }, [isBlocked, i18nReady, segments, router]);
 
   return (
     <>

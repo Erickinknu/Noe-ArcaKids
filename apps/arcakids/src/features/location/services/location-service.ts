@@ -1,6 +1,7 @@
 import { locationModule } from '@/features/location/native/location-module';
 import { identityService } from '@/features/identity/services/identity-service';
 import { notificationService } from '@/features/notifications';
+import { parentalService } from '@/features/parental/services/parental-service';
 
 export interface LocationUpdate {
   id: string;
@@ -186,8 +187,15 @@ export class LocationService {
   }
 
   private async syncLocationUpdate(update: LocationUpdate) {
-    // TODO: Sync to Supabase with idempotent upsert
-    // await supabase.from('location_updates').upsert(update);
+    try {
+      await parentalService.reportLocation(
+        update.childId,
+        update.latitude,
+        update.longitude
+      );
+    } catch (e) {
+      console.error('Failed to sync location:', e);
+    }
   }
 
   getState(): LocationState {
