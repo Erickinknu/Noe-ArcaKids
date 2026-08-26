@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '@noe-arcakids/shared';
 
+import { ThemeProvider } from '@/providers/theme-provider';
 import { useAuthStore } from '@/stores/auth-store';
 import { ROUTES } from '@/constants';
 
@@ -24,10 +25,11 @@ export default function AppLayout() {
   }
 
   return (
-    <Tabs
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary,
+    <ThemeProvider>
+      <Tabs
+        screenOptions={{
+          headerShown: false,
+          tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
         tabBarStyle: {
           backgroundColor: colors.background,
@@ -91,6 +93,7 @@ export default function AppLayout() {
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="children/[childId]" options={{ href: null }} />
     </Tabs>
+    </ThemeProvider>
   );
 }
 

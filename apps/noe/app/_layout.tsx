@@ -4,14 +4,13 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 
-import { ThemeProvider } from '@/providers/theme-provider';
 import { initI18n } from '@/i18n';
 import { networkService } from '@/services/network-service';
 import { useAuthStore } from '@/stores/auth-store';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-function RootLayoutInner() {
+export default function RootLayout() {
   const initialize = useAuthStore((state) => state.initialize);
   const [ready, setReady] = useState(false);
 
@@ -54,14 +53,6 @@ function RootLayoutInner() {
       <Stack screenOptions={{ headerShown: false }} />
       <StatusBar style="auto" />
     </>
-  );
-}
-
-export default function RootLayout() {
-  return (
-    <ThemeProvider>
-      <RootLayoutInner />
-    </ThemeProvider>
   );
 }
 
