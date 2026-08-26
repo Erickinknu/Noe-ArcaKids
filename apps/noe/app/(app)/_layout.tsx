@@ -109,6 +109,13 @@ export default function AppLayout() {
       <Tabs.Screen name="profile/privacidad" options={{ href: null }} />
       <Tabs.Screen name="profile/terminos" options={{ href: null }} />
       <Tabs.Screen name="profile/suscripcion" options={{ href: null }} />
+      {/* Activity sub-screens */}
+      <Tabs.Screen name="activity/web" options={{ href: null }} />
+      <Tabs.Screen name="activity/youtube" options={{ href: null }} />
+      <Tabs.Screen name="activity/apps" options={{ href: null }} />
+      <Tabs.Screen name="activity/social" options={{ href: null }} />
+      <Tabs.Screen name="activity/media" options={{ href: null }} />
+      <Tabs.Screen name="activity/conversations" options={{ href: null }} />
     </Tabs>
     </ThemeProvider>
   );

@@ -18,7 +18,7 @@ import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
-import { TimePicker, DurationPicker } from '@/components/ui/time-picker';
+import { TimeInput, DurationField } from '@/components/ui/time-picker';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { useAsyncData } from '@/hooks/use-async-data';
 import type { ChildProfile, ParentalRules } from '@noe-arcakids/types';
@@ -198,7 +198,7 @@ export default function RulesScreen() {
               <Text style={styles.ruleValue}>{formatDuration(dailyLimitMinutes)}</Text>
             </View>
           </View>
-          <DurationPicker totalMinutes={dailyLimitMinutes} onChange={setDailyLimitMinutes} />
+          <DurationField totalMinutes={dailyLimitMinutes} onChange={setDailyLimitMinutes} label="Límite diario" />
           <Pressable
             style={({ pressed }) => [styles.saveBtn, pressed && styles.saveBtnPressed]}
             onPress={() => saveRules({ dailyLimitMinutes })}
@@ -232,9 +232,9 @@ export default function RulesScreen() {
           {bedtimeOn && (
             <>
               <Text style={styles.timeSectionLabel}>Dormir</Text>
-              <TimePicker hours={bedtimeStartH} minutes={bedtimeStartM} onHoursChange={setBedtimeStartH} onMinutesChange={setBedtimeStartM} />
+              <TimeInput hours={bedtimeStartH} minutes={bedtimeStartM} onHoursChange={setBedtimeStartH} onMinutesChange={setBedtimeStartM} label="" />
               <Text style={styles.timeSectionLabel}>Despertar</Text>
-              <TimePicker hours={bedtimeEndH} minutes={bedtimeEndM} onHoursChange={setBedtimeEndH} onMinutesChange={setBedtimeEndM} />
+              <TimeInput hours={bedtimeEndH} minutes={bedtimeEndM} onHoursChange={setBedtimeEndH} onMinutesChange={setBedtimeEndM} label="" />
               <Pressable
                 style={({ pressed }) => [styles.saveBtn, pressed && styles.saveBtnPressed]}
                 onPress={() => saveRules({ bedtimeEnabled: true, bedtimeStart: formatTime(bedtimeStartH, bedtimeStartM), bedtimeEnd: formatTime(bedtimeEndH, bedtimeEndM) })}
@@ -276,18 +276,20 @@ export default function RulesScreen() {
               </View>
               {sch.enabled && (
                 <View style={styles.customTimes}>
-                  <TimePicker
+                  <TimeInput
                     hours={sch.startH}
                     minutes={sch.startM}
                     onHoursChange={(h) => updateCustomSchedule(sch.id, { startH: h })}
                     onMinutesChange={(m) => updateCustomSchedule(sch.id, { startM: m })}
+                    label="Inicio"
                   />
                   <MaterialIcons name="arrow-forward" size={18} color={colors.textMuted} />
-                  <TimePicker
+                  <TimeInput
                     hours={sch.endH}
                     minutes={sch.endM}
                     onHoursChange={(h) => updateCustomSchedule(sch.id, { endH: h })}
                     onMinutesChange={(m) => updateCustomSchedule(sch.id, { endM: m })}
+                    label="Fin"
                   />
                 </View>
               )}

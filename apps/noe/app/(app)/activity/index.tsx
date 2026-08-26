@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -56,6 +57,7 @@ function getAlertIcon(type: AlertItem['type']): string {
 
 export default function ActivityScreen() {
   const { t: tr } = useTranslation();
+  const router = useRouter();
   const screenPadding = useScreenPadding();
   const [refreshing, setRefreshing] = useState(false);
   const fetchUsage = useCallback(() => activityService.getAllChildrenUsage(7), []);
@@ -121,6 +123,30 @@ export default function ActivityScreen() {
           <View style={styles.liveDot} />
           <Text style={styles.liveText}>En vivo</Text>
         </View>
+      </View>
+
+      {/* ── Monitoreo ── */}
+      <Text style={styles.sectionLabel}>Monitoreo detallado</Text>
+      <View style={styles.monitorGrid}>
+        {[
+          { icon: 'language' as const, title: 'Páginas\nweb', color: '#6366F1', path: '/activity/web' },
+          { icon: 'play-circle' as const, title: 'YouTube\nvideos', color: '#DC2626', path: '/activity/youtube' },
+          { icon: 'apps' as const, title: 'Apps\ninstaladas', color: '#D97706', path: '/activity/apps' },
+          { icon: 'people' as const, title: 'Redes\nsociales', color: '#E1306C', path: '/activity/social' },
+          { icon: 'photo-library' as const, title: 'Imágenes\nrecibidas', color: '#059669', path: '/activity/media' },
+          { icon: 'chat' as const, title: 'Conversa-\nciones', color: '#25D366', path: '/activity/conversations' },
+        ].map((item) => (
+          <Pressable
+            key={item.title}
+            style={({ pressed }) => [styles.monitorCard, pressed && styles.monitorCardPressed]}
+            onPress={() => router.push(item.path as any)}
+          >
+            <View style={[styles.monitorIcon, { backgroundColor: item.color + '18' }]}>
+              <MaterialIcons name={item.icon} size={22} color={item.color} />
+            </View>
+            <Text style={styles.monitorTitle}>{item.title}</Text>
+          </Pressable>
+        ))}
       </View>
       {!hasData && !hasAlerts ? (
         <EmptyState icon="📊" title={tr('noe.activity.emptyTitle')} description={tr('noe.activity.emptyDescription')} />
@@ -195,4 +221,10 @@ const styles = StyleSheet.create({
   appBarBg: { flex: 1, height: 8, backgroundColor: colors.borderLight, borderRadius: radius.full, overflow: 'hidden' },
   appBarFill: { height: '100%', backgroundColor: colors.primary, borderRadius: radius.full },
   appMinutes: { width: 45, textAlign: 'right', fontSize: typography.fontSizes.caption, color: colors.textMuted, fontWeight: typography.fontWeights.medium },
+  sectionLabel: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginTop: spacing.sm },
+  monitorGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
+  monitorCard: { width: '31%', flexGrow: 1, alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
+  monitorCardPressed: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
+  monitorIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
+  monitorTitle: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.text, textAlign: 'center', lineHeight: 16 },
 });
