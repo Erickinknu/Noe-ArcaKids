@@ -41,3 +41,6 @@ example
 # generated native folders (committed by design)
 !/ios
 !/android
+
+# build artifacts
+build_output.txt
