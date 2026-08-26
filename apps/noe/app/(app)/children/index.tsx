@@ -14,6 +14,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
+import { parentalService } from '@/features/parental/services/parental-service';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
 import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
@@ -28,6 +29,23 @@ export default function ChildrenScreen() {
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
   const [adding, setAdding] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [rewardingChildId, setRewardingChildId] = useState<string | null>(null);
+
+  async function handleReward(child: { id: string; displayName: string }) {
+    setRewardingChildId(child.id);
+    try {
+      const { family } = await familyService.getMyFamily();
+      const rules = await parentalService.getRulesByChild(child.id);
+      const current = rules?.dailyLimitMinutes ?? 0;
+      const newLimit = Math.min(current + 30, 1440);
+      await parentalService.saveRules(family.id, child.id, { dailyLimitMinutes: newLimit });
+      Alert.alert('Recompensa', `Se agregaron 30 minutos a ${child.displayName}. Límite actual: ${newLimit} min`);
+    } catch {
+      Alert.alert('Error', 'No se pudo actualizar el límite. Intenta de nuevo.');
+    } finally {
+      setRewardingChildId(null);
+    }
+  }
 
   const fetchChildren = useCallback(async () => {
     const { family } = await familyService.getMyFamily();
@@ -107,10 +125,11 @@ export default function ChildrenScreen() {
                     <Text style={styles.rewardName}>{child.displayName}</Text>
                     <Pressable
                       style={({ pressed }) => [styles.rewardBtn, pressed && styles.rewardBtnPressed]}
-                      onPress={() => Alert.alert('Recompensa', `Se otorgaron 30 minutos extra a ${child.displayName}`)}
+                      onPress={() => handleReward(child)}
+                      disabled={rewardingChildId === child.id}
                     >
                       <MaterialIcons name="add-circle" size={18} color={colors.success} />
-                      <Text style={styles.rewardBtnText}>+30min</Text>
+                      <Text style={styles.rewardBtnText}>{rewardingChildId === child.id ? '...' : '+30min'}</Text>
                     </Pressable>
                   </View>
                 ))}
