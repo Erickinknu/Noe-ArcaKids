@@ -42,15 +42,7 @@ export default function AppLayout() {
         tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: tr('noe.tabs.home'),
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="home" color={color} focused={focused} />
-          ),
-        }}
-      />
+      {/* ── Tab order: Hijos, Control, Inicio (center), Actividad, Otros ── */}
       <Tabs.Screen
         name="children"
         options={{
@@ -66,6 +58,21 @@ export default function AppLayout() {
           title: tr('noe.tabs.control'),
           tabBarIcon: ({ color, focused }) => (
             <TabIcon name="shield" color={color} focused={focused} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: tr('noe.tabs.home'),
+          tabBarIcon: ({ color, focused }) => (
+            <View style={[styles.homeIconWrap, focused && styles.homeIconWrapActive]}>
+              <MaterialIcons
+                name="home"
+                size={24}
+                color={focused ? '#FFFFFF' : color}
+              />
+            </View>
           ),
         }}
       />
@@ -142,5 +149,16 @@ const styles = StyleSheet.create({
   },
   iconActive: {
     opacity: 1,
+  },
+  homeIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.borderLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  homeIconWrapActive: {
+    backgroundColor: colors.primary,
   },
 });

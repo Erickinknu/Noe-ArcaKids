@@ -1,7 +1,7 @@
 {
   "name": "@noe-arcakids/noe",
   "main": "expo-router/entry",
-  "version": "0.1.0.8",
+  "version": "0.1.0.9",
   "private": true,
   "scripts": {
     "start": "expo start",
@@ -31,6 +31,7 @@
     "react-i18next": "^17.0.12",
     "react-native": "0.86.2",
     "react-native-gesture-handler": "~2.32.0",
+    "react-native-maps": "^1.29.0",
     "react-native-qrcode-svg": "^6.3.21",
     "react-native-reanimated": "4.5.1",
     "react-native-safe-area-context": "~5.7.0",
