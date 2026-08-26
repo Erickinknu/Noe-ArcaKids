@@ -12,6 +12,7 @@ import { useTranslation } from 'react-i18next';
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
+import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { useAsyncData } from '@/hooks/use-async-data';
@@ -30,6 +31,7 @@ interface FamilyWithChildren {
 
 export default function RulesScreen() {
   const { t: tr } = useTranslation();
+  const screenPadding = useScreenPadding();
   const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
   const [childData, setChildData] = useState<{ rules: ParentalRules | null; blockedApps: BlockedApp[] } | null>(null);
   const [loadingChild, setLoadingChild] = useState(false);
@@ -148,7 +150,7 @@ export default function RulesScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled"
+    <ScrollView contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]} keyboardShouldPersistTaps="handled"
       refreshControl={
         <RefreshControl
           refreshing={refreshing}

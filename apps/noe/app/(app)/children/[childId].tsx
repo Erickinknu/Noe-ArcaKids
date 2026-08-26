@@ -13,6 +13,7 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
 import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
+import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
 
 const AVATARS = ['🐻', '🐰', '🐱', '🐶', '🦊', '🐼', '🦁', '🐸', '🐵', '🦋', '🌟', '🚀'];
@@ -27,6 +28,7 @@ interface ChildDetail {
 export default function ChildDetailScreen() {
   const { t: tr } = useTranslation();
   const router = useRouter();
+  const screenPadding = useScreenPadding();
   const { childId } = useLocalSearchParams<{ childId: string }>();
 
   const [displayName, setDisplayName] = useState('');
@@ -112,7 +114,7 @@ export default function ChildDetailScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]} keyboardShouldPersistTaps="handled">
       <SectionHeader title={tr('noe.children.editTitle')} />
 
       <Card style={styles.card}>

@@ -1,5 +1,6 @@
 import { Redirect, Tabs } from 'expo-router';
 import { StyleSheet, type ColorValue } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '@noe-arcakids/shared';
@@ -7,16 +8,17 @@ import { colors, typography, spacing } from '@noe-arcakids/shared';
 import { useAuthStore } from '@/stores/auth-store';
 import { ROUTES } from '@/constants';
 
+const TAB_BAR_BASE_HEIGHT = 56;
+
 export default function AppLayout() {
   const { t: tr } = useTranslation();
   const status = useAuthStore((state) => state.status);
+  const insets = useSafeAreaInsets();
 
   if (status === 'unauthenticated') {
     return <Redirect href={ROUTES.login} />;
   }
 
-  // During init the native splash is visible; return null to avoid
-  // flashing protected Tabs before auth resolves.
   if (status === 'initializing') {
     return null;
   }
@@ -27,11 +29,17 @@ export default function AppLayout() {
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
         tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: styles.tabBar,
+        tabBarStyle: {
+          backgroundColor: colors.background,
+          borderTopColor: colors.borderLight,
+          borderTopWidth: 1,
+          height: TAB_BAR_BASE_HEIGHT + insets.bottom,
+          paddingBottom: insets.bottom,
+          paddingTop: spacing.xs,
+        },
         tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
-      {/* 1. Inicio */}
       <Tabs.Screen
         name="index"
         options={{
@@ -41,7 +49,6 @@ export default function AppLayout() {
           ),
         }}
       />
-      {/* 2. Hijos */}
       <Tabs.Screen
         name="children"
         options={{
@@ -51,7 +58,6 @@ export default function AppLayout() {
           ),
         }}
       />
-      {/* 3. Control — usa el archivo rules/ existente */}
       <Tabs.Screen
         name="rules"
         options={{
@@ -61,7 +67,6 @@ export default function AppLayout() {
           ),
         }}
       />
-      {/* 4. Actividad */}
       <Tabs.Screen
         name="activity"
         options={{
@@ -71,7 +76,6 @@ export default function AppLayout() {
           ),
         }}
       />
-      {/* 5. Perfil */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -82,7 +86,6 @@ export default function AppLayout() {
         }}
       />
 
-      {/* ── Ocultar pantallas que no van en la barra ── */}
       <Tabs.Screen name="linking" options={{ href: null }} />
       <Tabs.Screen name="settings" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
@@ -102,14 +105,6 @@ function TabIcon({ name, color, focused }: { name: string; color: ColorValue; fo
 }
 
 const styles = StyleSheet.create({
-  tabBar: {
-    backgroundColor: colors.background,
-    borderTopColor: colors.borderLight,
-    borderTopWidth: 1,
-    height: 60,
-    paddingBottom: spacing.sm,
-    paddingTop: spacing.sm,
-  },
   tabBarLabel: {
     fontSize: typography.fontSizes.caption,
     fontWeight: typography.fontWeights.medium,

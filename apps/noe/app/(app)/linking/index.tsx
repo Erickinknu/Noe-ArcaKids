@@ -13,6 +13,7 @@ import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
 import { linkingService } from '@/features/linking/services/linking-service';
 import type { PairingCode } from '@/features/linking/repositories/linking-repository';
+import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
 import type { ChildProfile } from '@noe-arcakids/types';
 import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
@@ -24,6 +25,7 @@ interface FamilyWithChildren {
 
 export default function LinkingScreen() {
   const { t: tr } = useTranslation();
+  const screenPadding = useScreenPadding();
   const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
   const [pairing, setPairing] = useState<PairingCode | null>(null);
   const [generating, setGenerating] = useState(false);
@@ -81,7 +83,7 @@ export default function LinkingScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.screen}>
+    <ScrollView contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]}>
       <Text style={styles.title}>{tr('noe.linking.title')}</Text>
       <Text style={styles.subtitle}>{tr('noe.linking.subtitle')}</Text>
 

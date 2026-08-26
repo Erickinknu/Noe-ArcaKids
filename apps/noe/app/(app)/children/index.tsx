@@ -13,6 +13,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
+import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
 import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
 
@@ -21,6 +22,7 @@ const AVATARS = ['🐻', '🐰', '🐱', '🐶', '🦊', '🐼', '🦁', '🐸',
 export default function ChildrenScreen() {
   const { t: tr } = useTranslation();
   const router = useRouter();
+  const screenPadding = useScreenPadding();
   const [displayName, setDisplayName] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
   const [adding, setAdding] = useState(false);
@@ -65,7 +67,7 @@ export default function ChildrenScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]} keyboardShouldPersistTaps="handled">
       <SectionHeader title={tr('noe.children.title')} />
       {children ? (
         <>

@@ -10,6 +10,7 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { WeeklyChart } from '@/components/ui/weekly-chart';
 import { activityService, AlertItem, DailyUsage } from '@/features/activity/services/activity-service';
 import { useAsyncData } from '@/hooks/use-async-data';
+import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { colors, spacing, typography, shadows } from '@noe-arcakids/shared';
 
 interface DailyBar {
@@ -45,6 +46,7 @@ function getAlertIcon(type: AlertItem['type']): string {
 
 export default function ActivityScreen() {
   const { t: tr } = useTranslation();
+  const screenPadding = useScreenPadding();
   const [refreshing, setRefreshing] = useState(false);
   const fetchUsage = useCallback(() => activityService.getAllChildrenUsage(7), []);
   const fetchAlerts = useCallback(() => activityService.getRecentAlerts(), []);
@@ -93,7 +95,7 @@ export default function ActivityScreen() {
   if (error) return <ErrorState message={error} onRetry={onRetry} />;
 
   return (
-    <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled"
+    <ScrollView contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]} keyboardShouldPersistTaps="handled"
       refreshControl={
         <RefreshControl
           refreshing={refreshing}

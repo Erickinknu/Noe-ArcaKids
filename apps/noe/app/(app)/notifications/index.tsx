@@ -8,6 +8,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { storage } from '@noe-arcakids/storage';
 import { colors, shadows, spacing, typography } from '@noe-arcakids/shared';
+import { useScreenPadding } from '@/hooks/use-screen-padding';
 
 const NOTIFICATION_KEYS = {
   pushEnabled: 'noe/notifications/pushEnabled',
@@ -19,6 +20,7 @@ const NOTIFICATION_KEYS = {
 
 export default function NotificationsScreen() {
   const { t: tr } = useTranslation();
+  const screenPadding = useScreenPadding();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
@@ -81,7 +83,7 @@ export default function NotificationsScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]} keyboardShouldPersistTaps="handled">
       <Card style={styles.card}>
         <SectionHeader title={tr('noe.notifications.title')} />
         {loading ? (

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
+import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Avatar } from '@/components/ui/avatar';
@@ -43,6 +44,7 @@ import { ROUTES } from '@/constants';
 export default function DashboardScreen() {
   const { t: tr } = useTranslation();
   const router = useRouter();
+  const screenPadding = useScreenPadding();
   const { isOnline } = useNetworkStatus();
 
   const [data, setData] = useState<FamilySummary | null>(null);
@@ -170,7 +172,7 @@ export default function DashboardScreen() {
   return (
     <ScrollView
       style={styles.screen}
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={[styles.scrollContent, { paddingTop: screenPadding.paddingTop }]}
       refreshControl={
         <RefreshControl
           refreshing={refreshing}
@@ -429,7 +431,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: spacing.lg,
-    paddingTop: spacing.xxl,
     gap: spacing.md,
   },
 

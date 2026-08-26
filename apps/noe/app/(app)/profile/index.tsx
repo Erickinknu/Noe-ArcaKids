@@ -12,10 +12,12 @@ import { authService } from '@/features/auth/services/auth-service';
 import { familyService } from '@/features/family/services/family-service';
 import type { MyFamily } from '@/features/family/repositories/family-repository';
 import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
+import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { colors, spacing, typography } from '@noe-arcakids/shared';
 
 export default function ProfileScreen() {
   const { t: tr } = useTranslation();
+  const screenPadding = useScreenPadding();
   const [familyName, setFamilyName] = useState('');
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -66,7 +68,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
+    <ScrollView contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]} keyboardShouldPersistTaps="handled">
       <SectionHeader title={tr('noe.profile.title')} />
       {data ? (
         <>
