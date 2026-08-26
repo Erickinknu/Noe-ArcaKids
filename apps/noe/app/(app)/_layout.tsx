@@ -79,9 +79,9 @@ export default function AppLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          title: tr('noe.tabs.profile'),
+          title: 'Otros',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="person" color={color} focused={focused} />
+            <TabIcon name="more-horiz" color={color} focused={focused} />
           ),
         }}
       />

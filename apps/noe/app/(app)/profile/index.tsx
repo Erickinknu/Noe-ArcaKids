@@ -1,122 +1,336 @@
 import { useCallback, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  Pressable,
+  Switch,
+  View,
+  Alert,
+} from 'react-native';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { MaterialIcons } from '@expo/vector-icons';
 
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { ErrorState } from '@/components/ui/error-state';
-import { Input } from '@/components/ui/input';
-import { LoadingState } from '@/components/ui/loading-state';
-import { SectionHeader } from '@/components/ui/section-header';
-import { authService } from '@/features/auth/services/auth-service';
-import { familyService } from '@/features/family/services/family-service';
-import type { MyFamily } from '@/features/family/repositories/family-repository';
-import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { colors, spacing, typography } from '@noe-arcakids/shared';
+import { authService } from '@/features/auth/services/auth-service';
+import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
 
-export default function ProfileScreen() {
+interface MenuItem {
+  icon: keyof typeof MaterialIcons.glyphMap;
+  title: string;
+  subtitle?: string;
+  onPress: () => void;
+  color?: string;
+  danger?: boolean;
+}
+
+interface ToggleItem {
+  icon: keyof typeof MaterialIcons.glyphMap;
+  title: string;
+  subtitle?: string;
+  value: boolean;
+  onValueChange: (v: boolean) => void;
+  color?: string;
+}
+
+export default function OtrosScreen() {
   const { t: tr } = useTranslation();
+  const router = useRouter();
   const screenPadding = useScreenPadding();
-  const [familyName, setFamilyName] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [blockInstalls, setBlockInstalls] = useState(false);
 
-  const fetchFamily = useCallback(() => familyService.getMyFamily(), []);
-  const handleFamilyLoaded = useCallback((result: MyFamily) => {
-    setFamilyName(result.family.name);
-  }, []);
-  const { data, error, loading, reload } = useAsyncData(fetchFamily, handleFamilyLoaded);
+  const navigate = useCallback(
+    (path: string) => () => router.push(path as any),
+    [router],
+  );
 
-  async function handleRename() {
-    if (!data) {
-      return;
-    }
-    setSaving(true);
-    setActionError(null);
-    try {
-      await familyService.renameFamily(data.family.id, familyName);
-    } catch (cause) {
-      setActionError(errorMessage(cause));
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  async function handleSignOut() {
-    try {
-      await authService.signOut();
-    } catch (cause) {
-      setActionError(errorMessage(cause));
-    }
-  }
-
-  if (loading) {
-    return (
-      <View style={styles.screen}>
-        <LoadingState text={tr('noe.profile.loading')} />
-      </View>
+  const handleSignOut = useCallback(() => {
+    Alert.alert(
+      tr('noe.profile.signOut'),
+      tr('noe.profile.signOutConfirm'),
+      [
+        { text: tr('noe.common.cancel'), style: 'cancel' },
+        {
+          text: tr('noe.profile.signOut'),
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await authService.signOut();
+            } catch {}
+          },
+        },
+      ],
     );
-  }
+  }, [tr]);
 
-  if (error && !data) {
-    return (
-      <View style={styles.screen}>
-        <ErrorState message={error} onRetry={reload} />
-      </View>
-    );
-  }
+  const menuItems: MenuItem[] = [
+    {
+      icon: 'family-restroom',
+      title: 'Familia',
+      subtitle: 'Gestionar miembros y niños',
+      onPress: navigate('/familia'),
+    },
+    {
+      icon: 'person',
+      title: 'Perfil',
+      subtitle: 'Información de tu cuenta',
+      onPress: navigate('/cuenta'),
+    },
+    {
+      icon: 'notifications',
+      title: 'Notificaciones',
+      subtitle: 'Ajustes de alertas y notificaciones',
+      onPress: navigate('/notificaciones-ajustes'),
+    },
+    {
+      icon: 'lock',
+      title: 'Código PIN',
+      subtitle: 'PIN para desbloquear el teléfono del niño',
+      onPress: navigate('/pin'),
+    },
+    {
+      icon: 'card-membership',
+      title: 'Suscripción',
+      subtitle: 'Plan actual y opciones de pago',
+      onPress: navigate('/suscripcion'),
+    },
+    {
+      icon: 'help',
+      title: 'Conseguir ayuda',
+      subtitle: 'Centro de soporte y preguntas frecuentes',
+      onPress: navigate('/ayuda'),
+    },
+    {
+      icon: 'lightbulb',
+      title: 'Sugiere una idea',
+      subtitle: 'Comparte tus ideas para mejorar NOE',
+      onPress: navigate('/sugerir'),
+    },
+    {
+      icon: 'share',
+      title: 'Compartir app',
+      subtitle: 'Enviar la app a otros padres',
+      onPress: navigate('/compartir'),
+    },
+    {
+      icon: 'privacy-tip',
+      title: 'Política de privacidad',
+      onPress: navigate('/privacidad'),
+    },
+    {
+      icon: 'description',
+      title: 'Términos de uso',
+      onPress: navigate('/terminos'),
+    },
+  ];
+
+  const toggleItem: ToggleItem = {
+    icon: 'block',
+    title: 'Bloquear instalación de nuevas apps',
+    subtitle:
+      'Evita que se instalen nuevas aplicaciones en el dispositivo del niño controlado por ArcaKids',
+    value: blockInstalls,
+    onValueChange: setBlockInstalls,
+    color: colors.danger,
+  };
 
   return (
-    <ScrollView contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]} keyboardShouldPersistTaps="handled">
-      <SectionHeader title={tr('noe.profile.title')} />
-      {data ? (
-        <>
-          <Card>
-            <Text style={styles.label}>{tr('noe.profile.name')}</Text>
-            <Text style={styles.value}>{data.profile.displayName || '—'}</Text>
-            <Text style={styles.label}>{tr('noe.profile.email')}</Text>
-            <Text style={styles.value}>{data.profile.email || '—'}</Text>
-            <Text style={styles.label}>{tr('noe.profile.family')}</Text>
-            <Text style={styles.value}>{data.family.name}</Text>
-          </Card>
-          <SectionHeader title={tr('noe.profile.familyName')} />
-          <Card>
-            <Input
-              label={tr('noe.profile.family')}
-              value={familyName}
-              onChangeText={setFamilyName}
-              placeholder={tr('noe.profile.familyPlaceholder')}
+    <ScrollView
+      style={styles.screen}
+      contentContainerStyle={[
+        styles.content,
+        { paddingTop: screenPadding.paddingTop },
+      ]}
+    >
+      <Text style={styles.headerTitle}>Otros</Text>
+
+      {/* ── Toggle: Bloquear instalaciones ── */}
+      <View style={styles.toggleCard}>
+        <View style={styles.toggleLeft}>
+          <MaterialIcons
+            name={toggleItem.icon}
+            size={22}
+            color={toggleItem.color ?? colors.primary}
+          />
+          <View style={styles.toggleTextGroup}>
+            <Text style={styles.toggleTitle}>{toggleItem.title}</Text>
+            <Text style={styles.toggleSubtitle}>{toggleItem.subtitle}</Text>
+          </View>
+        </View>
+        <Switch
+          value={toggleItem.value}
+          onValueChange={toggleItem.onValueChange}
+          trackColor={{ false: colors.border, true: colors.primary }}
+          thumbColor="#fff"
+        />
+      </View>
+
+      {/* ── Menu items ── */}
+      <View style={styles.menuGroup}>
+        {menuItems.map((item, i) => (
+          <Pressable
+            key={item.title}
+            style={({ pressed }) => [
+              styles.menuItem,
+              pressed && styles.menuItemPressed,
+            ]}
+            onPress={item.onPress}
+          >
+            <MaterialIcons
+              name={item.icon}
+              size={22}
+              color={item.danger ? colors.danger : colors.primary}
             />
-            <Button onPress={handleRename} loading={saving}>
-              {tr('noe.profile.saveFamilyName')}
-            </Button>
-          </Card>
-          {actionError ? <ErrorState message={actionError} /> : null}
-          <Button variant="outline" onPress={handleSignOut}>
-            {tr('noe.profile.signOut')}
-          </Button>
-        </>
-      ) : null}
+            <View style={styles.menuTextGroup}>
+              <Text
+                style={[
+                  styles.menuTitle,
+                  item.danger && { color: colors.danger },
+                ]}
+              >
+                {item.title}
+              </Text>
+              {item.subtitle ? (
+                <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
+              ) : null}
+            </View>
+            <MaterialIcons
+              name="chevron-right"
+              size={20}
+              color={colors.textMuted}
+            />
+          </Pressable>
+        ))}
+      </View>
+
+      {/* ── Sign out ── */}
+      <Pressable
+        style={({ pressed }) => [
+          styles.dangerButton,
+          pressed && styles.dangerButtonPressed,
+        ]}
+        onPress={handleSignOut}
+      >
+        <MaterialIcons name="logout" size={20} color={colors.danger} />
+        <Text style={styles.dangerButtonText}>
+          {tr('noe.profile.signOut')}
+        </Text>
+      </Pressable>
+
+      <Text style={styles.version}>NOE v0.1.0.7</Text>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   screen: {
+    flex: 1,
+    backgroundColor: colors.surface,
+  },
+  content: {
     padding: spacing.lg,
-    backgroundColor: colors.background,
     gap: spacing.md,
-    paddingTop: spacing.xxl,
   },
-  label: {
-    fontSize: typography.fontSizes.caption,
-    color: colors.textMuted,
-    marginTop: spacing.xs,
-  },
-  value: {
-    fontSize: typography.fontSizes.body,
+  headerTitle: {
+    fontSize: typography.fontSizes.heading,
+    fontWeight: typography.fontWeights.bold,
     color: colors.text,
     marginBottom: spacing.xs,
+  },
+
+  /* ── Toggle card ── */
+  toggleCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  toggleLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flex: 1,
+    gap: spacing.md,
+  },
+  toggleTextGroup: {
+    flex: 1,
+    gap: 2,
+  },
+  toggleTitle: {
+    fontSize: typography.fontSizes.body,
+    fontWeight: typography.fontWeights.medium,
+    color: colors.text,
+  },
+  toggleSubtitle: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    lineHeight: 18,
+  },
+
+  /* ── Menu group ── */
+  menuGroup: {
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+  },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.lg,
+    gap: spacing.md,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.borderLight,
+  },
+  menuItemPressed: {
+    backgroundColor: colors.surface,
+  },
+  menuTextGroup: {
+    flex: 1,
+    gap: 2,
+  },
+  menuTitle: {
+    fontSize: typography.fontSizes.body,
+    fontWeight: typography.fontWeights.medium,
+    color: colors.text,
+  },
+  menuSubtitle: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    lineHeight: 18,
+  },
+
+  /* ── Danger button ── */
+  dangerButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.danger,
+    gap: spacing.sm,
+  },
+  dangerButtonPressed: {
+    backgroundColor: '#fef2f2',
+  },
+  dangerButtonText: {
+    fontSize: typography.fontSizes.body,
+    fontWeight: typography.fontWeights.medium,
+    color: colors.danger,
+  },
+
+  version: {
+    textAlign: 'center',
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    marginTop: spacing.sm,
   },
 });
