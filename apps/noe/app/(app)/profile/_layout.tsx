@@ -14,6 +14,7 @@ export default function OtrosStackLayout() {
       <Stack.Screen name="cuenta" />
       <Stack.Screen name="notificaciones-ajustes" />
       <Stack.Screen name="pin" />
+      <Stack.Screen name="config" />
       <Stack.Screen name="ayuda" />
       <Stack.Screen name="sugerir" />
       <Stack.Screen name="compartir" />

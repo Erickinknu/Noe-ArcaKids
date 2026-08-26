@@ -90,6 +90,12 @@ export default function OtrosScreen() {
       onPress: navigate('/pin'),
     },
     {
+      icon: 'settings',
+      title: 'Configuración de la app',
+      subtitle: 'Tema, idioma y preferencias',
+      onPress: navigate('/config'),
+    },
+    {
       icon: 'card-membership',
       title: 'Suscripción',
       subtitle: 'Plan actual y opciones de pago',

@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { MaterialIcons } from '@expo/vector-icons';
 
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -11,7 +12,7 @@ import { WeeklyChart } from '@/components/ui/weekly-chart';
 import { activityService, AlertItem, DailyUsage } from '@/features/activity/services/activity-service';
 import { useAsyncData } from '@/hooks/use-async-data';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { colors, spacing, typography, shadows } from '@noe-arcakids/shared';
+import { colors, radius, spacing, typography, shadows } from '@noe-arcakids/shared';
 
 interface DailyBar {
   date: string;
@@ -26,6 +27,15 @@ interface ChildUsageSummary {
   totalMinutes: number;
   dailyData: DailyUsage[];
 }
+
+const INITIAL_APP_USAGE = [
+  { name: 'TikTok', minutes: 95, color: '#000000' },
+  { name: 'YouTube', minutes: 72, color: '#FF0000' },
+  { name: 'Instagram', minutes: 48, color: '#E1306C' },
+  { name: 'WhatsApp', minutes: 35, color: '#25D366' },
+  { name: 'Roblox', minutes: 28, color: '#E2231A' },
+  { name: 'Chrome', minutes: 15, color: '#4285F4' },
+];
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
@@ -105,7 +115,13 @@ export default function ActivityScreen() {
         />
       }
     >
-      <Text style={styles.title}>{tr('noe.activity.title')}</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>{tr('noe.activity.title')}</Text>
+        <View style={styles.liveBadge}>
+          <View style={styles.liveDot} />
+          <Text style={styles.liveText}>En vivo</Text>
+        </View>
+      </View>
       {!hasData && !hasAlerts ? (
         <EmptyState icon="📊" title={tr('noe.activity.emptyTitle')} description={tr('noe.activity.emptyDescription')} />
       ) : (
@@ -120,6 +136,21 @@ export default function ActivityScreen() {
               />
             </>
           )}
+
+          {/* ── App usage breakdown ── */}
+          <SectionHeader title="Uso por app (hoy)" />
+          <Card style={styles.card}>
+            {INITIAL_APP_USAGE.map((app, i) => (
+              <View key={app.name} style={[styles.appRow, i < INITIAL_APP_USAGE.length - 1 && styles.appBorder]}>
+                <View style={[styles.appDot, { backgroundColor: app.color }]} />
+                <Text style={styles.appName}>{app.name}</Text>
+                <View style={styles.appBarBg}>
+                  <View style={[styles.appBarFill, { width: `${(app.minutes / INITIAL_APP_USAGE[0].minutes) * 100}%` }]} />
+                </View>
+                <Text style={styles.appMinutes}>{app.minutes}min</Text>
+              </View>
+            ))}
+          </Card>
           {hasAlerts && (
             <>
               <SectionHeader title={tr('noe.activity.recentAlerts')} />
@@ -145,7 +176,11 @@ export default function ActivityScreen() {
 
 const styles = StyleSheet.create({
   screen: { paddingTop: spacing.xxl, padding: spacing.lg, backgroundColor: colors.background, gap: spacing.md },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
+  liveBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.successLight, paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: radius.full },
+  liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success },
+  liveText: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.success },
   card: { ...shadows.sm },
   alertRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   alertIcon: { fontSize: 20 },
@@ -153,4 +188,11 @@ const styles = StyleSheet.create({
   alertChild: { fontSize: typography.fontSizes.subtitle, fontWeight: typography.fontWeights.semibold, color: colors.text },
   alertMessage: { fontSize: typography.fontSizes.caption, color: colors.textMuted, marginTop: 2 },
   alertTime: { fontSize: typography.fontSizes.caption, color: colors.textMuted },
+  appRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm },
+  appBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  appDot: { width: 10, height: 10, borderRadius: 5 },
+  appName: { width: 80, fontSize: typography.fontSizes.caption, color: colors.text, fontWeight: typography.fontWeights.medium },
+  appBarBg: { flex: 1, height: 8, backgroundColor: colors.borderLight, borderRadius: radius.full, overflow: 'hidden' },
+  appBarFill: { height: '100%', backgroundColor: colors.primary, borderRadius: radius.full },
+  appMinutes: { width: 45, textAlign: 'right', fontSize: typography.fontSizes.caption, color: colors.textMuted, fontWeight: typography.fontWeights.medium },
 });

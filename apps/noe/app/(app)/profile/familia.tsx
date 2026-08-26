@@ -92,7 +92,22 @@ export default function FamiliaScreen() {
         <Text style={styles.hint}>
           Los miembros adultos pueden administrar conjuntamente los dispositivos de los niños.
         </Text>
-        <EmptyState icon="👨‍👩‍👧‍👦" title="Invita a otros padres o tutores" />
+        <View style={styles.inviteRow}>
+          <Pressable
+            style={({ pressed }) => [styles.inviteBtn, pressed && styles.inviteBtnPressed]}
+            onPress={() => Alert.alert('Invitar co-padre', 'Se abrirá el diálogo de compartir con el código de invitación de la familia.')}
+          >
+            <MaterialIcons name="person-add" size={20} color={colors.primary} />
+            <Text style={styles.inviteBtnText}>Invitar padre/tutor</Text>
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.inviteBtn, pressed && styles.inviteBtnPressed]}
+            onPress={() => Alert.alert('Código de familia', `Código: ${data?.family.id?.slice(0, 8) ?? 'N/A'}\nComparte este código con el otro padre para que se una.`)}
+          >
+            <MaterialIcons name="vpn-key" size={20} color={colors.primary} />
+            <Text style={styles.inviteBtnText}>Ver código</Text>
+          </Pressable>
+        </View>
       </Card>
 
       {actionError ? <ErrorState message={actionError} /> : null}
@@ -126,5 +141,28 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     lineHeight: 18,
     marginBottom: spacing.sm,
+  },
+  inviteRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  inviteBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  inviteBtnPressed: {
+    backgroundColor: colors.primaryLight,
+  },
+  inviteBtnText: {
+    fontSize: typography.fontSizes.subtitle,
+    fontWeight: typography.fontWeights.medium,
+    color: colors.primary,
   },
 });
