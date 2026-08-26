@@ -92,6 +92,23 @@ export default function AppLayout() {
       <Tabs.Screen name="settings" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="children/[childId]" options={{ href: null }} />
+      {/* Control sub-screens */}
+      <Tabs.Screen name="rules/horarios" options={{ href: null }} />
+      <Tabs.Screen name="rules/modo-estudio" options={{ href: null }} />
+      <Tabs.Screen name="rules/geofencing" options={{ href: null }} />
+      <Tabs.Screen name="rules/filtrado-web" options={{ href: null }} />
+      {/* Profile sub-screens */}
+      <Tabs.Screen name="profile/familia" options={{ href: null }} />
+      <Tabs.Screen name="profile/cuenta" options={{ href: null }} />
+      <Tabs.Screen name="profile/notificaciones-ajustes" options={{ href: null }} />
+      <Tabs.Screen name="profile/pin" options={{ href: null }} />
+      <Tabs.Screen name="profile/config" options={{ href: null }} />
+      <Tabs.Screen name="profile/ayuda" options={{ href: null }} />
+      <Tabs.Screen name="profile/sugerir" options={{ href: null }} />
+      <Tabs.Screen name="profile/compartir" options={{ href: null }} />
+      <Tabs.Screen name="profile/privacidad" options={{ href: null }} />
+      <Tabs.Screen name="profile/terminos" options={{ href: null }} />
+      <Tabs.Screen name="profile/suscripcion" options={{ href: null }} />
     </Tabs>
     </ThemeProvider>
   );

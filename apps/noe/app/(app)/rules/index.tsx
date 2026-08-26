@@ -169,10 +169,10 @@ export default function RulesScreen() {
       {/* ── Control submenu ── */}
       <View style={styles.controlMenu}>
         {[
-          { icon: 'schedule' as const, title: 'Horarios de uso', subtitle: 'Define cuándo puede usar el dispositivo', path: '/horarios' },
-          { icon: 'school' as const, title: 'Modo estudio', subtitle: 'Bloquea apps durante clases', path: '/modo-estudio' },
-          { icon: 'location-on' as const, title: 'Zonas seguras', subtitle: 'Alertas al salir de una zona', path: '/geofencing' },
-          { icon: 'language' as const, title: 'Filtrado web', subtitle: 'Bloquear sitios inapropiados', path: '/filtrado-web' },
+          { icon: 'schedule' as const, title: 'Horarios de uso', subtitle: 'Define cuándo puede usar el dispositivo', path: '/rules/horarios' },
+          { icon: 'school' as const, title: 'Modo estudio', subtitle: 'Bloquea apps durante clases', path: '/rules/modo-estudio' },
+          { icon: 'location-on' as const, title: 'Zonas seguras', subtitle: 'Alertas al salir de una zona', path: '/rules/geofencing' },
+          { icon: 'language' as const, title: 'Filtrado web', subtitle: 'Bloquear sitios inapropiados', path: '/rules/filtrado-web' },
         ].map((item, i) => (
           <Pressable
             key={item.title}
