@@ -1,19 +1,29 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { authService } from '@/features/auth/services/auth-service';
+import { useAuthStore } from '@/stores/auth-store';
 import { errorMessage, colors, spacing, typography } from '@noe-arcakids/shared';
+import { ROUTES } from '@/constants';
 
 export default function LoginScreen() {
   const { t: tr } = useTranslation();
+  const router = useRouter();
+  const status = useAuthStore((state) => state.status);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.replace(ROUTES.app);
+    }
+  }, [status, router]);
 
   async function handleSubmit() {
     setSubmitting(true);

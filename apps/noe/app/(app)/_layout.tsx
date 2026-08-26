@@ -1,5 +1,5 @@
-import { StyleSheet, type ColorValue } from 'react-native';
 import { Redirect, Tabs } from 'expo-router';
+import { StyleSheet, type ColorValue } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '@noe-arcakids/shared';
@@ -31,6 +31,7 @@ export default function AppLayout() {
         tabBarLabelStyle: styles.tabBarLabel,
       }}
     >
+      {/* 1. Inicio */}
       <Tabs.Screen
         name="index"
         options={{
@@ -40,6 +41,7 @@ export default function AppLayout() {
           ),
         }}
       />
+      {/* 2. Hijos */}
       <Tabs.Screen
         name="children"
         options={{
@@ -49,6 +51,7 @@ export default function AppLayout() {
           ),
         }}
       />
+      {/* 3. Control — usa el archivo rules/ existente */}
       <Tabs.Screen
         name="rules"
         options={{
@@ -58,6 +61,7 @@ export default function AppLayout() {
           ),
         }}
       />
+      {/* 4. Actividad */}
       <Tabs.Screen
         name="activity"
         options={{
@@ -67,24 +71,7 @@ export default function AppLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="linking"
-        options={{
-          title: tr('noe.tabs.linking'),
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="link" color={color} focused={focused} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="settings"
-        options={{
-          title: tr('noe.tabs.settings'),
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="settings" color={color} focused={focused} />
-          ),
-        }}
-      />
+      {/* 5. Perfil */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -94,15 +81,11 @@ export default function AppLayout() {
           ),
         }}
       />
-      <Tabs.Screen
-        name="notifications"
-        options={{
-          title: tr('noe.tabs.notifications'),
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="notifications" color={color} focused={focused} />
-          ),
-        }}
-      />
+
+      {/* ── Ocultar pantallas que no van en la barra ── */}
+      <Tabs.Screen name="linking" options={{ href: null }} />
+      <Tabs.Screen name="settings" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
     </Tabs>
   );
 }

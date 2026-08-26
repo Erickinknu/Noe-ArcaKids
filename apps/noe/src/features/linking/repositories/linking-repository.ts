@@ -3,8 +3,6 @@ import type { PostgrestError } from '@supabase/supabase-js';
 import { DatabaseError, t } from '@noe-arcakids/shared';
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
 
-import { getRandomValues } from 'expo-crypto';
-
 const CODE_LIFESPAN_MS = 10 * 60 * 1000;
 const MAX_CODE_ATTEMPTS = 5;
 const CODE_LENGTH = 8;
@@ -15,10 +13,13 @@ export interface PairingCode {
   expiresAt: string;
 }
 
-/** Cryptographically secure 8-char alphanumeric pairing code. */
+/**
+ * Cryptographically secure 8-char alphanumeric pairing code.
+ * Uses globalThis.crypto.getRandomValues (available in Hermes RN 0.86+).
+ */
 export function generatePairingCode(): string {
   const bytes = new Uint8Array(CODE_LENGTH);
-  getRandomValues(bytes);
+  globalThis.crypto.getRandomValues(bytes);
   return Array.from(bytes, (b) => CODE_CHARSET[b % CODE_CHARSET.length]).join('');
 }
 

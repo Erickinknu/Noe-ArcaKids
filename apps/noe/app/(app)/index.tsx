@@ -1,15 +1,25 @@
-import { useState, useCallback } from 'react';
-import { View, Text, ScrollView, Pressable, StyleSheet, RefreshControl } from 'react-native';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  StyleSheet,
+  RefreshControl,
+  Alert,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import ChildCard from '@/components/ui/child-card';
-import { StatCard } from '@/components/ui/stat-card';
-import { SectionHeader } from '@/components/ui/section-header';
+import { Avatar } from '@/components/ui/avatar';
+import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
+import { ProgressBar } from '@/components/ui/progress-bar';
+import { StatusDot } from '@/components/ui/status-dot';
+import { Button } from '@/components/ui/button';
 import {
   colors,
   errorMessage,
@@ -22,33 +32,39 @@ import {
 import {
   dashboardService,
   formatDuration,
+  relativeTime,
 } from '@/features/dashboard/services/dashboard-service';
-import type { FamilySummary } from '@/features/dashboard/types';
+import type { ChildSummary, FamilySummary } from '@/features/dashboard/types';
+import { activityService, type AlertItem } from '@/features/activity/services/activity-service';
 import { familyService } from '@/features/family/services/family-service';
+import { parentalService } from '@/features/parental/services/parental-service';
 import { ROUTES } from '@/constants';
 
 export default function DashboardScreen() {
   const { t: tr } = useTranslation();
   const router = useRouter();
   const { isOnline } = useNetworkStatus();
+
   const [data, setData] = useState<FamilySummary | null>(null);
+  const [alerts, setAlerts] = useState<AlertItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [familyId, setFamilyId] = useState<string | null>(null);
 
   const fetchData = useCallback(async (isRefresh = false) => {
-    if (isRefresh) {
-      setRefreshing(true);
-    } else {
-      setLoading(true);
-    }
+    if (isRefresh) setRefreshing(true);
+    else setLoading(true);
     setError(null);
     try {
       const result = await dashboardService.getFamilySummary();
       setData(result);
-      const myFamily = await familyService.getMyFamily().catch(() => null);
+      const [myFamily, recentAlerts] = await Promise.all([
+        familyService.getMyFamily().catch(() => null),
+        activityService.getRecentAlerts().catch(() => []),
+      ]);
       if (myFamily) setFamilyId(myFamily.family.id);
+      setAlerts(recentAlerts.slice(0, 3));
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
@@ -57,10 +73,63 @@ export default function DashboardScreen() {
     }
   }, []);
 
+  useEffect(() => { fetchData(); }, [fetchData]);
+
   const handleRefresh = useCallback(() => fetchData(true), [fetchData]);
 
+  const handleQuickBlock = useCallback(
+    (child: ChildSummary) => {
+      if (!familyId) return;
+      Alert.alert(
+        tr('noe.dashboard.blockTitle'),
+        tr('noe.dashboard.blockConfirm', { name: child.name }),
+        [
+          { text: tr('common.cancel'), style: 'cancel' },
+          {
+            text: tr('noe.dashboard.blockConfirmButton'),
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await parentalService.saveRules(familyId, child.id, { dailyLimitMinutes: 0 });
+                fetchData(true);
+              } catch {
+                Alert.alert(tr('noe.dashboard.comingSoon'));
+              }
+            },
+          },
+        ],
+      );
+    },
+    [familyId, fetchData, tr],
+  );
 
+  const handleAddTime = useCallback(
+    (child: ChildSummary, minutes: number) => {
+      if (!familyId) return;
+      const currentLimit = child.dailyLimitMinutes ?? 120;
+      Alert.alert(
+        tr('noe.dashboard.addTimeTitle'),
+        tr('noe.dashboard.addTimeConfirm', { name: child.name, minutes }),
+        [
+          { text: tr('common.cancel'), style: 'cancel' },
+          {
+            text: tr('noe.dashboard.addTimeConfirmButton'),
+            onPress: async () => {
+              try {
+                await parentalService.saveRules(familyId, child.id, { dailyLimitMinutes: currentLimit + minutes });
+                fetchData(true);
+              } catch {
+                Alert.alert(tr('noe.dashboard.comingSoon'));
+              }
+            },
+          },
+        ],
+      );
+    },
+    [familyId, fetchData, tr],
+  );
 
+  /* ── Loading / Error / Empty states ── */
   if (loading && !data) {
     return (
       <View style={styles.screen}>
@@ -92,9 +161,12 @@ export default function DashboardScreen() {
     );
   }
 
+  /* ── Computed data ── */
   const totalMinutesToday = dashboardService.getTotalMinutesToday(data.children);
   const connectedCount = dashboardService.getConnectedCount(data.children);
+  const hasAlerts = alerts.length > 0;
 
+  /* ── Render ── */
   return (
     <ScrollView
       style={styles.screen}
@@ -108,6 +180,7 @@ export default function DashboardScreen() {
         />
       }
     >
+      {/* ── Offline banner ── */}
       {!isOnline && (
         <View style={styles.offlineBanner}>
           <MaterialIcons name="wifi-off" size={16} color={colors.warning} />
@@ -115,17 +188,25 @@ export default function DashboardScreen() {
         </View>
       )}
 
+      {/* ── Header ── */}
       <View style={styles.header}>
         <View style={styles.headerLeft}>
-          <Text style={styles.logo}>NOE</Text>
+          <Avatar name={data.parentName} size={44} />
           <View style={styles.headerTextGroup}>
             <Text style={styles.greeting}>
               {tr('noe.dashboard.greeting', { name: data.parentName })}
             </Text>
-            <Text style={styles.subtitle}>{tr('noe.dashboard.subtitle')}</Text>
+            <Text style={styles.subtitle}>
+              {connectedCount > 0
+                ? tr('noe.dashboard.connectedCount', { count: connectedCount, total: data.totalChildren })
+                : tr('noe.dashboard.noChildrenOnline')}
+            </Text>
           </View>
         </View>
-        <Pressable style={styles.notificationBell} onPress={() => router.push({ pathname: '/notifications' } as any)}>
+        <Pressable
+          style={styles.notificationBell}
+          onPress={() => router.push({ pathname: ROUTES.notifications } as any)}
+        >
           <MaterialIcons name="notifications" size={22} color={colors.text} />
           {data.alertsCount > 0 && (
             <View style={styles.badge}>
@@ -135,46 +216,242 @@ export default function DashboardScreen() {
         </Pressable>
       </View>
 
+      {/* ── Summary cards ── */}
       <View style={styles.summaryRow}>
-        <StatCard
-          icon={<MaterialIcons name="wifi" size={24} color={colors.success} />}
+        <SummaryCard
+          icon="wifi"
           value={`${connectedCount}/${data.totalChildren}`}
-          label={tr('noe.dashboard.connected')}
+          label={tr('noe.dashboard.online')}
           color={colors.success}
         />
-        <StatCard
-          icon={<MaterialIcons name="schedule" size={24} color={colors.primary} />}
+        <SummaryCard
+          icon="schedule"
           value={formatDuration(totalMinutesToday)}
           label={tr('noe.dashboard.totalTime')}
           color={colors.primary}
         />
-        <StatCard
-          icon={<MaterialIcons name="warning" size={24} color={colors.warning} />}
+        <SummaryCard
+          icon="warning"
           value={String(data.alertsCount)}
           label={tr('noe.dashboard.alerts')}
           color={colors.warning}
         />
       </View>
 
-      <SectionHeader title={tr('noe.dashboard.myChildren')} />
+      {/* ── Children section ── */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>{tr('noe.dashboard.myChildren')}</Text>
+        <Pressable onPress={() => router.push(ROUTES.children as any)}>
+          <Text style={styles.sectionAction}>{tr('noe.dashboard.seeAll')}</Text>
+        </Pressable>
+      </View>
 
       {data.children.map((child) => (
-        <ChildCard key={child.id} child={child} familyId={familyId} onAction={fetchData} />
+        <ChildRow
+          key={child.id}
+          child={child}
+          familyId={familyId}
+          onRefresh={() => fetchData(true)}
+          onQuickBlock={handleQuickBlock}
+          onAddTime={handleAddTime}
+        />
       ))}
+
+      {/* ── Recent activity ── */}
+      {hasAlerts && (
+        <>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>{tr('noe.dashboard.recentActivity')}</Text>
+            <Pressable onPress={() => router.push(ROUTES.activity as any)}>
+              <Text style={styles.sectionAction}>{tr('noe.dashboard.seeAll')}</Text>
+            </Pressable>
+          </View>
+
+          {alerts.map((alert) => (
+            <Card key={alert.id} style={styles.alertCard}>
+              <View style={styles.alertRow}>
+                <Text style={styles.alertIcon}>
+                  {alert.type === 'block' ? '🚫' : alert.type === 'time' ? '⏰' : '📍'}
+                </Text>
+                <View style={styles.alertInfo}>
+                  <Text style={styles.alertChild}>{alert.childName}</Text>
+                  <Text style={styles.alertMessage}>{alert.message}</Text>
+                </View>
+                <Text style={styles.alertTime}>{relativeTime(alert.timestamp)}</Text>
+              </View>
+            </Card>
+          ))}
+        </>
+      )}
+
+
     </ScrollView>
   );
 }
 
+/* ═══════════════════════════════════════════════════════════════════
+   SUB-COMPONENTS
+   ═══════════════════════════════════════════════════════════════════ */
+
+/** Compact summary card for the top grid. */
+function SummaryCard({
+  icon,
+  value,
+  label,
+  color,
+}: {
+  icon: string;
+  value: string;
+  label: string;
+  color: string;
+}) {
+  return (
+    <View style={styles.summaryCard}>
+      <View style={[styles.summaryIconWrap, { backgroundColor: color + '18' }]}>
+        <MaterialIcons name={icon as any} size={20} color={color} />
+      </View>
+      <Text style={styles.summaryValue}>{value}</Text>
+      <Text style={styles.summaryLabel}>{label}</Text>
+    </View>
+  );
+}
+
+/** One child row: avatar, name, progress, quick actions. */
+function ChildRow({
+  child,
+  familyId,
+  onRefresh,
+  onQuickBlock,
+  onAddTime,
+}: {
+  child: ChildSummary;
+  familyId: string | null;
+  onRefresh: () => void;
+  onQuickBlock: (child: ChildSummary) => void;
+  onAddTime: (child: ChildSummary, minutes: number) => void;
+}) {
+  const { t: tr } = useTranslation();
+  const router = useRouter();
+  const usageRatio =
+    child.dailyLimitMinutes != null && child.dailyLimitMinutes > 0
+      ? child.minutesToday / child.dailyLimitMinutes
+      : 0;
+  const isOverLimit = usageRatio >= 1;
+  const isNearLimit = usageRatio >= 0.8 && !isOverLimit;
+
+  return (
+    <Card style={[styles.childCard, !child.isOnline && styles.childCardOffline]}>
+      {/* Row 1: Avatar + Name + Status */}
+      <View style={styles.childTop}>
+        <Avatar name={child.name} emoji={child.avatarUrl ?? undefined} size={44} />
+        <View style={styles.childInfo}>
+          <Text style={styles.childName}>{child.name}</Text>
+          <StatusDot
+            online={child.isOnline}
+            showLabel
+            label={
+              child.isOnline
+                ? tr('noe.dashboard.online')
+                : tr('noe.dashboard.offlineChild', { time: relativeTime(child.lastSeenAt) })
+            }
+          />
+        </View>
+        {child.isOnline && (
+          <Pressable
+            style={[styles.blockBtn, (isOverLimit || isNearLimit) && styles.blockBtnActive]}
+            onPress={() => onQuickBlock(child)}
+          >
+            <MaterialIcons
+              name={isOverLimit ? 'block' : 'pause-circle'}
+              size={22}
+              color={isOverLimit ? colors.danger : colors.textMuted}
+            />
+          </Pressable>
+        )}
+      </View>
+
+      {/* Row 2: Screen time + Progress */}
+      <View style={styles.childUsage}>
+        <View style={styles.usageLabel}>
+          <Text style={styles.usageText}>
+            {child.dailyLimitMinutes != null
+              ? `${formatDuration(child.minutesToday)} / ${formatDuration(child.dailyLimitMinutes)}`
+              : formatDuration(child.minutesToday)}
+          </Text>
+          {isOverLimit && (
+            <View style={styles.overLimitBadge}>
+              <Text style={styles.overLimitText}>{tr('noe.dashboard.overLimit')}</Text>
+            </View>
+          )}
+        </View>
+        {child.dailyLimitMinutes != null && (
+          <ProgressBar value={child.minutesToday} max={child.dailyLimitMinutes} height={6} />
+        )}
+      </View>
+
+      {/* Row 3: Quick action chips */}
+      <View style={styles.childChips}>
+        <Pressable
+          style={styles.chip}
+          onPress={() =>
+            Alert.alert(tr('noe.dashboard.addTimeTitle'), '', [
+              { text: tr('noe.dashboard.addTimeOptions.fifteen'), onPress: () => onAddTime(child, 15) },
+              { text: tr('noe.dashboard.addTimeOptions.thirty'), onPress: () => onAddTime(child, 30) },
+              { text: tr('noe.dashboard.addTimeOptions.sixty'), onPress: () => onAddTime(child, 60) },
+              { text: tr('common.cancel'), style: 'cancel' },
+            ])
+          }
+        >
+          <MaterialIcons name="add-circle-outline" size={16} color={colors.primary} />
+          <Text style={styles.chipText}>{tr('noe.dashboard.addTime')}</Text>
+        </Pressable>
+
+        <Pressable
+          style={styles.chip}
+          onPress={() => router.push({ pathname: '/children/[childId]', params: { childId: child.id } } as any)}
+        >
+          <MaterialIcons name="info-outline" size={16} color={colors.textMuted} />
+          <Text style={[styles.chipText, { color: colors.textMuted }]}>{tr('noe.dashboard.details')}</Text>
+        </Pressable>
+      </View>
+    </Card>
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   STYLES
+   ═══════════════════════════════════════════════════════════════════ */
+
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
   },
   scrollContent: {
     padding: spacing.lg,
     paddingTop: spacing.xxl,
     gap: spacing.md,
   },
+
+  /* ── Offline ── */
+  offlineBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.warningLight,
+    borderWidth: 1,
+    borderColor: colors.warning,
+    gap: spacing.xs,
+  },
+  offlineText: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.warning,
+    fontWeight: typography.fontWeights.medium,
+  },
+
+  /* ── Header ── */
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -184,18 +461,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
+    flex: 1,
   },
   headerTextGroup: {
-    gap: spacing.xs,
-  },
-  logo: {
-    fontSize: typography.fontSizes.heading,
-    fontWeight: typography.fontWeights.bold,
-    color: colors.primary,
+    gap: 2,
+    flex: 1,
   },
   greeting: {
     fontSize: typography.fontSizes.title,
-    fontWeight: typography.fontWeights.semibold,
+    fontWeight: typography.fontWeights.bold,
     color: colors.text,
   },
   subtitle: {
@@ -208,7 +482,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
     position: 'relative',
     ...shadows.sm,
   },
@@ -229,42 +503,70 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeights.bold,
     color: colors.onPrimary,
   },
+
+  /* ── Summary cards ── */
   summaryRow: {
     flexDirection: 'row',
     gap: spacing.sm,
   },
-  offlineBanner: {
-    flexDirection: 'row',
+  summaryCard: {
+    flex: 1,
+    backgroundColor: colors.background,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    alignItems: 'center',
+    gap: spacing.xs,
+    ...shadows.sm,
+  },
+  summaryIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
-    padding: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: colors.warningLight,
-    borderWidth: 1,
-    borderColor: colors.warning,
-    gap: spacing.xs,
   },
-  offlineText: {
+  summaryValue: {
+    fontSize: typography.fontSizes.heading,
+    fontWeight: typography.fontWeights.bold,
+    color: colors.text,
+  },
+  summaryLabel: {
     fontSize: typography.fontSizes.caption,
-    color: colors.warning,
+    color: colors.textMuted,
+    textAlign: 'center',
+  },
+
+  /* ── Section headers ── */
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: spacing.xs,
+  },
+  sectionTitle: {
+    fontSize: typography.fontSizes.subtitle,
+    fontWeight: typography.fontWeights.semibold,
+    color: colors.text,
+  },
+  sectionAction: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.primary,
     fontWeight: typography.fontWeights.medium,
   },
+
+  /* ── Child card ── */
   childCard: {
-    padding: spacing.lg,
-    borderRadius: radius.lg,
-    backgroundColor: colors.background,
     gap: spacing.md,
-    ...shadows.sm,
   },
   childCardOffline: {
     opacity: 0.6,
   },
-  childHeader: {
+  childTop: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
   },
-  childHeaderInfo: {
+  childInfo: {
     flex: 1,
     gap: 2,
   },
@@ -273,46 +575,96 @@ const styles = StyleSheet.create({
     fontWeight: typography.fontWeights.semibold,
     color: colors.text,
   },
-  batteryRow: {
+  blockBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+  },
+  blockBtnActive: {
+    backgroundColor: colors.dangerLight,
+  },
+  childUsage: {
+    gap: spacing.xs,
+  },
+  usageLabel: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  usageText: {
+    fontSize: typography.fontSizes.body,
+    fontWeight: typography.fontWeights.medium,
+    color: colors.text,
+  },
+  overLimitBadge: {
+    backgroundColor: colors.dangerLight,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+  },
+  overLimitText: {
+    fontSize: 10,
+    fontWeight: typography.fontWeights.bold,
+    color: colors.danger,
+  },
+  childChips: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  chip: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
-  batteryText: {
+  chipText: {
     fontSize: typography.fontSizes.caption,
-    color: colors.textMuted,
+    color: colors.primary,
+    fontWeight: typography.fontWeights.medium,
   },
-  childMetrics: {
-    gap: spacing.xs,
+
+  /* ── Alert cards ── */
+  alertCard: {
+    padding: spacing.md,
   },
-  metric: {
-    gap: 2,
+  alertRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
-  metricLabel: {
-    fontSize: typography.fontSizes.caption,
-    color: colors.textMuted,
+  alertIcon: {
+    fontSize: 20,
   },
-  metricValue: {
+  alertInfo: {
+    flex: 1,
+  },
+  alertChild: {
     fontSize: typography.fontSizes.body,
     fontWeight: typography.fontWeights.semibold,
     color: colors.text,
   },
-  childActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: spacing.sm,
-  },
-  actionButton: {
-    flex: 1,
-    alignItems: 'center',
-    paddingVertical: spacing.sm,
-    borderRadius: radius.md,
-    backgroundColor: colors.surface,
-    gap: 2,
-  },
-  actionLabel: {
+  alertMessage: {
     fontSize: typography.fontSizes.caption,
-    color: colors.text,
-    fontWeight: typography.fontWeights.medium,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  alertTime: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+  },
+
+  /* ── Quick actions ── */
+  quickActions: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    marginTop: spacing.xs,
   },
 });
