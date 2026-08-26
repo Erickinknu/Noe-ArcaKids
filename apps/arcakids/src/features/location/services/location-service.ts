@@ -65,10 +65,8 @@ export class LocationService {
     // Load existing geofences
     await this.loadGeofencesFromStorage();
 
-    // Start monitoring if we have geofences
-    if (this.geofences.length > 0) {
-      this.startLocationMonitoring();
-    }
+    // Start monitoring — always report GPS, with or without geofences
+    this.startLocationMonitoring();
   }
 
   private async loadGeofencesFromStorage() {

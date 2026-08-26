@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -11,9 +11,10 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { WeeklyChart } from '@/components/ui/weekly-chart';
 import { activityService, AlertItem, DailyUsage } from '@/features/activity/services/activity-service';
+import { unlockRequestService, UnlockRequest } from '@/features/unlock-request/services/unlock-request-service';
 import { useAsyncData } from '@/hooks/use-async-data';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { colors, radius, spacing, typography, shadows } from '@noe-arcakids/shared';
+import { errorMessage, colors, radius, spacing, typography, shadows } from '@noe-arcakids/shared';
 
 interface DailyBar {
   date: string;
@@ -55,6 +56,16 @@ function getAlertIcon(type: AlertItem['type']): string {
   return '📍';
 }
 
+const HISTORY_CHART_HEIGHT = 100;
+const HISTORY_BAR_WIDTH = 28;
+
+function getDayLetter(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00');
+  const day = d.getDay();
+  const letters = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+  return letters[day];
+}
+
 export default function ActivityScreen() {
   const { t: tr } = useTranslation();
   const router = useRouter();
@@ -62,17 +73,28 @@ export default function ActivityScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const fetchUsage = useCallback(() => activityService.getAllChildrenUsage(7), []);
   const fetchAlerts = useCallback(() => activityService.getRecentAlerts(), []);
+  const fetchUnlockRequests = useCallback(() => unlockRequestService.getPendingRequests(), []);
   const { data: usageData, error: usageError, loading: usageLoading, reload: reloadUsage } = useAsyncData<DailyUsage[]>(fetchUsage);
   const { data: alerts, error: alertsError, loading: alertsLoading, reload: reloadAlerts } = useAsyncData<AlertItem[]>(fetchAlerts);
+  const { data: unlockRequests, error: unlockError, loading: unlockLoading, reload: reloadUnlockRequests } = useAsyncData<UnlockRequest[]>(fetchUnlockRequests);
 
-  const loading = usageLoading || alertsLoading;
-  const error = usageError || alertsError;
-  const onRetry = useCallback(() => { reloadUsage(); reloadAlerts(); }, [reloadUsage, reloadAlerts]);
+  const loading = usageLoading || alertsLoading || unlockLoading;
+  const error = usageError || alertsError || unlockError;
+  const onRetry = useCallback(() => { reloadUsage(); reloadAlerts(); reloadUnlockRequests(); }, [reloadUsage, reloadAlerts, reloadUnlockRequests]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    Promise.all([reloadUsage(), reloadAlerts()]).finally(() => setRefreshing(false));
-  }, [reloadUsage, reloadAlerts]);
+    Promise.all([reloadUsage(), reloadAlerts(), reloadUnlockRequests()]).finally(() => setRefreshing(false));
+  }, [reloadUsage, reloadAlerts, reloadUnlockRequests]);
+
+  const handleResolveRequest = useCallback(async (requestId: string, status: 'approved' | 'denied') => {
+    try {
+      await unlockRequestService.resolveRequest(requestId, status);
+      reloadUnlockRequests();
+    } catch (cause) {
+      Alert.alert('Error', errorMessage(cause));
+    }
+  }, [reloadUnlockRequests]);
 
   const childSummaries = useMemo(() => {
     if (!usageData) return [];
@@ -194,6 +216,67 @@ export default function ActivityScreen() {
               ))}
             </>
           )}
+
+          {/* ── Unlock requests ── */}
+          {unlockRequests && unlockRequests.length > 0 && (
+            <>
+              <SectionHeader title="Solicitudes de desbloqueo" />
+              {unlockRequests.map((req) => (
+                <Card key={req.id} style={styles.card}>
+                  <View style={styles.unlockRow}>
+                    <MaterialIcons name="lock-open" size={20} color={colors.warning} />
+                    <View style={styles.unlockInfo}>
+                      <Text style={styles.unlockChild}>{req.childName}</Text>
+                      <Text style={styles.unlockReason}>{req.reason ?? 'Sin motivo especificado'}</Text>
+                      <Text style={styles.unlockTime}>{formatDate(req.createdAt)}</Text>
+                    </View>
+                    <View style={styles.unlockActions}>
+                      <Pressable
+                        style={({ pressed }) => [styles.unlockBtn, styles.unlockApprove, pressed && styles.unlockBtnPressed]}
+                        onPress={() => handleResolveRequest(req.id, 'approved')}
+                      >
+                        <MaterialIcons name="check" size={18} color="#fff" />
+                      </Pressable>
+                      <Pressable
+                        style={({ pressed }) => [styles.unlockBtn, styles.unlockDeny, pressed && styles.unlockBtnPressed]}
+                        onPress={() => handleResolveRequest(req.id, 'denied')}
+                      >
+                        <MaterialIcons name="close" size={18} color="#fff" />
+                      </Pressable>
+                    </View>
+                  </View>
+                </Card>
+              ))}
+            </>
+          )}
+        </>
+      )}
+
+      {/* ── Usage History Bar Chart ── */}
+      {weeklyBars.length > 0 && (
+        <>
+          <Text style={styles.sectionLabel}>Historial de uso (7 días)</Text>
+          <Card style={styles.card}>
+            <View style={styles.historyChart}>
+              {weeklyBars.map((bar) => (
+                <View key={bar.date} style={styles.historyBarColumn}>
+                  <Text style={styles.historyBarValue}>
+                    {bar.minutes > 0 ? `${bar.minutes}m` : ''}
+                  </Text>
+                  <View
+                    style={[
+                      styles.historyBar,
+                      {
+                        height: Math.max((bar.minutes / maxMinutes) * HISTORY_CHART_HEIGHT, 4),
+                        backgroundColor: bar.color,
+                      },
+                    ]}
+                  />
+                  <Text style={styles.historyBarLabel}>{getDayLetter(bar.date)}</Text>
+                </View>
+              ))}
+            </View>
+          </Card>
         </>
       )}
     </ScrollView>
@@ -227,4 +310,19 @@ const styles = StyleSheet.create({
   monitorCardPressed: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
   monitorIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
   monitorTitle: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.text, textAlign: 'center', lineHeight: 16 },
+  unlockRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  unlockInfo: { flex: 1 },
+  unlockChild: { fontSize: typography.fontSizes.subtitle, fontWeight: typography.fontWeights.semibold, color: colors.text },
+  unlockReason: { fontSize: typography.fontSizes.caption, color: colors.textMuted, marginTop: 2 },
+  unlockTime: { fontSize: typography.fontSizes.caption, color: colors.textMuted, marginTop: 2 },
+  unlockActions: { flexDirection: 'row', gap: spacing.xs },
+  unlockBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
+  unlockBtnPressed: { opacity: 0.8 },
+  unlockApprove: { backgroundColor: colors.success },
+  unlockDeny: { backgroundColor: colors.danger },
+  historyChart: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', height: HISTORY_CHART_HEIGHT + spacing.xl, paddingTop: spacing.xs },
+  historyBarColumn: { alignItems: 'center', flex: 1 },
+  historyBarValue: { fontSize: 10, color: colors.textMuted, marginBottom: 4 },
+  historyBar: { width: HISTORY_BAR_WIDTH, borderRadius: radius.sm, minHeight: 4 },
+  historyBarLabel: { fontSize: 10, color: colors.textMuted, marginTop: 4, fontWeight: typography.fontWeights.medium },
 });

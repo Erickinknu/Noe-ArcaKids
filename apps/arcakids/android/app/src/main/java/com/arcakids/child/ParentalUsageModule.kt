@@ -155,6 +155,19 @@ class ParentalUsageModule(private val reactContext: ReactApplicationContext) :
     }
   }
 
+  /** Caches device state (isBlocked, alertActive) for EnforcementService. */
+  @ReactMethod
+  fun updateDeviceState(deviceStateJson: String, promise: Promise) {
+    try {
+      val prefs =
+        reactContext.getSharedPreferences(EnforcementService.PREFS_NAME, Context.MODE_PRIVATE)
+      prefs.edit().putString(EnforcementService.KEY_DEVICE_STATE, deviceStateJson).apply()
+      promise.resolve(null)
+    } catch (e: Exception) {
+      promise.reject("DEVICE_STATE_ERROR", e.message, e)
+    }
+  }
+
   @ReactMethod
   fun startEnforcement(promise: Promise) {
     try {

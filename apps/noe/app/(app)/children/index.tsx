@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -15,6 +15,7 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
 import { parentalService } from '@/features/parental/services/parental-service';
+import { deviceControlService } from '@/features/device-control/services/device-control-service';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
 import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
@@ -44,6 +45,56 @@ export default function ChildrenScreen() {
       Alert.alert('Error', 'No se pudo actualizar el límite. Intenta de nuevo.');
     } finally {
       setRewardingChildId(null);
+    }
+  }
+
+  async function handleSos() {
+    try {
+      const locations = await deviceControlService.getChildrenLocations();
+      if (locations.length === 0) {
+        Alert.alert('SOS', 'No se encontraron ubicaciones de los hijos. Verifica que tengan GPS activo.');
+        return;
+      }
+
+      const childNames = locations.map((c) => c.displayName).join(', ');
+      const locationLines = locations
+        .map((c) => {
+          const name = c.displayName;
+          const lat = c.latitude?.toFixed(4) ?? '?';
+          const lng = c.longitude?.toFixed(4) ?? '?';
+          return `${name}: https://maps.google.com/?q=${lat},${lng}`;
+        })
+        .join('\n');
+
+      const message = `SOS: ${childNames} necesita ayuda.\n\nUbicación:\n${locationLines}`;
+
+      Alert.alert(
+        'SOS de emergencia',
+        'Enviar ubicación actual de tus hijos por:',
+        [
+          {
+            text: 'WhatsApp',
+            onPress: () => {
+              const url = `whatsapp://send?text=${encodeURIComponent(message)}`;
+              Linking.openURL(url).catch(() =>
+                Alert.alert('Error', 'WhatsApp no está instalado')
+              );
+            },
+          },
+          {
+            text: 'SMS',
+            onPress: () => {
+              const url = `sms:?body=${encodeURIComponent(message)}`;
+              Linking.openURL(url).catch(() =>
+                Alert.alert('Error', 'No se pudo abrir SMS')
+              );
+            },
+          },
+          { text: 'Cancelar', style: 'cancel' },
+        ]
+      );
+    } catch (cause: any) {
+      Alert.alert('Error', cause?.message ?? 'No se pudo obtener la ubicación');
     }
   }
 
@@ -151,14 +202,7 @@ export default function ChildrenScreen() {
                 </View>
                 <Pressable
                   style={({ pressed }) => [styles.sosBtn, pressed && styles.sosBtnPressed]}
-                  onPress={() => Alert.alert(
-                    'SOS de emergencia',
-                    'Se enviará la ubicación actual a todos los padres. ¿Continuar?',
-                    [
-                      { text: 'Cancelar', style: 'cancel' },
-                      { text: 'Enviar SOS', style: 'destructive', onPress: () => Alert.alert('Enviado', 'Ubicación enviada a todos los padres.') },
-                    ]
-                  )}
+                  onPress={handleSos}
                 >
                   <MaterialIcons name="emergency" size={22} color={colors.onPrimary} />
                   <Text style={styles.sosBtnText}>Activar SOS</Text>

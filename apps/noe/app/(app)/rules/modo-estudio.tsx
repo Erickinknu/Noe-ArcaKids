@@ -1,14 +1,26 @@
-import { useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, Pressable, Switch } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  Pressable,
+  Switch,
+  Alert,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { LoadingState } from '@/components/ui/loading-state';
+import { ErrorState } from '@/components/ui/error-state';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
+import { studyModeService, type StudySchedule } from '@/features/study-mode/services/study-mode-service';
 import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
 
 type StudyDay = { enabled: boolean; start: string; end: string };
-type StudySchedule = Record<string, StudyDay>;
+type StudyScheduleState = Record<string, StudyDay>;
 
 const DAYS = [
   { key: 'mon', label: 'Lunes' },
@@ -20,7 +32,7 @@ const DAYS = [
 
 const BLOCKED_APPS = ['TikTok', 'Instagram', 'YouTube', 'Facebook', 'Snapchat', 'Discord', 'Twitch'];
 
-const DEFAULT_STUDY: StudySchedule = {
+const DEFAULT_STUDY: StudyScheduleState = {
   mon: { enabled: true, start: '08:00', end: '14:00' },
   tue: { enabled: true, start: '08:00', end: '14:00' },
   wed: { enabled: true, start: '08:00', end: '14:00' },
@@ -28,11 +40,61 @@ const DEFAULT_STUDY: StudySchedule = {
   fri: { enabled: true, start: '08:00', end: '14:00' },
 };
 
+function toState(schedule: StudySchedule): StudyScheduleState {
+  const state: StudyScheduleState = {};
+  for (const day of DAYS) {
+    const dayData = schedule.days.includes(day.key)
+      ? { enabled: true, start: '08:00', end: '14:00' }
+      : { enabled: false, start: '08:00', end: '14:00' };
+    state[day.key] = dayData;
+  }
+  // Try to extract hours from first entry
+  if (schedule.hours.length > 0) {
+    for (const day of DAYS) {
+      if (state[day.key].enabled) {
+        state[day.key].start = schedule.hours[0].start;
+        state[day.key].end = schedule.hours[0].end;
+      }
+    }
+  }
+  return state;
+}
+
+function fromState(enabled: boolean, state: StudyScheduleState): StudySchedule {
+  const days: string[] = [];
+  const hours: { start: string; end: string }[] = [];
+  for (const day of DAYS) {
+    if (state[day.key].enabled) {
+      days.push(day.key);
+      if (hours.length === 0) {
+        hours.push({ start: state[day.key].start, end: state[day.key].end });
+      }
+    }
+  }
+  return { enabled, hours, days };
+}
+
 export default function ModoEstudioScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const [schedule, setSchedule] = useState<StudySchedule>(DEFAULT_STUDY);
-  const [allDay, setAllDay] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [enabled, setEnabled] = useState(false);
+  const [schedule, setSchedule] = useState<StudyScheduleState>(DEFAULT_STUDY);
+
+  useEffect(() => {
+    studyModeService
+      .getSchedule()
+      .then((s) => {
+        setEnabled(s.enabled);
+        if (s.days.length > 0) {
+          setSchedule(toState(s));
+        }
+      })
+      .catch((err) => setError(err?.message ?? 'Error al cargar'))
+      .finally(() => setLoading(false));
+  }, []);
 
   const toggleDay = (day: string) => {
     setSchedule((prev) => ({
@@ -40,6 +102,22 @@ export default function ModoEstudioScreen() {
       [day]: { ...prev[day], enabled: !prev[day].enabled },
     }));
   };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const studySchedule = fromState(enabled, schedule);
+      await studyModeService.saveSchedule(studySchedule);
+      Alert.alert('Guardado', 'Modo estudio actualizado correctamente');
+    } catch (cause: any) {
+      Alert.alert('Error', cause?.message ?? 'No se pudo guardar');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) return <LoadingState text="Cargando modo estudio..." />;
+  if (error) return <ErrorState message={error} onRetry={() => setError(null)} />;
 
   return (
     <ScrollView contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]}>
@@ -54,7 +132,11 @@ export default function ModoEstudioScreen() {
       <Card>
         <View style={styles.switchRow}>
           <Text style={styles.switchLabel}>Activar modo estudio</Text>
-          <Switch value={true} trackColor={{ false: colors.border, true: colors.primary }} />
+          <Switch
+            value={enabled}
+            onValueChange={setEnabled}
+            trackColor={{ false: colors.border, true: colors.primary }}
+          />
         </View>
       </Card>
 
@@ -98,9 +180,9 @@ export default function ModoEstudioScreen() {
         ))}
       </Card>
 
-      <Pressable style={({ pressed }) => [styles.saveBtn, pressed && styles.saveBtnPressed]}>
-        <Text style={styles.saveBtnText}>Guardar modo estudio</Text>
-      </Pressable>
+      <Button onPress={handleSave} loading={saving}>
+        Guardar modo estudio
+      </Button>
     </ScrollView>
   );
 }
@@ -123,7 +205,4 @@ const styles = StyleSheet.create({
   appRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: spacing.sm },
   appBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   appName: { fontSize: typography.fontSizes.body, color: colors.text },
-  saveBtn: { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.sm },
-  saveBtnPressed: { opacity: 0.85 },
-  saveBtnText: { color: colors.onPrimary, fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold },
 });

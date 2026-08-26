@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -14,19 +14,30 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
+import { pinService } from '@/features/pin/services/pin-service';
 import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
 
 const PIN_LENGTH = 4;
 const WEAK_PINS = ['0000', '1111', '2222', '3333', '4444', '5555', '6666', '7777', '8888', '9999', '1234', '4321'];
 
+type ScreenMode = 'loading' | 'create' | 'verify-old' | 'create-new' | 'done';
+
 export default function PinScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
+  const [mode, setMode] = useState<ScreenMode>('loading');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
+  const [oldPin, setOldPin] = useState('');
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    pinService.isEnabled().then((enabled) => {
+      setMode(enabled ? 'verify-old' : 'create');
+    });
+  }, []);
 
   function validate(newPin: string): string | null {
     if (newPin.length !== PIN_LENGTH) {
@@ -41,7 +52,29 @@ export default function PinScreen() {
     return null;
   }
 
-  async function handleSave() {
+  async function handleVerifyOld() {
+    setError(null);
+    if (oldPin.length !== PIN_LENGTH) {
+      setError('Ingresa el PIN actual');
+      return;
+    }
+    setSaving(true);
+    try {
+      const valid = await pinService.verifyPin(oldPin);
+      if (!valid) {
+        setError('PIN incorrecto');
+        return;
+      }
+      setMode('create-new');
+      setOldPin('');
+    } catch (cause: any) {
+      setError(cause?.message ?? 'Error al verificar el PIN');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleCreate() {
     setError(null);
     setSavedFlash(false);
 
@@ -58,15 +91,55 @@ export default function PinScreen() {
 
     setSaving(true);
     try {
-      // TODO: Call PIN service linked to ArcaKids
-      await new Promise((r) => setTimeout(r, 800));
+      await pinService.createPin(pin);
       setSavedFlash(true);
+      setMode('done');
       setTimeout(() => setSavedFlash(false), 2000);
     } catch (cause: any) {
       setError(cause?.message ?? 'Error al guardar el PIN');
     } finally {
       setSaving(false);
     }
+  }
+
+  async function handleUpdateNew() {
+    setError(null);
+    setSavedFlash(false);
+
+    const validationError = validate(pin);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
+    if (pin !== confirmPin) {
+      setError('Los PIN no coinciden');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const updated = await pinService.updatePin(oldPin, pin);
+      if (!updated) {
+        setError('PIN anterior incorrecto');
+        return;
+      }
+      setSavedFlash(true);
+      setMode('done');
+      setTimeout(() => setSavedFlash(false), 2000);
+    } catch (cause: any) {
+      setError(cause?.message ?? 'Error al actualizar el PIN');
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  if (mode === 'loading') {
+    return (
+      <View style={[styles.screen, { paddingTop: screenPadding.paddingTop }]}>
+        <Text style={styles.loadingText}>Cargando...</Text>
+      </View>
+    );
   }
 
   return (
@@ -81,33 +154,63 @@ export default function PinScreen() {
 
       <Card>
         <Text style={styles.description}>
-          El código PIN se utiliza para desbloquear el teléfono del niño. Solo puede
-          ser modificado desde NOE (la app del padre).
+          {mode === 'verify-old'
+            ? 'Ingresa el PIN actual para poder cambiarlo.'
+            : mode === 'create-new'
+            ? 'Ingresa el nuevo PIN que usarás para desbloquear el teléfono del niño.'
+            : 'El código PIN se utiliza para desbloquear el teléfono del niño. Solo puede ser modificado desde NOE (la app del padre).'}
         </Text>
 
-        <Text style={styles.label}>Nuevo PIN ({PIN_LENGTH} dígitos)</Text>
-        <TextInput
-          style={styles.pinInput}
-          value={pin}
-          onChangeText={(t) => setPin(t.replace(/\D/g, '').slice(0, PIN_LENGTH))}
-          keyboardType="number-pad"
-          maxLength={PIN_LENGTH}
-          secureTextEntry
-          placeholder="••••"
-          placeholderTextColor={colors.textMuted}
-        />
+        {mode === 'verify-old' && (
+          <>
+            <Text style={styles.label}>PIN actual ({PIN_LENGTH} dígitos)</Text>
+            <TextInput
+              style={styles.pinInput}
+              value={oldPin}
+              onChangeText={(t) => setOldPin(t.replace(/\D/g, '').slice(0, PIN_LENGTH))}
+              keyboardType="number-pad"
+              maxLength={PIN_LENGTH}
+              secureTextEntry
+              placeholder="••••"
+              placeholderTextColor={colors.textMuted}
+            />
+          </>
+        )}
 
-        <Text style={styles.label}>Confirmar PIN</Text>
-        <TextInput
-          style={styles.pinInput}
-          value={confirmPin}
-          onChangeText={(t) => setConfirmPin(t.replace(/\D/g, '').slice(0, PIN_LENGTH))}
-          keyboardType="number-pad"
-          maxLength={PIN_LENGTH}
-          secureTextEntry
-          placeholder="••••"
-          placeholderTextColor={colors.textMuted}
-        />
+        {(mode === 'create' || mode === 'create-new') && (
+          <>
+            <Text style={styles.label}>Nuevo PIN ({PIN_LENGTH} dígitos)</Text>
+            <TextInput
+              style={styles.pinInput}
+              value={pin}
+              onChangeText={(t) => setPin(t.replace(/\D/g, '').slice(0, PIN_LENGTH))}
+              keyboardType="number-pad"
+              maxLength={PIN_LENGTH}
+              secureTextEntry
+              placeholder="••••"
+              placeholderTextColor={colors.textMuted}
+            />
+
+            <Text style={styles.label}>Confirmar PIN</Text>
+            <TextInput
+              style={styles.pinInput}
+              value={confirmPin}
+              onChangeText={(t) => setConfirmPin(t.replace(/\D/g, '').slice(0, PIN_LENGTH))}
+              keyboardType="number-pad"
+              maxLength={PIN_LENGTH}
+              secureTextEntry
+              placeholder="••••"
+              placeholderTextColor={colors.textMuted}
+            />
+          </>
+        )}
+
+        {mode === 'done' && (
+          <View style={styles.successBox}>
+            <MaterialIcons name="check-circle" size={48} color={colors.success} />
+            <Text style={styles.successText}>PIN guardado correctamente</Text>
+          </View>
+        )}
 
         <View style={styles.warningBox}>
           <MaterialIcons name="warning" size={18} color={colors.warning} />
@@ -124,9 +227,23 @@ export default function PinScreen() {
           </View>
         ) : null}
 
-        <Button onPress={handleSave} loading={saving}>
-          {savedFlash ? 'Guardado ✓' : 'Guardar PIN'}
-        </Button>
+        {mode === 'verify-old' && (
+          <Button onPress={handleVerifyOld} loading={saving}>
+            Verificar PIN
+          </Button>
+        )}
+
+        {mode === 'create' && (
+          <Button onPress={handleCreate} loading={saving}>
+            {savedFlash ? 'Guardado ✓' : 'Crear PIN'}
+          </Button>
+        )}
+
+        {mode === 'create-new' && (
+          <Button onPress={handleUpdateNew} loading={saving}>
+            {savedFlash ? 'Guardado ✓' : 'Actualizar PIN'}
+          </Button>
+        )}
       </Card>
 
       <Text style={styles.hint}>
@@ -204,10 +321,26 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSizes.caption,
     color: colors.danger,
   },
+  successBox: {
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.lg,
+  },
+  successText: {
+    fontSize: typography.fontSizes.body,
+    fontWeight: typography.fontWeights.semibold,
+    color: colors.success,
+  },
   hint: {
     fontSize: typography.fontSizes.caption,
     color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 18,
+  },
+  loadingText: {
+    fontSize: typography.fontSizes.body,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginTop: spacing.xxl,
   },
 });

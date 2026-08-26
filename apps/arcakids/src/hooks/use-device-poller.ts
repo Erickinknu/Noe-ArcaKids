@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { parentalService } from '@/features/parental/services/parental-service';
+import { parentalBridge } from '@/features/parental/native/parental-bridge';
 import { identityService } from '@/features/identity/services/identity-service';
 
 interface DeviceState {
@@ -25,6 +26,13 @@ export function useDevicePoller() {
           isBlocked: result.isBlocked,
           alertActive: result.alertActive,
           alertStartedAt: result.alertStartedAt,
+        });
+
+        // Write device state to a separate SharedPreferences key so the
+        // enforcement service can merge it without overwriting rule fields.
+        parentalBridge.updateDeviceState({
+          isBlocked: result.isBlocked,
+          alertActive: result.alertActive,
         });
       }
     } catch (e) {

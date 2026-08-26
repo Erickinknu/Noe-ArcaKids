@@ -63,6 +63,31 @@ class EnforcementService : Service() {
         return
       }
 
+      // Merge device state (isBlocked, alertActive) from the separate key.
+      val deviceRaw = prefs.getString(KEY_DEVICE_STATE, null)
+      if (deviceRaw != null) {
+        try {
+          val deviceState = JSONObject(deviceRaw)
+          state.put("isBlocked", deviceState.optBoolean("isBlocked", false))
+          state.put("alertActive", deviceState.optBoolean("alertActive", false))
+        } catch (_: Exception) {
+          // Malformed device state — ignore, use defaults.
+        }
+      }
+
+      // Block check — bring app to front immediately.
+      val isBlocked = state.optBoolean("isBlocked", false)
+      if (isBlocked) {
+        bringAppToFront()
+        return
+      }
+
+      // Sonic alert — play sound and vibrate when active.
+      val alertActive = state.optBoolean("alertActive", false)
+      if (alertActive) {
+        playAlertSound()
+      }
+
       val nowMinutes = Calendar.getInstance().let {
         it.get(Calendar.HOUR_OF_DAY) * 60 + it.get(Calendar.MINUTE)
       }
@@ -106,6 +131,48 @@ class EnforcementService : Service() {
       }
     } catch (_: Exception) {
       // Never crash the service on malformed state.
+    }
+  }
+
+  @Suppress("DEPRECATION")
+  private fun playAlertSound() {
+    try {
+      val audioManager = getSystemService(Context.AUDIO_SERVICE) as android.media.AudioManager
+
+      // Set to max volume
+      audioManager.setStreamVolume(
+        android.media.AudioManager.STREAM_ALARM,
+        audioManager.getStreamMaxVolume(android.media.AudioManager.STREAM_ALARM),
+        0
+      )
+
+      // Play alarm sound
+      val uri = android.media.RingtoneManager.getDefaultUri(
+        android.media.RingtoneManager.TYPE_ALARM
+      )
+      val ringtone = android.media.RingtoneManager.getRingtone(applicationContext, uri)
+      ringtone?.play()
+
+      // Also vibrate
+      val vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+        val manager = getSystemService(Context.VIBRATOR_MANAGER_SERVICE) as
+          android.os.VibratorManager
+        manager.defaultVibrator
+      } else {
+        getSystemService(Context.VIBRATOR_SERVICE) as android.os.Vibrator
+      }
+
+      if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        vibrator.vibrate(
+          android.os.VibrationEffect.createWaveform(
+            longArrayOf(0, 500, 200, 500), 0
+          )
+        )
+      } else {
+        vibrator.vibrate(longArrayOf(0, 500, 200, 500), 0)
+      }
+    } catch (_: Exception) {
+      // Service must not crash.
     }
   }
 
@@ -195,6 +262,7 @@ class EnforcementService : Service() {
   companion object {
     const val PREFS_NAME = "arcakids_enforcement"
     const val KEY_STATE = "state"
+    const val KEY_DEVICE_STATE = "device_state"
     const val ACTION_STOP = "com.arcakids.child.STOP_ENFORCEMENT"
 
     private const val CHANNEL_ID = "enforcement"
