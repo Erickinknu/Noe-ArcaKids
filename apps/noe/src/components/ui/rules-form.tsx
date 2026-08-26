@@ -83,15 +83,16 @@ export default function RulesForm({
               })}
             </Text>
 
-            <Switch
-              testID="bedtime-switch"
-              value={bedtimeEnabled}
-              onValueChange={(value) => setBedtimeEnabled(value)}
-              trackColor={{ false: colors.surface, true: colors.primary }}
-              thumbColor={colors.primary}
-            >
-              <Text>{tr('noe.rules.bedtimeEnabled')}</Text>
-            </Switch>
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>{tr('noe.rules.bedtimeEnabled')}</Text>
+              <Switch
+                testID="bedtime-switch"
+                value={bedtimeEnabled}
+                onValueChange={(value) => setBedtimeEnabled(value)}
+                trackColor={{ false: colors.surface, true: colors.primary }}
+                thumbColor={colors.primary}
+              />
+            </View>
 
             <View style={styles.timeRow}>
               <Text style={styles.timeLabel}>{tr('noe.rules.bedtimeStart')}</Text>
@@ -173,6 +174,17 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSizes.caption,
     color: colors.textMuted,
     marginRight: spacing.xs,
+  },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginVertical: spacing.sm,
+  },
+  switchLabel: {
+    fontSize: typography.fontSizes.body,
+    color: colors.text,
+    flex: 1,
   },
   timeInput: {
     flex: 1,
