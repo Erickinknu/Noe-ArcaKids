@@ -218,6 +218,57 @@ export default function DashboardScreen() {
         </Pressable>
       </View>
 
+      {/* ── Quick actions ── */}
+      <Text style={styles.sectionTitle}>Acciones rápidas</Text>
+      <View style={styles.quickActionsRow}>
+        {[
+          { icon: 'lock' as const, label: 'Bloquear\ntodos', color: '#DC2626', onPress: () => Alert.alert('Bloquear todos', '¿Bloquear el dispositivo de todos los hijos?', [
+            { text: 'Cancelar', style: 'cancel' },
+            { text: 'Bloquear', style: 'destructive', onPress: () => {} },
+          ])},
+          { icon: 'notifications-active' as const, label: 'Enviar\nalerta', color: '#D97706', onPress: () => Alert.alert('Enviar alerta', 'Se enviará una notificación a todos los dispositivos hijos.') },
+          { icon: 'location-search' as const, label: 'Ubicar\nhijos', color: '#059669', onPress: () => router.push('/rules/geofencing' as any) },
+          { icon: 'school' as const, label: 'Modo\nestudio', color: '#6366F1', onPress: () => router.push('/rules/modo-estudio' as any) },
+        ].map((action) => (
+          <Pressable
+            key={action.label}
+            style={({ pressed }) => [styles.quickActionCard, pressed && styles.quickActionPressed]}
+            onPress={action.onPress}
+          >
+            <View style={[styles.quickActionIcon, { backgroundColor: action.color + '18' }]}>
+              <MaterialIcons name={action.icon} size={22} color={action.color} />
+            </View>
+            <Text style={styles.quickActionLabel}>{action.label}</Text>
+          </Pressable>
+        ))}
+      </View>
+
+      {/* ── Resumen del día ── */}
+      <Card style={styles.daySummaryCard}>
+        <View style={styles.daySummaryHeader}>
+          <MaterialIcons name="today" size={20} color={colors.primary} />
+          <Text style={styles.daySummaryTitle}>Resumen de hoy</Text>
+        </View>
+        <View style={styles.daySummaryGrid}>
+          <View style={styles.daySummaryItem}>
+            <Text style={styles.daySummaryValue}>{formatDuration(totalMinutesToday)}</Text>
+            <Text style={styles.daySummaryLabel}>Tiempo total</Text>
+          </View>
+          <View style={styles.daySummaryDivider} />
+          <View style={styles.daySummaryItem}>
+            <Text style={styles.daySummaryValue}>{data.children.length}</Text>
+            <Text style={styles.daySummaryLabel}>Hijos</Text>
+          </View>
+          <View style={styles.daySummaryDivider} />
+          <View style={styles.daySummaryItem}>
+            <Text style={[styles.daySummaryValue, { color: data.alertsCount > 0 ? colors.warning : colors.success }]}>
+              {data.alertsCount}
+            </Text>
+            <Text style={styles.daySummaryLabel}>Alertas</Text>
+          </View>
+        </View>
+      </Card>
+
       {/* ── Summary cards ── */}
       <View style={styles.summaryRow}>
         <SummaryCard
@@ -667,5 +718,75 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: spacing.sm,
     marginTop: spacing.xs,
+  },
+  quickActionsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  quickActionCard: {
+    flex: 1,
+    alignItems: 'center',
+    backgroundColor: colors.background,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: spacing.sm,
+    ...shadows.sm,
+  },
+  quickActionPressed: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+  },
+  quickActionIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  quickActionLabel: {
+    fontSize: typography.fontSizes.caption,
+    fontWeight: typography.fontWeights.medium,
+    color: colors.text,
+    textAlign: 'center',
+    lineHeight: 16,
+  },
+  daySummaryCard: {
+    padding: spacing.md,
+  },
+  daySummaryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    marginBottom: spacing.md,
+  },
+  daySummaryTitle: {
+    fontSize: typography.fontSizes.subtitle,
+    fontWeight: typography.fontWeights.semibold,
+    color: colors.text,
+  },
+  daySummaryGrid: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  daySummaryItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  daySummaryValue: {
+    fontSize: typography.fontSizes.heading,
+    fontWeight: typography.fontWeights.bold,
+    color: colors.text,
+  },
+  daySummaryLabel: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    marginTop: 2,
+  },
+  daySummaryDivider: {
+    width: 1,
+    height: 36,
+    backgroundColor: colors.border,
   },
 });

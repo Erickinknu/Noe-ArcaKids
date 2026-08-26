@@ -5,7 +5,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   View,
   RefreshControl,
   Switch,
@@ -19,6 +18,7 @@ import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
+import { TimePicker, DurationPicker } from '@/components/ui/time-picker';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { useAsyncData } from '@/hooks/use-async-data';
 import type { ChildProfile, ParentalRules } from '@noe-arcakids/types';
@@ -32,10 +32,13 @@ interface FamilyData {
   children: ChildProfile[];
 }
 
+type ViewMode = 'list' | 'child';
+
 export default function RulesScreen() {
   const { t: tr } = useTranslation();
   const router = useRouter();
   const screenPadding = useScreenPadding();
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
   const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
   const [rules, setRules] = useState<ParentalRules | null>(null);
   const [loadingChild, setLoadingChild] = useState(false);
@@ -43,10 +46,23 @@ export default function RulesScreen() {
   const [saving, setSaving] = useState(false);
 
   // Rule states
-  const [dailyLimit, setDailyLimit] = useState('');
+  const [dailyLimitMinutes, setDailyLimitMinutes] = useState(120);
   const [bedtimeOn, setBedtimeOn] = useState(false);
-  const [bedtimeStart, setBedtimeStart] = useState('21:00');
-  const [bedtimeEnd, setBedtimeEnd] = useState('07:00');
+  const [bedtimeStartH, setBedtimeStartH] = useState(21);
+  const [bedtimeStartM, setBedtimeStartM] = useState(0);
+  const [bedtimeEndH, setBedtimeEndH] = useState(7);
+  const [bedtimeEndM, setBedtimeEndM] = useState(0);
+
+  // Custom schedules
+  const [customSchedules, setCustomSchedules] = useState<Array<{
+    id: string;
+    name: string;
+    enabled: boolean;
+    startH: number;
+    startM: number;
+    endH: number;
+    endM: number;
+  }>>([]);
 
   const fetchFamily = useCallback(async (): Promise<FamilyData> => {
     const { family } = await familyService.getMyFamily();
@@ -61,26 +77,46 @@ export default function RulesScreen() {
     setRefreshing(false);
   }, [reload]);
 
+  function formatTime(h: number, m: number) {
+    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+  }
+
+  function formatDuration(totalMin: number) {
+    const h = Math.floor(totalMin / 60);
+    const m = totalMin % 60;
+    if (h === 0) return `${m}min`;
+    if (m === 0) return `${h}h`;
+    return `${h}h ${m}min`;
+  }
+
   async function handleSelectChild(child: ChildProfile) {
     setSelectedChild(child);
     setLoadingChild(true);
     try {
       const r = await parentalService.getRulesByChild(child.id);
       setRules(r);
-      setDailyLimit(r?.dailyLimitMinutes != null ? String(r.dailyLimitMinutes) : '');
+      setDailyLimitMinutes(r?.dailyLimitMinutes ?? 120);
       setBedtimeOn(r?.bedtimeEnabled ?? false);
-      setBedtimeStart(r?.bedtimeStart ?? '21:00');
-      setBedtimeEnd(r?.bedtimeEnd ?? '07:00');
+      const sH = r?.bedtimeStart ? parseInt(r.bedtimeStart.split(':')[0], 10) : 21;
+      const sM = r?.bedtimeStart ? parseInt(r.bedtimeStart.split(':')[1], 10) : 0;
+      const eH = r?.bedtimeEnd ? parseInt(r.bedtimeEnd.split(':')[0], 10) : 7;
+      const eM = r?.bedtimeEnd ? parseInt(r.bedtimeEnd.split(':')[1], 10) : 0;
+      setBedtimeStartH(sH);
+      setBedtimeStartM(sM);
+      setBedtimeEndH(eH);
+      setBedtimeEndM(eM);
     } catch {
-      // No rules yet — use defaults
       setRules(null);
-      setDailyLimit('');
+      setDailyLimitMinutes(120);
       setBedtimeOn(false);
-      setBedtimeStart('21:00');
-      setBedtimeEnd('07:00');
+      setBedtimeStartH(21);
+      setBedtimeStartM(0);
+      setBedtimeEndH(7);
+      setBedtimeEndM(0);
     } finally {
       setLoadingChild(false);
     }
+    setViewMode('child');
   }
 
   async function saveRules(partial: Partial<ParentalRules>) {
@@ -97,158 +133,180 @@ export default function RulesScreen() {
     }
   }
 
-  async function handleSaveDailyLimit() {
-    const val = dailyLimit.trim();
-    await saveRules({ dailyLimitMinutes: val === '' ? null : Number(val) });
+  function addCustomSchedule() {
+    const newSchedule = {
+      id: Date.now().toString(),
+      name: 'Nuevo horario',
+      enabled: true,
+      startH: 8,
+      startM: 0,
+      endH: 9,
+      endM: 0,
+    };
+    setCustomSchedules((prev) => [...prev, newSchedule]);
   }
 
-  async function handleToggleBedtime(val: boolean) {
-    setBedtimeOn(val);
-    await saveRules({
-      bedtimeEnabled: val,
-      bedtimeStart: val ? bedtimeStart : null,
-      bedtimeEnd: val ? bedtimeEnd : null,
-    });
+  function removeCustomSchedule(id: string) {
+    setCustomSchedules((prev) => prev.filter((s) => s.id !== id));
   }
 
-  async function handleSaveBedtime() {
-    await saveRules({ bedtimeEnabled: true, bedtimeStart, bedtimeEnd });
+  function updateCustomSchedule(id: string, updates: Partial<typeof customSchedules[0]>) {
+    setCustomSchedules((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
   }
 
-  // ── Loading / Error states ──
+  // ── Loading / Error ──
   if (loading) {
-    return (
-      <View style={styles.screen}>
-        <LoadingState text={tr('noe.rules.loading')} />
-      </View>
-    );
+    return <View style={styles.screen}><LoadingState text={tr('noe.rules.loading')} /></View>;
   }
-
   if (error || !data) {
-    return (
-      <View style={styles.screen}>
-        <ErrorState message={error ?? 'Algo salió mal'} onRetry={reload} />
-      </View>
-    );
+    return <View style={styles.screen}><ErrorState message={error ?? 'Algo salió mal'} onRetry={reload} /></View>;
   }
 
-  // ── Child selected → show control panel ──
-  if (selectedChild) {
+  // ── Child control panel ──
+  if (viewMode === 'child' && selectedChild) {
     return (
       <ScrollView
         contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]}
         keyboardShouldPersistTaps="handled"
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
       >
-        {/* Back + child header */}
-        <Pressable style={styles.backRow} onPress={() => setSelectedChild(null)}>
+        {/* Back */}
+        <Pressable style={styles.backRow} onPress={() => setViewMode('list')}>
           <MaterialIcons name="arrow-back" size={22} color={colors.primary} />
           <Text style={styles.backText}>Cambiar hijo</Text>
         </Pressable>
 
+        {/* Child header */}
         <View style={styles.childHeader}>
           <Avatar name={selectedChild.displayName} emoji={selectedChild.avatarUrl ?? undefined} size={56} />
           <View>
             <Text style={styles.childName}>{selectedChild.displayName}</Text>
             <Text style={styles.childStatus}>
-              {loadingChild ? 'Cargando reglas...' : rules ? 'Reglas configuradas' : 'Sin reglas aún'}
+              {loadingChild ? 'Cargando...' : rules ? 'Reglas activas' : 'Sin reglas aún'}
             </Text>
           </View>
         </View>
 
         {/* ── Límite diario ── */}
         <Card style={styles.card}>
-          <View style={styles.ruleRow}>
-            <View style={styles.ruleIconBox}>
-              <MaterialIcons name="timer" size={22} color={colors.primary} />
+          <View style={styles.ruleHeader}>
+            <View style={[styles.ruleIcon, { backgroundColor: '#6366F118' }]}>
+              <MaterialIcons name="timer" size={22} color="#6366F1" />
             </View>
             <View style={styles.ruleInfo}>
               <Text style={styles.ruleTitle}>Límite diario</Text>
-              <Text style={styles.ruleDesc}>Minutos máximos de uso por día</Text>
+              <Text style={styles.ruleValue}>{formatDuration(dailyLimitMinutes)}</Text>
             </View>
           </View>
-          <View style={styles.limitInputRow}>
-            <TextInput
-              style={styles.limitInput}
-              value={dailyLimit}
-              onChangeText={setDailyLimit}
-              placeholder="Ej: 120"
-              placeholderTextColor={colors.textMuted}
-              keyboardType="numeric"
-              maxLength={4}
-            />
-            <Text style={styles.limitUnit}>min/día</Text>
-            <Pressable
-              style={({ pressed }) => [styles.saveSmallBtn, pressed && styles.saveSmallBtnPressed, saving && styles.saveSmallBtnDisabled]}
-              onPress={handleSaveDailyLimit}
-              disabled={saving}
-            >
-              <Text style={styles.saveSmallBtnText}>{saving ? '...' : 'Guardar'}</Text>
-            </Pressable>
-          </View>
+          <DurationPicker totalMinutes={dailyLimitMinutes} onChange={setDailyLimitMinutes} />
+          <Pressable
+            style={({ pressed }) => [styles.saveBtn, pressed && styles.saveBtnPressed]}
+            onPress={() => saveRules({ dailyLimitMinutes })}
+            disabled={saving}
+          >
+            <Text style={styles.saveBtnText}>{saving ? 'Guardando...' : 'Guardar límite'}</Text>
+          </Pressable>
         </Card>
 
         {/* ── Horario de sueño ── */}
         <Card style={styles.card}>
-          <View style={styles.ruleRow}>
-            <View style={styles.ruleIconBox}>
-              <MaterialIcons name="bedtime" size={22} color={colors.primary} />
+          <View style={styles.ruleHeader}>
+            <View style={[styles.ruleIcon, { backgroundColor: '#8B5CF618' }]}>
+              <MaterialIcons name="bedtime" size={22} color="#8B5CF6" />
             </View>
             <View style={styles.ruleInfo}>
               <Text style={styles.ruleTitle}>Horario de sueño</Text>
-              <Text style={styles.ruleDesc}>Bloqueo automático durante la noche</Text>
+              <Text style={styles.ruleValue}>
+                {bedtimeOn ? `${formatTime(bedtimeStartH, bedtimeStartM)} – ${formatTime(bedtimeEndH, bedtimeEndM)}` : 'Desactivado'}
+              </Text>
             </View>
             <Switch
               value={bedtimeOn}
-              onValueChange={handleToggleBedtime}
-              trackColor={{ false: colors.border, true: colors.primary }}
+              onValueChange={(v) => {
+                setBedtimeOn(v);
+                saveRules({ bedtimeEnabled: v, bedtimeStart: formatTime(bedtimeStartH, bedtimeStartM), bedtimeEnd: formatTime(bedtimeEndH, bedtimeEndM) });
+              }}
+              trackColor={{ false: colors.border, true: '#8B5CF6' }}
             />
           </View>
           {bedtimeOn && (
-            <View style={styles.timeInputRow}>
-              <View style={styles.timeBox}>
-                <Text style={styles.timeLabel}>Dormir</Text>
-                <TextInput
-                  style={styles.timeInput}
-                  value={bedtimeStart}
-                  onChangeText={setBedtimeStart}
-                  placeholder="21:00"
-                  placeholderTextColor={colors.textMuted}
-                  maxLength={5}
-                />
-              </View>
-              <MaterialIcons name="arrow-forward" size={18} color={colors.textMuted} />
-              <View style={styles.timeBox}>
-                <Text style={styles.timeLabel}>Despertar</Text>
-                <TextInput
-                  style={styles.timeInput}
-                  value={bedtimeEnd}
-                  onChangeText={setBedtimeEnd}
-                  placeholder="07:00"
-                  placeholderTextColor={colors.textMuted}
-                  maxLength={5}
-                />
-              </View>
+            <>
+              <Text style={styles.timeSectionLabel}>Dormir</Text>
+              <TimePicker hours={bedtimeStartH} minutes={bedtimeStartM} onHoursChange={setBedtimeStartH} onMinutesChange={setBedtimeStartM} />
+              <Text style={styles.timeSectionLabel}>Despertar</Text>
+              <TimePicker hours={bedtimeEndH} minutes={bedtimeEndM} onHoursChange={setBedtimeEndH} onMinutesChange={setBedtimeEndM} />
               <Pressable
-                style={({ pressed }) => [styles.saveSmallBtn, pressed && styles.saveSmallBtnPressed]}
-                onPress={handleSaveBedtime}
+                style={({ pressed }) => [styles.saveBtn, pressed && styles.saveBtnPressed]}
+                onPress={() => saveRules({ bedtimeEnabled: true, bedtimeStart: formatTime(bedtimeStartH, bedtimeStartM), bedtimeEnd: formatTime(bedtimeEndH, bedtimeEndM) })}
                 disabled={saving}
               >
-                <Text style={styles.saveSmallBtnText}>{saving ? '...' : 'OK'}</Text>
+                <Text style={styles.saveBtnText}>{saving ? 'Guardando...' : 'Guardar horario'}</Text>
               </Pressable>
-            </View>
+            </>
           )}
+        </Card>
+
+        {/* ── Horario personalizado ── */}
+        <Card style={styles.card}>
+          <View style={styles.ruleHeader}>
+            <View style={[styles.ruleIcon, { backgroundColor: '#05966918' }]}>
+              <MaterialIcons name="event" size={22} color="#059669" />
+            </View>
+            <View style={styles.ruleInfo}>
+              <Text style={styles.ruleTitle}>Horarios personalizados</Text>
+              <Text style={styles.ruleDesc}>Biblia, escuela, actividades, etc.</Text>
+            </View>
+          </View>
+
+          {customSchedules.map((sch) => (
+            <View key={sch.id} style={styles.customRow}>
+              <View style={styles.customTop}>
+                <Pressable onPress={() => updateCustomSchedule(sch.id, { enabled: !sch.enabled })}>
+                  <MaterialIcons name={sch.enabled ? 'check-circle' : 'radio-button-unchecked'} size={22} color={sch.enabled ? '#059669' : colors.textMuted} />
+                </Pressable>
+                <Text style={[styles.customName, !sch.enabled && { color: colors.textMuted }]}>{sch.name}</Text>
+                <Pressable onPress={() => {
+                  Alert.alert('Eliminar horario', `¿Eliminar "${sch.name}"?`, [
+                    { text: 'Cancelar', style: 'cancel' },
+                    { text: 'Eliminar', style: 'destructive', onPress: () => removeCustomSchedule(sch.id) },
+                  ]);
+                }}>
+                  <MaterialIcons name="delete-outline" size={20} color={colors.danger} />
+                </Pressable>
+              </View>
+              {sch.enabled && (
+                <View style={styles.customTimes}>
+                  <TimePicker
+                    hours={sch.startH}
+                    minutes={sch.startM}
+                    onHoursChange={(h) => updateCustomSchedule(sch.id, { startH: h })}
+                    onMinutesChange={(m) => updateCustomSchedule(sch.id, { startM: m })}
+                  />
+                  <MaterialIcons name="arrow-forward" size={18} color={colors.textMuted} />
+                  <TimePicker
+                    hours={sch.endH}
+                    minutes={sch.endM}
+                    onHoursChange={(h) => updateCustomSchedule(sch.id, { endH: h })}
+                    onMinutesChange={(m) => updateCustomSchedule(sch.id, { endM: m })}
+                  />
+                </View>
+              )}
+            </View>
+          ))}
+
+          <Pressable style={({ pressed }) => [styles.addBtn, pressed && styles.addBtnPressed]} onPress={addCustomSchedule}>
+            <MaterialIcons name="add-circle-outline" size={20} color="#059669" />
+            <Text style={styles.addBtnText}>Agregar horario</Text>
+          </Pressable>
         </Card>
 
         {/* ── Accesos rápidos ── */}
         <Text style={styles.sectionLabel}>Control avanzado</Text>
         <View style={styles.quickGrid}>
           {[
-            { icon: 'schedule' as const, title: 'Horarios', color: '#6366F1', path: '/rules/horarios' },
+            { icon: 'schedule' as const, title: 'Horarios de uso', color: '#6366F1', path: '/rules/horarios' },
             { icon: 'school' as const, title: 'Modo estudio', color: '#059669', path: '/rules/modo-estudio' },
-            { icon: 'location-on' as const, title: 'Zonas', color: '#D97706', path: '/rules/geofencing' },
+            { icon: 'location-on' as const, title: 'Zonas seguras', color: '#D97706', path: '/rules/geofencing' },
             { icon: 'language' as const, title: 'Filtrado web', color: '#DC2626', path: '/rules/filtrado-web' },
           ].map((item) => (
             <Pressable
@@ -268,14 +326,12 @@ export default function RulesScreen() {
     );
   }
 
-  // ── Default: children list ──
+  // ── Children list ──
   return (
     <ScrollView
       contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]}
       keyboardShouldPersistTaps="handled"
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />
-      }
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
     >
       <Text style={styles.title}>Control parental</Text>
       <Text style={styles.subtitle}>Selecciona un hijo para configurar sus reglas</Text>
@@ -318,7 +374,7 @@ const styles = StyleSheet.create({
   childCardName: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.text },
   childCardMeta: { fontSize: typography.fontSizes.caption, color: colors.textMuted },
 
-  // Back + child header
+  // Back + header
   backRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   backText: { fontSize: typography.fontSizes.body, color: colors.primary, fontWeight: typography.fontWeights.medium },
   childHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md },
@@ -326,26 +382,27 @@ const styles = StyleSheet.create({
   childStatus: { fontSize: typography.fontSizes.caption, color: colors.textMuted },
 
   // Rule rows
-  ruleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  ruleIconBox: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
+  ruleHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  ruleIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
   ruleInfo: { flex: 1 },
   ruleTitle: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.text },
+  ruleValue: { fontSize: typography.fontSizes.caption, color: colors.textMuted, marginTop: 2 },
   ruleDesc: { fontSize: typography.fontSizes.caption, color: colors.textMuted },
+  timeSectionLabel: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginTop: spacing.md, marginBottom: spacing.xs },
 
-  // Daily limit
-  limitInputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-  limitInput: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, fontSize: typography.fontSizes.body, color: colors.text, backgroundColor: colors.background, textAlign: 'center' },
-  limitUnit: { fontSize: typography.fontSizes.caption, color: colors.textMuted },
-  saveSmallBtn: { backgroundColor: colors.primary, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm },
-  saveSmallBtnPressed: { opacity: 0.85 },
-  saveSmallBtnDisabled: { opacity: 0.5 },
-  saveSmallBtnText: { color: colors.onPrimary, fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.semibold },
+  // Save
+  saveBtn: { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.md },
+  saveBtnPressed: { opacity: 0.85 },
+  saveBtnText: { color: colors.onPrimary, fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold },
 
-  // Bedtime
-  timeInputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-  timeBox: { flex: 1, alignItems: 'center' },
-  timeLabel: { fontSize: typography.fontSizes.caption, color: colors.textMuted, marginBottom: spacing.xs },
-  timeInput: { borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm, paddingHorizontal: spacing.sm, paddingVertical: spacing.xs, fontSize: typography.fontSizes.body, color: colors.text, backgroundColor: colors.background, textAlign: 'center', width: '100%' },
+  // Custom schedules
+  customRow: { marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
+  customTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  customName: { flex: 1, fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.medium, color: colors.text },
+  customTimes: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md, marginTop: spacing.sm },
+  addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, borderWidth: 1.5, borderColor: '#059669', borderStyle: 'dashed', borderRadius: radius.md, padding: spacing.md, marginTop: spacing.md },
+  addBtnPressed: { backgroundColor: '#05966918' },
+  addBtnText: { fontSize: typography.fontSizes.body, color: '#059669', fontWeight: typography.fontWeights.medium },
 
   // Quick grid
   sectionLabel: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
