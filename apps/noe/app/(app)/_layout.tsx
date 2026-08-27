@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { Redirect, Tabs } from 'expo-router';
 import { StyleSheet, View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -15,6 +16,10 @@ export default function AppLayout() {
   const { t: tr } = useTranslation();
   const status = useAuthStore((state) => state.status);
   const insets = useSafeAreaInsets();
+
+  useEffect(() => {
+    console.log('[AppLayout] Rendered with status:', status);
+  }, [status]);
 
   if (status === 'unauthenticated') {
     return <Redirect href={ROUTES.login} />;
