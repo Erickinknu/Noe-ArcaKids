@@ -310,11 +310,12 @@ export default function RulesScreen() {
             { icon: 'school' as const, title: 'Modo estudio', color: '#059669', path: '/rules/modo-estudio' },
             { icon: 'location-on' as const, title: 'Zonas seguras', color: '#D97706', path: '/rules/geofencing' },
             { icon: 'language' as const, title: 'Filtrado web', color: '#DC2626', path: '/rules/filtrado-web' },
+            { icon: 'apps' as const, title: 'Control de apps', color: '#EA580C', path: '/rules/apps' },
           ].map((item) => (
             <Pressable
               key={item.title}
               style={({ pressed }) => [styles.quickCard, pressed && styles.quickCardPressed]}
-              onPress={() => router.push(item.path as any)}
+              onPress={() => router.push({ pathname: item.path as any, params: item.path === '/rules/apps' && selectedChild ? { childId: selectedChild.id } : undefined })}
             >
               <View style={[styles.quickIcon, { backgroundColor: item.color + '18' }]}>
                 <MaterialIcons name={item.icon} size={24} color={item.color} />

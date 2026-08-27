@@ -109,6 +109,7 @@ export default function AppLayout() {
       <Tabs.Screen name="rules/modo-estudio" options={{ href: null }} />
       <Tabs.Screen name="rules/geofencing" options={{ href: null }} />
       <Tabs.Screen name="rules/filtrado-web" options={{ href: null }} />
+      <Tabs.Screen name="rules/apps" options={{ href: null }} />
       {/* Profile sub-screens */}
       <Tabs.Screen name="profile/familia" options={{ href: null }} />
       <Tabs.Screen name="profile/cuenta" options={{ href: null }} />
