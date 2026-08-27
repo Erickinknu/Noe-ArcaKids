@@ -3,7 +3,7 @@ import type { ExpoConfig } from 'expo/config';
 const config: ExpoConfig = {
   name: 'ARCA KIDS',
   slug: 'arcakids',
-  version: '0.1.0.10',
+  version: '0.1.0.11',
   orientation: 'portrait',
   icon: './assets/images/arca-kids.png',
   scheme: 'arcakids',

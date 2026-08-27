@@ -25,6 +25,7 @@ import {
   type ChildApp,
   type AppCategory,
 } from '@/features/app-categories/services/app-category-service';
+import { familyService } from '@/features/family/services/family-service';
 import { childService } from '@/features/children/services/child-service';
 
 type Tab = 'limited' | 'blocked' | 'free';
@@ -64,12 +65,20 @@ export default function AppsControlScreen() {
     else setLoading(true);
     setError(null);
     try {
-      const [childApps, child] = await Promise.all([
+      const [childApps] = await Promise.all([
         appCategoryService.getCategories(childId),
-        childService.getChild(childId).catch(() => null),
+        (async () => {
+          try {
+            const { family } = await familyService.getMyFamily();
+            const children = await childService.listChildren(family.id);
+            const found = children.find((c) => c.id === childId);
+            if (found) setChildName(found.displayName);
+          } catch {
+            // child name is cosmetic — don't block on failure
+          }
+        })(),
       ]);
       setApps(childApps);
-      if (child) setChildName(child.displayName);
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
