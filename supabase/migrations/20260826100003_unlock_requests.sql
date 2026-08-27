@@ -11,5 +11,5 @@ create table public.unlock_requests (
 alter table public.unlock_requests enable row level security;
 
 create policy "Family members manage unlock requests"
-  on unlock_requests for all
+  on public.unlock_requests for all
   using (family_id = (select family_id from profiles where user_id = auth.uid()));

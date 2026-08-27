@@ -9,5 +9,5 @@ create table public.push_tokens (
 alter table public.push_tokens enable row level security;
 
 create policy "Users manage own tokens"
-  on push_tokens for all
+  on public.push_tokens for all
   using (user_id = auth.uid());
