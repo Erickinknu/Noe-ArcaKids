@@ -7,7 +7,7 @@ import com.facebook.react.uimanager.ViewManager
 
 class ParentalUsagePackage : ReactPackage {
   override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> =
-    listOf(ParentalUsageModule(reactContext))
+    listOf(ParentalUsageModule(reactContext), DeviceOwnerModule(reactContext))
 
   @Deprecated(
     "Deprecated in Java",
