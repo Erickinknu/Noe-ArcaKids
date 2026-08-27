@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 import {
   View,
   Text,
@@ -81,6 +82,12 @@ export default function DashboardScreen() {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  useFocusEffect(
+    useCallback(() => {
+      fetchData(true);
+    }, [fetchData])
+  );
 
   const handleRefresh = useCallback(() => fetchData(true), [fetchData]);
 

@@ -126,6 +126,19 @@ class EnforcementService : Service() {
           foreground != packageName &&
           containsPackage(state.optJSONArray("blockedPackages"), foreground)
 
+      // Check per-app time limits for 'limited' category apps.
+      val appLimits = state.optJSONObject("appLimits")
+      if (appLimits != null && foreground != null && foreground != packageName) {
+        val appLimit = appLimits.optInt(foreground, -1)
+        if (appLimit >= 0) {
+          val appUsage = getPackageUsageMinutes(foreground)
+          if (appUsage >= appLimit) {
+            bringAppToFront()
+            return
+          }
+        }
+      }
+
       if (restricted || foregroundIsBlocked) {
         bringAppToFront()
       }
@@ -173,6 +186,23 @@ class EnforcementService : Service() {
       }
     } catch (_: Exception) {
       // Service must not crash.
+    }
+  }
+
+  private fun getPackageUsageMinutes(packageName: String): Long {
+    try {
+      val usm = getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+      val start = Calendar.getInstance().apply {
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+      }.timeInMillis
+      val stats = usm.queryAndAggregateUsageStats(start, System.currentTimeMillis())
+      val usageStats = stats[packageName] ?: return 0
+      return TimeUnit.MILLISECONDS.toMinutes(usageStats.totalTimeInForeground)
+    } catch (e: Exception) {
+      return 0
     }
   }
 

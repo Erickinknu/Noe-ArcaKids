@@ -14,6 +14,7 @@ export interface EnforcementState {
   bonusMinutes: number;
   pausedUntil: number | null;
   blockedPackages: string[];
+  appLimits?: Record<string, number>;
 }
 
 interface NativeParentalUsage {

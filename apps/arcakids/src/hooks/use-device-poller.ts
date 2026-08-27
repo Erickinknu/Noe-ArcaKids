@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback } from 'react';
 import { parentalService } from '@/features/parental/services/parental-service';
+import { parentalRepository } from '@/features/parental/repositories/parental-repository';
 import { parentalBridge } from '@/features/parental/native/parental-bridge';
 import { identityService } from '@/features/identity/services/identity-service';
 
@@ -33,6 +34,31 @@ export function useDevicePoller() {
         parentalBridge.updateDeviceState({
           isBlocked: result.isBlocked,
           alertActive: result.alertActive,
+        });
+
+        // Fetch app categories and build enforcement state with per-app limits.
+        const appCategories =
+          await parentalRepository.getAppCategories(childId);
+        const limitedApps =
+          parentalService.getLimitedApps(appCategories);
+        const appLimitsObj: Record<string, number> = {};
+        limitedApps.forEach((limit, pkg) => {
+          appLimitsObj[pkg] = limit;
+        });
+
+        const device = await identityService.getLocalDevice();
+        const rules = await parentalService.getRulesForDevice(
+          device.deviceUuid
+        );
+        const enforcementState =
+          parentalService.buildEnforcementState(
+            rules,
+            null,
+            appCategories
+          );
+        parentalBridge.updateEnforcementState({
+          ...enforcementState,
+          appLimits: appLimitsObj,
         });
       }
     } catch (e) {

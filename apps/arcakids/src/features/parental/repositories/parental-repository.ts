@@ -91,6 +91,23 @@ export const parentalRepository = {
     if (error) throw new DatabaseError(error.message);
   },
 
+  async getAppCategories(
+    childId: string
+  ): Promise<
+    { packageName: string; category: string; timeLimitMinutes: number | null }[]
+  > {
+    const client = requireSupabaseClient();
+    const { data, error } = await client.rpc('get_app_categories', {
+      p_child_id: childId,
+    });
+    if (error) throw new DatabaseError(error.message);
+    return (data ?? []).map((r: any) => ({
+      packageName: r.package_name,
+      category: r.category,
+      timeLimitMinutes: r.time_limit_minutes,
+    }));
+  },
+
   async reportLocation(
     childId: string,
     latitude: number,

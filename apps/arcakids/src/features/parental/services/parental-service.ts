@@ -88,8 +88,23 @@ export const parentalService = {
 
   buildEnforcementState(
     rules: DeviceRules | null,
-    snapshot: UsageSnapshot | null
+    snapshot: UsageSnapshot | null,
+    appCategories?: {
+      packageName: string;
+      category: string;
+      timeLimitMinutes: number | null;
+    }[]
   ): EnforcementState {
+    const blockedFromCategories =
+      appCategories
+        ?.filter((c) => c.category === 'blocked')
+        .map((c) => c.packageName) ?? [];
+
+    const allBlocked = [
+      ...(rules?.blockedPackages ?? []),
+      ...blockedFromCategories,
+    ];
+
     return {
       enforce: rules !== null,
       bedtimeEnabled: rules?.bedtimeEnabled ?? false,
@@ -98,8 +113,24 @@ export const parentalService = {
       dailyLimitMinutes: rules?.dailyLimitMinutes ?? null,
       bonusMinutes: 0,
       pausedUntil: null,
-      blockedPackages: rules?.blockedPackages ?? [],
+      blockedPackages: allBlocked,
     };
+  },
+
+  getLimitedApps(
+    appCategories: {
+      packageName: string;
+      category: string;
+      timeLimitMinutes: number | null;
+    }[]
+  ): Map<string, number> {
+    const limits = new Map<string, number>();
+    for (const cat of appCategories) {
+      if (cat.category === 'limited' && cat.timeLimitMinutes != null) {
+        limits.set(cat.packageName, cat.timeLimitMinutes);
+      }
+    }
+    return limits;
   },
 
   /** Caches the enforcement state for the native foreground service. */
