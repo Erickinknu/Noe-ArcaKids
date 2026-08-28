@@ -91,6 +91,17 @@ export const es = {
       sent: 'Si ese correo existe, se envi\u00f3 un enlace de restablecimiento.',
       back: 'Volver a iniciar sesi\u00f3n',
     },
+    resetPassword: {
+      title: 'Nueva contrase\u00f1a',
+      subtitle: 'Elige una contrase\u00f1a nueva para tu cuenta.',
+      password: 'Nueva contrase\u00f1a',
+      passwordPlaceholder: 'Escribe tu nueva contrase\u00f1a',
+      confirm: 'Confirmar contrase\u00f1a',
+      confirmPlaceholder: 'Repite tu nueva contrase\u00f1a',
+      submit: 'Guardar contrase\u00f1a',
+      mismatch: 'Las contrase\u00f1as no coinciden.',
+      hint: 'Despu\u00e9s de guardar, tendr\u00e1s que iniciar sesi\u00f3n de nuevo.',
+    },
     dashboard: {
       greeting: '\u00a1Hola, {{name}}!',
       subtitle: 'Aqu\u00ed tienes el resumen de tu familia',

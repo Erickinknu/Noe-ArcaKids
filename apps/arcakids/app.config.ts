@@ -47,6 +47,7 @@ const config: ExpoConfig = {
         imageWidth: 200,
       },
     ],
+    '../../plugins/with-device-owner',
   ],
   experiments: {
     typedRoutes: true,

@@ -3,6 +3,7 @@ import {
   isValidEmail,
   isNonEmptyString,
   normalizeEmail,
+  validatePassword,
   t,
 } from '@noe-arcakids/shared';
 
@@ -49,5 +50,17 @@ export const authService = {
       throw new ValidationError(t('validation.emailRequired'));
     }
     await authRepository.resetPasswordForEmail(normalized);
+  },
+
+  /**
+   * Update the current user's password after the recovery flow.
+   * Validates the new password against project rules before calling the repo.
+   */
+  async updatePassword(password: string): Promise<void> {
+    const validationMessage = validatePassword(password);
+    if (validationMessage) {
+      throw new ValidationError(validationMessage);
+    }
+    await authRepository.updatePassword(password);
   },
 };

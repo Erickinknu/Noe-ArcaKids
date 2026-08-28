@@ -4,6 +4,7 @@ export const ROUTES = {
   login: '/(auth)/login',
   register: '/(auth)/register',
   forgotPassword: '/(auth)/forgot-password',
+  resetPassword: '/(auth)/reset-password',
   children: '/children',
   linking: '/linking',
   rules: '/rules',

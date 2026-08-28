@@ -51,6 +51,19 @@ export const authHelpers = {
     }
   },
 
+  /**
+   * Update the current user's password (used after a password-reset email flow).
+   * The user must have a valid recovery session (PASSWORD_RECOVERY) for Supabase
+   * to accept this; otherwise it throws AuthError.
+   */
+  async updateUserPassword(newPassword: string): Promise<void> {
+    const client = requireSupabaseClient();
+    const { error } = await client.auth.updateUser({ password: newPassword });
+    if (error) {
+      throw mapAuthError(error);
+    }
+  },
+
   async getSession() {
     const client = requireSupabaseClient();
     return client.auth.getSession();

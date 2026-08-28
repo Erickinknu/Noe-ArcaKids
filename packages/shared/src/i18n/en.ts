@@ -88,6 +88,17 @@ export const en = {
       sent: 'If that email exists, a password reset link was sent.',
       back: 'Back to sign in',
     },
+    resetPassword: {
+      title: 'New password',
+      subtitle: 'Choose a new password for your account.',
+      password: 'New password',
+      passwordPlaceholder: 'Enter your new password',
+      confirm: 'Confirm password',
+      confirmPlaceholder: 'Repeat your new password',
+      submit: 'Save password',
+      mismatch: 'The passwords do not match.',
+      hint: 'You will need to sign in again after saving.',
+    },
     dashboard: {
       greeting: 'Hi, {{name}}!',
       subtitle: "Here\u2019s a summary of your family",

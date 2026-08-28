@@ -2,6 +2,7 @@ package com.arcakids.child
 import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
+import android.content.Intent
 import android.os.Bundle
 
 import com.facebook.react.ReactActivity
@@ -21,6 +22,7 @@ class MainActivity : ReactActivity() {
     SplashScreenManager.registerOnActivity(this)
     // @generated end expo-splashscreen
     super.onCreate(null)
+    ProvisioningHandler.handleIntent(this, intent)
   }
 
   /**
@@ -33,7 +35,12 @@ class MainActivity : ReactActivity() {
    * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]
    * which allows you to enable New Architecture with a single boolean flags [fabricEnabled]
    */
-  override fun createReactActivityDelegate(): ReactActivityDelegate {
+    override fun onNewIntent(intent: Intent) {
+    super.onNewIntent(intent)
+    ProvisioningHandler.handleIntent(this, intent)
+  }
+
+override fun createReactActivityDelegate(): ReactActivityDelegate {
     return ReactActivityDelegateWrapper(
           this,
           BuildConfig.IS_NEW_ARCHITECTURE_ENABLED,

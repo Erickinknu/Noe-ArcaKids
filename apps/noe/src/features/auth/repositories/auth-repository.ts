@@ -17,4 +17,7 @@ export const authRepository = {
   resetPasswordForEmail(email: string) {
     return authHelpers.resetPasswordForEmail(email);
   },
+  updatePassword(newPassword: string) {
+    return authHelpers.updateUserPassword(newPassword);
+  },
 };
