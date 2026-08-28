@@ -40,10 +40,20 @@ export default function LocationScreen() {
   }, [selectedChild]);
 
   useEffect(() => {
-    fetchLocations();
-    const interval = setInterval(() => fetchLocations(true), 10000); // refresh every 10s
-    return () => clearInterval(interval);
-  }, []);
+    let cancelled = false;
+    const runFetch = async () => {
+      if (cancelled) return;
+      await fetchLocations();
+    };
+    runFetch();
+    const interval = setInterval(() => {
+      if (!cancelled) fetchLocations(true);
+    }, 10000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
+  }, [fetchLocations]);
 
   const selected = locations.find((l) => l.childId === selectedChild);
   const region = selected

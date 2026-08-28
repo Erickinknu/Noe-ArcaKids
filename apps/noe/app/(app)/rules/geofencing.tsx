@@ -66,7 +66,13 @@ export default function GeofencingScreen() {
   }, []);
 
   useEffect(() => {
-    fetchData();
+    let cancelled = false;
+    const runFetch = async () => {
+      if (cancelled) return;
+      await fetchData();
+    };
+    runFetch();
+    return () => { cancelled = true; };
   }, [fetchData]);
 
   const toggleZone = async (id: string, currentEnabled: boolean) => {

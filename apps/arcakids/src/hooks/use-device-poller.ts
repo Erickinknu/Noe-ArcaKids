@@ -67,9 +67,19 @@ export function useDevicePoller() {
   }, []);
 
   useEffect(() => {
-    poll(); // immediate first check
-    const interval = setInterval(poll, POLL_INTERVAL);
-    return () => clearInterval(interval);
+    let cancelled = false;
+    const runPoll = async () => {
+      if (cancelled) return;
+      await poll();
+    };
+    runPoll();
+    const interval = setInterval(() => {
+      runPoll();
+    }, POLL_INTERVAL);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [poll]);
 
   const dismissAlert = useCallback(async () => {

@@ -47,7 +47,7 @@ export default function PinScreen() {
       return 'El PIN solo puede contener números';
     }
     if (WEAK_PINS.includes(newPin)) {
-      return 'No uses combinaciones simples como "1234" o años de nacimiento. Se pueden adivinar fácilmente.';
+      return 'No uses combinaciones simples como "1234" o a&ntilde;os de nacimiento. Se pueden adivinar f&aacute;cilmente.';
     }
     return null;
   }
@@ -215,8 +215,7 @@ export default function PinScreen() {
         <View style={styles.warningBox}>
           <MaterialIcons name="warning" size={18} color={colors.warning} />
           <Text style={styles.warningText}>
-            No uses combinaciones simples como "1234" o un año de nacimiento. Dicho
-            código se puede descifrar fácilmente.
+            No uses combinaciones simples como &quot;1234&quot; o un a&ntilde;o de nacimiento. Dicho c&oacute;digo se puede descifrar f&aacute;cilmente.
           </Text>
         </View>
 

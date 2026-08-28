@@ -87,7 +87,15 @@ export default function AppsControlScreen() {
     }
   }, [childId]);
 
-  useEffect(() => { fetchApps(); }, [fetchApps]);
+  useEffect(() => {
+    let cancelled = false;
+    const runFetch = async () => {
+      if (cancelled) return;
+      await fetchApps();
+    };
+    runFetch();
+    return () => { cancelled = true; };
+  }, [fetchApps]);
 
   const filteredApps = apps.filter((app) => {
     const matchesTab = app.category === activeTab;

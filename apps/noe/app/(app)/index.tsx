@@ -105,8 +105,16 @@ export default function DashboardScreen() {
   }, []);
 
   useEffect(() => {
-    fetchData();
-    return () => abortControllerRef.current?.abort();
+    let cancelled = false;
+    const runFetch = async () => {
+      if (cancelled) return;
+      await fetchData();
+    };
+    runFetch();
+    return () => {
+      cancelled = true;
+      abortControllerRef.current?.abort();
+    };
   }, [fetchData]);
 
   useFocusEffect(
@@ -401,7 +409,7 @@ export default function DashboardScreen() {
       {/* ── Child select modal ── */}
       <ChildSelectModal
         visible={childSelectVisible}
-        children={data?.children ?? []}
+        childList={data?.children ?? []}
         onClose={() => { setChildSelectVisible(false); setChildSelectAction(null); }}
         onSelect={handleChildSelect}
         actionType={childSelectAction}
@@ -438,13 +446,13 @@ function SummaryCard({
 
 function ChildSelectModal({
   visible,
-  children,
+  childList,
   onClose,
   onSelect,
   actionType,
 }: {
   visible: boolean;
-  children: ChildSummary[];
+  childList: ChildSummary[];
   onClose: () => void;
   onSelect: (childId: string) => void;
   actionType: 'block' | 'alert' | null;
@@ -457,7 +465,7 @@ function ChildSelectModal({
         <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
           <Text style={styles.modalTitle}>{title}</Text>
           <FlatList
-            data={children}
+            data={childList}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
               <Pressable

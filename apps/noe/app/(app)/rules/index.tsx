@@ -54,7 +54,7 @@ export default function RulesScreen() {
   const [bedtimeEndM, setBedtimeEndM] = useState(0);
 
   // Custom schedules
-  const [customSchedules, setCustomSchedules] = useState<Array<{
+  const [customSchedules, setCustomSchedules] = useState<{
     id: string;
     name: string;
     enabled: boolean;
@@ -62,7 +62,7 @@ export default function RulesScreen() {
     startM: number;
     endH: number;
     endM: number;
-  }>>([]);
+  }[]>([]);
 
   const fetchFamily = useCallback(async (): Promise<FamilyData> => {
     const { family } = await familyService.getMyFamily();

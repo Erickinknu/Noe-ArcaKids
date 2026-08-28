@@ -39,7 +39,7 @@ export default function TerminosScreen() {
 
       <Text style={styles.sectionTitle}>4. Limitación de responsabilidad</Text>
       <Text style={styles.body}>
-        NOE se proporciona "tal cual" sin garantías. No nos hacemos responsables por
+        NOE se proporciona &quot;tal cual&quot; sin garant&iacute;as. No nos hacemos responsables por
         daños derivados del uso de la app.
       </Text>
 
