@@ -64,7 +64,7 @@ export class OfflineSyncEngine {
 
   async queueAction(type: OfflineAction['type'], payload: Record<string, any>): Promise<OfflineAction> {
     const action: OfflineAction = {
-      id: `${Date.now()}-${Math.random().toString(36).slice(2)}`,
+      id: `${Date.now()}-${globalThis.crypto.getRandomValues(new Uint32Array(1))[0].toString(36)}`,
       type,
       status: 'pending',
       payload,

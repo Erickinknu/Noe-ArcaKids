@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { PasswordStrength } from '@/components/ui/password-strength';
 import { authService } from '@/features/auth/services/auth-service';
 import { errorMessage, colors, spacing, typography } from '@noe-arcakids/shared';
 
@@ -63,6 +64,7 @@ export default function RegisterScreen() {
         secureTextEntry
         placeholder={tr('noe.register.passwordPlaceholder')}
       />
+      <PasswordStrength password={password} />
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {message ? <Text style={styles.message}>{message}</Text> : null}
       <Button onPress={handleSubmit} loading={submitting}>

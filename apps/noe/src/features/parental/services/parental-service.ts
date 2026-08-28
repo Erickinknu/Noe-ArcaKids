@@ -1,5 +1,5 @@
 import type { BlockedApp, ParentalRules } from '@noe-arcakids/types';
-import { ValidationError, t } from '@noe-arcakids/shared';
+import { ValidationError, checkRateLimit, t } from '@noe-arcakids/shared';
 
 import {
   parentalRepository,
@@ -38,6 +38,7 @@ export const parentalService = {
     childId: string,
     input: SaveRulesInput
   ): Promise<ParentalRules> {
+    checkRateLimit('saveRules');
     const patch: ParentalRulesPatch = {};
 
     if (input.dailyLimitMinutes !== undefined) {
@@ -84,6 +85,7 @@ export const parentalService = {
     packageName: string,
     appLabel: string
   ): Promise<BlockedApp> {
+    checkRateLimit('addBlockedApp');
     const pkg = packageName.trim();
     const label = appLabel.trim() || pkg;
 
@@ -98,6 +100,7 @@ export const parentalService = {
   },
 
   async removeBlockedApp(id: string): Promise<void> {
+    checkRateLimit('removeBlockedApp');
     return parentalRepository.removeBlockedApp(id);
   },
 };

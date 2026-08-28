@@ -33,7 +33,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     }).catch(() => {});
   }, []);
 
-  const resolved = theme === 'system' ? (systemScheme ?? 'light') : theme;
+  const resolved: 'light' | 'dark' = theme === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : theme as 'light' | 'dark';
   const colors = getColors(resolved);
   const shadows = getShadows(resolved);
 

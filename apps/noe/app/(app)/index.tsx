@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useState, useRef } from 'react';
 import { useFocusEffect } from 'expo-router';
 import {
   View,
@@ -45,6 +45,8 @@ import { parentalService } from '@/features/parental/services/parental-service';
 import { deviceControlService } from '@/features/device-control/services/device-control-service';
 import { ROUTES } from '@/constants';
 
+const FETCH_TIMEOUT_MS = 10_000;
+
 export default function DashboardScreen() {
   const { t: tr } = useTranslation();
   const router = useRouter();
@@ -60,12 +62,28 @@ export default function DashboardScreen() {
   const [childSelectVisible, setChildSelectVisible] = useState(false);
   const [childSelectAction, setChildSelectAction] = useState<'block' | 'alert' | null>(null);
 
+  const abortControllerRef = useRef<AbortController | null>(null);
+
   const fetchData = useCallback(async (isRefresh = false) => {
+    abortControllerRef.current?.abort();
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
     if (isRefresh) setRefreshing(true);
     else setLoading(true);
     setError(null);
+
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
     try {
-      const result = await dashboardService.getFamilySummary();
+      const result = await Promise.race([
+        dashboardService.getFamilySummary(),
+        new Promise<never>((_, reject) => {
+          controller.signal.addEventListener('abort', () => {
+            reject(new Error('Fetch timeout'));
+          });
+        }),
+      ]);
       setData(result);
       const [myFamily, recentAlerts] = await Promise.all([
         familyService.getMyFamily().catch(() => null),
@@ -74,14 +92,22 @@ export default function DashboardScreen() {
       if (myFamily) setFamilyId(myFamily.family.id);
       setAlerts(recentAlerts.slice(0, 3));
     } catch (cause) {
-      setError(errorMessage(cause));
+      if (!controller.signal.aborted) {
+        setError(errorMessage(cause));
+      }
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      clearTimeout(timeoutId);
+      if (!controller.signal.aborted) {
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+    return () => abortControllerRef.current?.abort();
+  }, [fetchData]);
 
   useFocusEffect(
     useCallback(() => {
@@ -114,7 +140,7 @@ export default function DashboardScreen() {
         ],
       );
     },
-    [familyId, fetchData, tr],
+    [familyId, fetchData, tr]
   );
 
   const handleChildSelect = useCallback(
@@ -137,7 +163,7 @@ export default function DashboardScreen() {
       }
       setChildSelectAction(null);
     },
-    [childSelectAction],
+    [childSelectAction]
   );
 
   const handleAddTime = useCallback(
@@ -163,7 +189,7 @@ export default function DashboardScreen() {
         ],
       );
     },
-    [familyId, fetchData, tr],
+    [familyId, fetchData, tr]
   );
 
   /* ── Loading / Error / Empty states ── */
@@ -205,188 +231,189 @@ export default function DashboardScreen() {
 
   /* ── Render ── */
   return (
-    <ScrollView
-      style={styles.screen}
-      contentContainerStyle={[styles.scrollContent, { paddingTop: screenPadding.paddingTop }]}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={handleRefresh}
-          colors={[colors.primary]}
-          tintColor={colors.primary}
-        />
-      }
-    >
-      {/* ── Offline banner ── */}
-      {!isOnline && (
-        <View style={styles.offlineBanner}>
-          <MaterialIcons name="wifi-off" size={16} color={colors.warning} />
-          <Text style={styles.offlineText}>{tr('noe.dashboard.offline')}</Text>
-        </View>
-      )}
-
-      {/* ── Header ── */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Avatar name={data.parentName} size={44} />
-          <View style={styles.headerTextGroup}>
-            <Text style={styles.greeting}>
-              {tr('noe.dashboard.greeting', { name: data.parentName })}
-            </Text>
-            <Text style={styles.subtitle}>
-              {connectedCount > 0
-                ? tr('noe.dashboard.connectedCount', { count: connectedCount, total: data.totalChildren })
-                : tr('noe.dashboard.noChildrenOnline')}
-            </Text>
+    <View style={styles.screen}>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: screenPadding.paddingTop }]}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            colors={[colors.primary]}
+            tintColor={colors.primary}
+          />
+        }
+      >
+        {/* ── Offline banner ── */}
+        {!isOnline && (
+          <View style={styles.offlineBanner}>
+            <MaterialIcons name="wifi-off" size={16} color={colors.warning} />
+            <Text style={styles.offlineText}>{tr('noe.dashboard.offline')}</Text>
           </View>
-        </View>
-        <Pressable
-          style={styles.notificationBell}
-          onPress={() => router.push({ pathname: ROUTES.notifications } as any)}
-        >
-          <MaterialIcons name="notifications" size={22} color={colors.text} />
-          {data.alertsCount > 0 && (
-            <View style={styles.badge}>
-              <Text style={styles.badgeText}>{data.alertsCount}</Text>
-            </View>
-          )}
-        </Pressable>
-      </View>
+        )}
 
-      {/* ── Quick actions ── */}
-      <Text style={styles.sectionTitle}>Acciones rápidas</Text>
-      <View style={styles.quickActionsRow}>
-        {[
-          { icon: 'lock' as const, label: 'Bloquear\ntodos', color: '#DC2626', onPress: () => { setChildSelectAction('block'); setChildSelectVisible(true); } },
-          { icon: 'notifications-active' as const, label: 'Enviar\nalerta', color: '#D97706', onPress: () => { setChildSelectAction('alert'); setChildSelectVisible(true); } },
-          { icon: 'location-searching' as const, label: 'Ubicar\nhijos', color: '#059669', onPress: () => router.push('/activity/location' as any) },
-          { icon: 'school' as const, label: 'Modo\nestudio', color: '#6366F1', onPress: () => router.push('/rules/modo-estudio' as any) },
-        ].map((action) => (
+        {/* ── Header ── */}
+        <View style={styles.header}>
+          <View style={styles.headerLeft}>
+            <Avatar name={data.parentName} size={44} />
+            <View style={styles.headerTextGroup}>
+              <Text style={styles.greeting}>
+                {tr('noe.dashboard.greeting', { name: data.parentName })}
+              </Text>
+              <Text style={styles.subtitle}>
+                {connectedCount > 0
+                  ? tr('noe.dashboard.connectedCount', { count: connectedCount, total: data.totalChildren })
+                  : tr('noe.dashboard.noChildrenOnline')}
+              </Text>
+            </View>
+          </View>
           <Pressable
-            key={action.label}
-            style={({ pressed }) => [styles.quickActionCard, pressed && styles.quickActionPressed]}
-            onPress={action.onPress}
+            style={styles.notificationBell}
+            onPress={() => router.push({ pathname: ROUTES.notifications } as any)}
           >
-            <View style={[styles.quickActionIcon, { backgroundColor: action.color + '18' }]}>
-              <MaterialIcons name={action.icon} size={22} color={action.color} />
-            </View>
-            <Text style={styles.quickActionLabel}>{action.label}</Text>
-          </Pressable>
-        ))}
-      </View>
-
-      {/* ── Resumen del día ── */}
-      <Card style={styles.daySummaryCard}>
-        <View style={styles.daySummaryHeader}>
-          <MaterialIcons name="today" size={20} color={colors.primary} />
-          <Text style={styles.daySummaryTitle}>Resumen de hoy</Text>
-        </View>
-        <View style={styles.daySummaryGrid}>
-          <View style={styles.daySummaryItem}>
-            <Text style={styles.daySummaryValue}>{formatDuration(totalMinutesToday)}</Text>
-            <Text style={styles.daySummaryLabel}>Tiempo total</Text>
-          </View>
-          <View style={styles.daySummaryDivider} />
-          <View style={styles.daySummaryItem}>
-            <Text style={styles.daySummaryValue}>{data.children.length}</Text>
-            <Text style={styles.daySummaryLabel}>Hijos</Text>
-          </View>
-          <View style={styles.daySummaryDivider} />
-          <View style={styles.daySummaryItem}>
-            <Text style={[styles.daySummaryValue, { color: data.alertsCount > 0 ? colors.warning : colors.success }]}>
-              {data.alertsCount}
-            </Text>
-            <Text style={styles.daySummaryLabel}>Alertas</Text>
-          </View>
-        </View>
-      </Card>
-
-      {/* ── Summary cards ── */}
-      <View style={styles.summaryRow}>
-        <SummaryCard
-          icon="wifi"
-          value={`${connectedCount}/${data.totalChildren}`}
-          label={tr('noe.dashboard.online')}
-          color={colors.success}
-        />
-        <SummaryCard
-          icon="schedule"
-          value={formatDuration(totalMinutesToday)}
-          label={tr('noe.dashboard.totalTime')}
-          color={colors.primary}
-        />
-        <SummaryCard
-          icon="warning"
-          value={String(data.alertsCount)}
-          label={tr('noe.dashboard.alerts')}
-          color={colors.warning}
-        />
-      </View>
-
-      {/* ── Children section ── */}
-      <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{tr('noe.dashboard.myChildren')}</Text>
-        <Pressable onPress={() => router.push(ROUTES.children as any)}>
-          <Text style={styles.sectionAction}>{tr('noe.dashboard.seeAll')}</Text>
-        </Pressable>
-      </View>
-
-      {data.children.map((child) => (
-        <ChildRow
-          key={child.id}
-          child={child}
-          familyId={familyId}
-          onRefresh={() => fetchData(true)}
-          onQuickBlock={handleQuickBlock}
-          onAddTime={handleAddTime}
-        />
-      ))}
-
-      {/* ── Recent activity ── */}
-      {hasAlerts && (
-        <>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>{tr('noe.dashboard.recentActivity')}</Text>
-            <Pressable onPress={() => router.push(ROUTES.activity as any)}>
-              <Text style={styles.sectionAction}>{tr('noe.dashboard.seeAll')}</Text>
-            </Pressable>
-          </View>
-
-          {alerts.map((alert) => (
-            <Card key={alert.id} style={styles.alertCard}>
-              <View style={styles.alertRow}>
-                <Text style={styles.alertIcon}>
-                  {alert.type === 'block' ? '🚫' : alert.type === 'time' ? '⏰' : '📍'}
-                </Text>
-                <View style={styles.alertInfo}>
-                  <Text style={styles.alertChild}>{alert.childName}</Text>
-                  <Text style={styles.alertMessage}>{alert.message}</Text>
-                </View>
-                <Text style={styles.alertTime}>{relativeTime(alert.timestamp)}</Text>
+            <MaterialIcons name="notifications" size={22} color={colors.text} />
+            {data.alertsCount > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{data.alertsCount}</Text>
               </View>
-            </Card>
+            )}
+          </Pressable>
+        </View>
+
+        {/* ── Quick actions ── */}
+        <Text style={styles.sectionTitle}>Acciones rápidas</Text>
+        <View style={styles.quickActionsRow}>
+          {[
+            { icon: 'lock' as const, label: 'Bloquear\ntodos', color: '#DC2626', onPress: () => { setChildSelectAction('block'); setChildSelectVisible(true); } },
+            { icon: 'notifications-active' as const, label: 'Enviar\nalerta', color: '#D97706', onPress: () => { setChildSelectAction('alert'); setChildSelectVisible(true); } },
+            { icon: 'location-searching' as const, label: 'Ubicar\nhijos', color: '#059669', onPress: () => router.push('/activity/location' as any) },
+            { icon: 'school' as const, label: 'Modo\nestudio', color: '#6366F1', onPress: () => router.push('/rules/modo-estudio' as any) },
+          ].map((action) => (
+            <Pressable
+              key={action.label}
+              style={({ pressed }) => [styles.quickActionCard, pressed && styles.quickActionPressed]}
+              onPress={action.onPress}
+            >
+              <View style={[styles.quickActionIcon, { backgroundColor: action.color + '18' }]}>
+                <MaterialIcons name={action.icon} size={22} color={action.color} />
+              </View>
+              <Text style={styles.quickActionLabel}>{action.label}</Text>
+            </Pressable>
           ))}
-        </>
-      )}
+        </View>
+
+        {/* ── Resumen del día ── */}
+        <Card style={styles.daySummaryCard}>
+          <View style={styles.daySummaryHeader}>
+            <MaterialIcons name="today" size={20} color={colors.primary} />
+            <Text style={styles.daySummaryTitle}>Resumen de hoy</Text>
+          </View>
+          <View style={styles.daySummaryGrid}>
+            <View style={styles.daySummaryItem}>
+              <Text style={styles.daySummaryValue}>{formatDuration(totalMinutesToday)}</Text>
+              <Text style={styles.daySummaryLabel}>Tiempo total</Text>
+            </View>
+            <View style={styles.daySummaryDivider} />
+            <View style={styles.daySummaryItem}>
+              <Text style={styles.daySummaryValue}>{data.children.length}</Text>
+              <Text style={styles.daySummaryLabel}>Hijos</Text>
+            </View>
+            <View style={styles.daySummaryDivider} />
+            <View style={styles.daySummaryItem}>
+              <Text style={[styles.daySummaryValue, { color: data.alertsCount > 0 ? colors.warning : colors.success }]}>
+                {data.alertsCount}
+              </Text>
+              <Text style={styles.daySummaryLabel}>Alertas</Text>
+            </View>
+          </View>
+        </Card>
+
+        {/* ── Summary cards ── */}
+        <View style={styles.summaryRow}>
+          <SummaryCard
+            icon="wifi"
+            value={`${connectedCount}/${data.totalChildren}`}
+            label={tr('noe.dashboard.online')}
+            color={colors.success}
+          />
+          <SummaryCard
+            icon="schedule"
+            value={formatDuration(totalMinutesToday)}
+            label={tr('noe.dashboard.totalTime')}
+            color={colors.primary}
+          />
+          <SummaryCard
+            icon="warning"
+            value={String(data.alertsCount)}
+            label={tr('noe.dashboard.alerts')}
+            color={colors.warning}
+          />
+        </View>
+
+        {/* ── Children section ── */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>{tr('noe.dashboard.myChildren')}</Text>
+          <Pressable onPress={() => router.push(ROUTES.children as any)}>
+            <Text style={styles.sectionAction}>{tr('noe.dashboard.seeAll')}</Text>
+          </Pressable>
+        </View>
+
+        {data.children.map((child) => (
+          <ChildRow
+            key={child.id}
+            child={child}
+            familyId={familyId}
+            onRefresh={() => fetchData(true)}
+            onQuickBlock={handleQuickBlock}
+            onAddTime={handleAddTime}
+          />
+        ))}
+
+        {/* ── Recent activity ── */}
+        {hasAlerts && (
+          <>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{tr('noe.dashboard.recentActivity')}</Text>
+              <Pressable onPress={() => router.push(ROUTES.activity as any)}>
+                <Text style={styles.sectionAction}>{tr('noe.dashboard.seeAll')}</Text>
+              </Pressable>
+            </View>
+
+            {alerts.map((alert) => (
+              <Card key={alert.id} style={styles.alertCard}>
+                <View style={styles.alertRow}>
+                  <Text style={styles.alertIcon}>
+                    {alert.type === 'block' ? '🚫' : alert.type === 'time' ? '⏰' : '📍'}
+                  </Text>
+                  <View style={styles.alertInfo}>
+                    <Text style={styles.alertChild}>{alert.childName}</Text>
+                    <Text style={styles.alertMessage}>{alert.message}</Text>
+                  </View>
+                  <Text style={styles.alertTime}>{relativeTime(alert.timestamp)}</Text>
+                </View>
+              </Card>
+            ))}
+          </>
+        )}
+
+      </ScrollView>
 
       {/* ── Child select modal ── */}
       <ChildSelectModal
         visible={childSelectVisible}
-        children={data.children}
+        children={data?.children ?? []}
         onClose={() => { setChildSelectVisible(false); setChildSelectAction(null); }}
         onSelect={handleChildSelect}
         actionType={childSelectAction}
       />
-
-    </ScrollView>
+    </View>
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════
+/* ═════════════════════════════════════════════════════════════════════════════════════════════
    SUB-COMPONENTS
-   ═══════════════════════════════════════════════════════════════════ */
+════════════════════════════════════════════════════════════════════════════════════════════════ */
 
-/** Compact summary card for the top grid. */
 function SummaryCard({
   icon,
   value,
@@ -409,7 +436,6 @@ function SummaryCard({
   );
 }
 
-/** Modal to select a child for block/alert actions. */
 function ChildSelectModal({
   visible,
   children,
@@ -454,7 +480,6 @@ function ChildSelectModal({
   );
 }
 
-/** One child row: avatar, name, progress, quick actions. */
 function ChildRow({
   child,
   familyId,
@@ -556,9 +581,9 @@ function ChildRow({
   );
 }
 
-/* ═══════════════════════════════════════════════════════════════════
+/* ═══════════════════════════════════════════════════════════════════════════════════════════════
    STYLES
-   ═══════════════════════════════════════════════════════════════════ */
+═════════════════════════════════════════════════════════════════════════════════════════════════ */
 
 const styles = StyleSheet.create({
   screen: {

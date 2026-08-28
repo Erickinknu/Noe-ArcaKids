@@ -1,6 +1,6 @@
 import type { ChildProfile } from '@noe-arcakids/types';
 import { DatabaseError } from '@noe-arcakids/shared';
-import { requireSupabaseClient } from '@noe-arcakids/supabase';
+import { requireSupabaseClient, authHelpers } from '@noe-arcakids/supabase';
 
 interface ChildRow {
   id: string;
@@ -38,6 +38,7 @@ export const childRepository = {
   },
 
   async addChild(familyId: string, displayName: string, avatarUrl: string | null = null): Promise<ChildProfile> {
+    await authHelpers.ensureAuthenticated();
     const client = requireSupabaseClient();
     const { data, error } = await client
       .from('children')
@@ -52,6 +53,7 @@ export const childRepository = {
   },
 
   async updateChild(childId: string, displayName: string, avatarUrl: string | null): Promise<ChildProfile> {
+    await authHelpers.ensureAuthenticated();
     const client = requireSupabaseClient();
     const { data, error } = await client
       .from('children')
@@ -67,6 +69,7 @@ export const childRepository = {
   },
 
   async removeChild(childId: string): Promise<void> {
+    await authHelpers.ensureAuthenticated();
     const client = requireSupabaseClient();
     const { error } = await client
       .from('children')

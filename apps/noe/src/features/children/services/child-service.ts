@@ -1,5 +1,5 @@
 import type { ChildProfile } from '@noe-arcakids/types';
-import { ValidationError, t } from '@noe-arcakids/shared';
+import { ValidationError, checkRateLimit, t } from '@noe-arcakids/shared';
 
 import { childRepository } from '../repositories/child-repository';
 
@@ -11,6 +11,7 @@ export const childService = {
   },
 
   async addChild(familyId: string, displayName: string, avatarUrl?: string): Promise<ChildProfile> {
+    checkRateLimit('addChild');
     const trimmed = displayName.trim();
     if (trimmed.length === 0) {
       throw new ValidationError(t('validation.childNameRequired'));
@@ -24,6 +25,7 @@ export const childService = {
   },
 
   async updateChild(childId: string, displayName: string, avatarUrl: string): Promise<ChildProfile> {
+    checkRateLimit('updateChild');
     const trimmed = displayName.trim();
     if (trimmed.length === 0) {
       throw new ValidationError(t('validation.childNameRequired'));
@@ -37,6 +39,7 @@ export const childService = {
   },
 
   removeChild(childId: string): Promise<void> {
+    checkRateLimit('removeChild');
     return childRepository.removeChild(childId);
   },
 };

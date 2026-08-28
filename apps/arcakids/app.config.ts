@@ -22,6 +22,13 @@ const config: ExpoConfig = {
       monochromeImage: './assets/images/arca-kids.png',
     },
     predictiveBackGestureEnabled: false,
+    permissions: [
+      'android.permission.CAMERA',
+      'android.permission.SYSTEM_ALERT_WINDOW',
+      'android.permission.USE_BIOMETRIC',
+      'android.permission.ACCESS_FINE_LOCATION',
+      'android.permission.ACCESS_COARSE_LOCATION',
+    ],
   },
   plugins: [
     'expo-router',

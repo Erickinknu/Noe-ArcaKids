@@ -11,8 +11,8 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
-import { linkingService } from '@/features/linking/services/linking-service';
-import type { PairingCode } from '@/features/linking/repositories/linking-repository';
+import { linkingService, type LinkingMode, DEVICE_ADMIN_COMPONENT_SHORT } from '@/features/linking/services/linking-service';
+import type { ProvisioningPayload } from '@noe-arcakids/types';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
 import type { ChildProfile } from '@noe-arcakids/types';
@@ -27,7 +27,9 @@ export default function LinkingScreen() {
   const { t: tr } = useTranslation();
   const screenPadding = useScreenPadding();
   const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
-  const [pairing, setPairing] = useState<PairingCode | null>(null);
+  const [mode, setMode] = useState<LinkingMode>('child');
+  const [payload, setPayload] = useState<ProvisioningPayload | null>(null);
+  const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
@@ -40,28 +42,46 @@ export default function LinkingScreen() {
 
   function handleSelect(child: ChildProfile) {
     setSelectedChild(child);
-    setPairing(null);
+    setPayload(null);
+    setExpiresAt(null);
+    setActionError(null);
+  }
+
+  function handleModeChange(next: LinkingMode) {
+    setMode(next);
+    setPayload(null);
+    setExpiresAt(null);
     setActionError(null);
   }
 
   async function handleGenerate() {
-    if (!data || !selectedChild) {
+    if (!data) return;
+    // For family mode we still need a child row to bind the code against (DB constraint).
+    const childForCode = selectedChild ?? data.children[0];
+    if (!childForCode) {
+      setActionError(tr('noe.linking.noChildren'));
       return;
     }
     setGenerating(true);
     setActionError(null);
     try {
-      const result = await linkingService.createPairingCode(
-        data.familyId,
-        selectedChild.id
-      );
-      setPairing(result);
+      const result = await linkingService.createProvisioningPayload({
+        familyId: data.familyId,
+        childId: childForCode.id,
+        mode,
+      });
+      setPayload(result.payload);
+      setExpiresAt(result.code.expiresAt);
     } catch (cause) {
       setActionError(errorMessage(cause));
     } finally {
       setGenerating(false);
     }
   }
+
+  const qrValue = payload ? JSON.stringify(payload) : '';
+  const displayChildName =
+    mode === 'family' ? tr('noe.linking.modeFamily') : (selectedChild?.displayName ?? '');
 
   if (loading) {
     return (
@@ -87,6 +107,25 @@ export default function LinkingScreen() {
       <Text style={styles.title}>{tr('noe.linking.title')}</Text>
       <Text style={styles.subtitle}>{tr('noe.linking.subtitle')}</Text>
 
+      {/* Mode toggle */}
+      <View style={styles.modeRow}>
+        <Pressable
+          onPress={() => handleModeChange('family')}
+          style={[styles.modeChip, mode === 'family' && styles.modeChipActive]}
+        >
+          <Text style={[styles.modeText, mode === 'family' && styles.modeTextActive]}>{tr('noe.linking.modeFamily')}</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => handleModeChange('child')}
+          style={[styles.modeChip, mode === 'child' && styles.modeChipActive]}
+        >
+          <Text style={[styles.modeText, mode === 'child' && styles.modeTextActive]}>{tr('noe.linking.modeChild')}</Text>
+        </Pressable>
+      </View>
+      <Text style={styles.muted}>
+        {mode === 'family' ? tr('noe.linking.modeHintFamily') : tr('noe.linking.modeHintChild')}
+      </Text>
+
       <Card style={styles.card}>
         <SectionHeader title={tr('noe.linking.chooseChild')} />
         {data.children.length === 0 ? (
@@ -107,29 +146,49 @@ export default function LinkingScreen() {
             ))}
           </View>
         )}
+        {mode === 'child' && !selectedChild ? (
+          <Text style={styles.hint}>{tr('noe.linking.chooseChild')}</Text>
+        ) : null}
       </Card>
 
-      {selectedChild ? (
-        <Button onPress={handleGenerate} loading={generating}>
-          {tr('noe.linking.generateCode', { name: selectedChild.displayName })}
-        </Button>
-      ) : null}
+      <Button
+        onPress={handleGenerate}
+        loading={generating}
+        disabled={mode === 'child' ? !selectedChild : data.children.length === 0}
+      >
+        {mode === 'child' && selectedChild
+          ? tr('noe.linking.generateCode', { name: selectedChild.displayName })
+          : tr('noe.linking.generateCode', { name: displayChildName || data.children[0]?.displayName || 'familia' })}
+      </Button>
 
       {actionError ? <Text style={styles.error}>{actionError}</Text> : null}
 
-      {pairing && selectedChild ? (
+      {payload && expiresAt ? (
         <Card style={[styles.pairingCard, shadows.sm]}>
           <Text style={styles.pairingLabel}>
-            {tr('noe.linking.codeFor', { name: selectedChild.displayName })}
+            {mode === 'child' && selectedChild
+              ? tr('noe.linking.codeFor', { name: selectedChild.displayName })
+              : tr('noe.linking.codeFor', { name: tr('noe.linking.modeFamily') })}
           </Text>
-          <Text style={styles.code}>{pairing.code}</Text>
+          <Text style={styles.code}>{payload.code}</Text>
           <View style={styles.qrBox}>
-            <QRCode value={pairing.code} size={180} />
+            <QRCode value={qrValue} size={190} />
           </View>
           <Text style={styles.muted}>
             {tr('noe.linking.expiresAt', {
-              time: new Date(pairing.expiresAt).toLocaleTimeString(),
+              time: new Date(expiresAt).toLocaleTimeString(),
             })}
+          </Text>
+          <Text style={[styles.muted, styles.qrHint]}>
+            {tr('noe.linking.provisioningHelp')}
+          </Text>
+          <Text style={styles.payloadLabel}>{tr('noe.linking.qrPayloadLabel')}</Text>
+          <Text style={styles.payloadJson} selectable>{qrValue}</Text>
+          <Text style={styles.muted}>
+            {tr('noe.linking.adminComponentLabel', { component: DEVICE_ADMIN_COMPONENT_SHORT })}
+          </Text>
+          <Text style={[styles.muted, { fontSize: 10 }]}>
+            {'android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME = com.arcakids.child/com.arcakids.child.DeviceAdminReceiver'}
           </Text>
         </Card>
       ) : null}
@@ -154,6 +213,31 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
     lineHeight: 24,
   },
+  modeRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  modeChip: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    alignItems: 'center',
+  },
+  modeChipActive: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+  },
+  modeText: {
+    fontSize: typography.fontSizes.body,
+    color: colors.textMuted,
+    fontWeight: typography.fontWeights.medium,
+  },
+  modeTextActive: {
+    color: colors.primary,
+  },
   card: {
     ...shadows.sm,
   },
@@ -175,6 +259,11 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSizes.body,
     color: colors.text,
   },
+  hint: {
+    marginTop: spacing.sm,
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+  },
   pairingCard: {
     alignItems: 'center',
     gap: spacing.md,
@@ -184,10 +273,10 @@ const styles = StyleSheet.create({
     color: colors.textMuted,
   },
   code: {
-    fontSize: 44,
+    fontSize: 32,
     fontWeight: typography.fontWeights.bold,
     color: colors.text,
-    letterSpacing: 8,
+    letterSpacing: 6,
   },
   qrBox: {
     padding: spacing.md,
@@ -203,5 +292,21 @@ const styles = StyleSheet.create({
     fontSize: typography.fontSizes.caption,
     textAlign: 'center',
     lineHeight: 20,
+  },
+  qrHint: {
+    fontStyle: 'italic',
+  },
+  payloadLabel: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.text,
+    fontWeight: typography.fontWeights.medium,
+  },
+  payloadJson: {
+    fontSize: 10,
+    color: colors.textMuted,
+    backgroundColor: colors.surface,
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    width: '100%',
   },
 });

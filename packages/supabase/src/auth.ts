@@ -60,4 +60,24 @@ export const authHelpers = {
     const client = requireSupabaseClient();
     return client.auth.onAuthStateChange(callback);
   },
+
+  /**
+   * Verify the current session is authenticated. Throws AuthError if not.
+   * Use before mutations (create/update/delete) to guard against
+   * unauthenticated requests that bypass RLS.
+   */
+  async ensureAuthenticated(): Promise<string> {
+    const client = requireSupabaseClient();
+    const { data: { user } } = await client.auth.getUser();
+    if (!user) {
+      throw new AuthError(t('auth.notAuthenticated'), { code: 'unauthenticated' });
+    }
+    return user.id;
+  },
+
+  async getUser() {
+    const client = requireSupabaseClient();
+    const { data: { user } } = await client.auth.getUser();
+    return user;
+  },
 };

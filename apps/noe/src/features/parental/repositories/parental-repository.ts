@@ -1,6 +1,6 @@
 import type { BlockedApp, ParentalRules } from '@noe-arcakids/types';
 import { DatabaseError } from '@noe-arcakids/shared';
-import { requireSupabaseClient } from '@noe-arcakids/supabase';
+import { requireSupabaseClient, authHelpers } from '@noe-arcakids/supabase';
 
 interface ParentalRulesRow {
   id: string;
@@ -79,6 +79,7 @@ export const parentalRepository = {
     childId: string,
     patch: ParentalRulesPatch
   ): Promise<ParentalRules> {
+    await authHelpers.ensureAuthenticated();
     const client = requireSupabaseClient();
     const { data, error } = await client
       .from('parental_rules')
@@ -122,6 +123,7 @@ export const parentalRepository = {
     packageName: string,
     appLabel: string
   ): Promise<BlockedApp> {
+    await authHelpers.ensureAuthenticated();
     const client = requireSupabaseClient();
     const { data, error } = await client
       .from('blocked_apps')
@@ -141,6 +143,7 @@ export const parentalRepository = {
   },
 
   async removeBlockedApp(id: string): Promise<void> {
+    await authHelpers.ensureAuthenticated();
     const client = requireSupabaseClient();
     const { error } = await client.from('blocked_apps').delete().eq('id', id);
 

@@ -43,8 +43,13 @@ Thumbs.db
 supabase/.branches/
 supabase/.temp/
 supabase/.env
+supabase/.db-secret
 
 # Build artifacts
 build/
 dist/
 APK/
+
+# Stray prebuild output at repo root (should only live under apps/)
+android/
+app.json
