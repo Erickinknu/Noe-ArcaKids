@@ -3,7 +3,7 @@ import type { ExpoConfig } from 'expo/config';
 const config: ExpoConfig = {
   name: 'NOE',
   slug: 'noe',
-  version: '0.1.0.11',
+  version: '0.1.0.12',
   orientation: 'portrait',
   icon: './assets/images/noe-icon.png',
   scheme: 'noe',
