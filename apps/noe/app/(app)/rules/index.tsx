@@ -14,13 +14,12 @@ import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Avatar } from '@/components/ui/avatar';
-import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { TimeInput, DurationField } from '@/components/ui/time-picker';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { useAsyncData } from '@noe-arcakids/shared';
+import { Card, useAsyncData } from '@noe-arcakids/shared';
 import type { ChildProfile, ParentalRules } from '@noe-arcakids/types';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';

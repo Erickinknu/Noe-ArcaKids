@@ -1,13 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { storage } from '@noe-arcakids/storage';
-import { colors, shadows, spacing, typography } from '@noe-arcakids/shared';
+import { Card, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 
 const NOTIFICATION_KEYS = {
@@ -21,10 +20,12 @@ const NOTIFICATION_KEYS = {
 export default function NotificationsScreen() {
   const { t: tr } = useTranslation();
   const screenPadding = useScreenPadding();
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState(false);
   const [prefs, setPrefs] = useState({
     pushEnabled: true,
     dailyReport: true,
@@ -54,7 +55,7 @@ export default function NotificationsScreen() {
           });
         }
       } catch {
-        if (!cancelled) setLoadError('Failed to load preferences');
+        if (!cancelled) setLoadError(true);
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -87,38 +88,48 @@ export default function NotificationsScreen() {
       <Card style={styles.card}>
         <SectionHeader title={tr('noe.notifications.title')} />
         {loading ? (
-          <LoadingState text={tr('noe.notifications.loading')} />
+          <LoadingState text={tr('common.loading')} />
         ) : (
           <View style={styles.form}>
             <SwitchRow
               value={prefs.pushEnabled}
               onToggle={() => setPrefs((p) => ({ ...p, pushEnabled: !p.pushEnabled }))}
               label={tr('noe.notifications.pushEnabled')}
+              colors={colors}
+              styles={styles}
             />
             <SwitchRow
               value={prefs.dailyReport}
               onToggle={() => setPrefs((p) => ({ ...p, dailyReport: !p.dailyReport }))}
               label={tr('noe.notifications.dailyReport')}
+              colors={colors}
+              styles={styles}
             />
             <SwitchRow
               value={prefs.bedtimeAlert}
               onToggle={() => setPrefs((p) => ({ ...p, bedtimeAlert: !p.bedtimeAlert }))}
               label={tr('noe.notifications.bedtimeAlert')}
+              colors={colors}
+              styles={styles}
             />
             <SwitchRow
               value={prefs.screenTimeAlert}
               onToggle={() => setPrefs((p) => ({ ...p, screenTimeAlert: !p.screenTimeAlert }))}
               label={tr('noe.notifications.screenTimeAlert')}
+              colors={colors}
+              styles={styles}
             />
             <SwitchRow
               value={prefs.offlineAlert}
               onToggle={() => setPrefs((p) => ({ ...p, offlineAlert: !p.offlineAlert }))}
               label={tr('noe.notifications.offlineAlert')}
+              colors={colors}
+              styles={styles}
             />
           </View>
         )}
 
-        {loadError ? <Text style={styles.errorText}>{loadError}</Text> : null}
+        {loadError ? <Text style={styles.errorText}>{tr('noe.notifications.loadError')}</Text> : null}
 
         {savedFlash ? (
           <View style={styles.flash}>
@@ -141,14 +152,18 @@ function SwitchRow({
   value,
   onToggle,
   label,
+  colors,
+  styles,
 }: {
   value: boolean;
   onToggle: () => void;
   label: string;
+  colors: ThemeColors;
+  styles: ReturnType<typeof makeStyles>;
 }) {
   return (
-    <View style={switchStyles.row}>
-      <Text style={switchStyles.label}>{label}</Text>
+    <View style={styles.switchRow}>
+      <Text style={styles.switchLabel}>{label}</Text>
       <Switch
         value={value}
         onValueChange={onToggle}
@@ -159,22 +174,8 @@ function SwitchRow({
   );
 }
 
-const switchStyles = StyleSheet.create({
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-  },
-  label: {
-    fontSize: typography.fontSizes.body,
-    color: colors.text,
-    flex: 1,
-    marginRight: spacing.md,
-  },
-});
-
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
+  StyleSheet.create({
   screen: {
     padding: spacing.lg,
     paddingTop: spacing.xxl,
@@ -188,6 +189,18 @@ const styles = StyleSheet.create({
     padding: spacing.lg,
     gap: spacing.sm,
   },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+  },
+  switchLabel: {
+    fontSize: typography.fontSizes.body,
+    color: colors.text,
+    flex: 1,
+    marginRight: spacing.md,
+  },
   errorText: {
     color: colors.danger,
     fontSize: typography.fontSizes.caption,
@@ -198,7 +211,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginTop: spacing.sm,
     backgroundColor: colors.successLight,
-    borderRadius: spacing.sm,
+    borderRadius: radius.sm,
   },
   flashText: {
     color: colors.success,

@@ -14,7 +14,6 @@ import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -22,7 +21,7 @@ import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { geofencingService, type Geofence } from '@/features/geofencing/services/geofencing-service';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
-import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 type ChildOption = { id: string; displayName: string };
 

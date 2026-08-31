@@ -2,9 +2,8 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useMemo } from 'react';
 
-import { useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
+import { Card, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 import { Avatar } from '@/components/ui/avatar';
-import { Card } from '@/components/ui/card';
 import { SectionHeader } from '@/components/ui/section-header';
 import { formatDuration } from '@/features/dashboard/services/dashboard-service';
 import type { DailyUsage } from '@/features/activity/services/activity-service';

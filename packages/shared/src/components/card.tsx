@@ -3,7 +3,8 @@ import type { ReactNode } from 'react';
 import { StyleSheet, View } from 'react-native';
 import type { StyleProp, ViewStyle } from 'react-native';
 
-import { useTheme, radius, spacing, type ThemeColors } from '@noe-arcakids/shared';
+import { useTheme } from '../theme-context';
+import { radius, spacing, type ThemeColors } from '../theme';
 
 interface CardProps {
   style?: StyleProp<ViewStyle>;
@@ -18,11 +19,11 @@ export function Card({ style, children }: CardProps) {
 
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-  card: {
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-  },
-});
+    card: {
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+      padding: spacing.lg,
+    },
+  });

@@ -2,9 +2,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { Card } from '@/components/ui/card';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { Card, colors, radius, spacing, typography } from '@noe-arcakids/shared';
 
 const MOCK_APPS = [
   { name: 'TikTok', package: 'com.zhiliaoapp.musically', installed: 'Hace 3 días', trusted: false },

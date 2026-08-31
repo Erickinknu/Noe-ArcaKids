@@ -13,13 +13,12 @@ import {
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { Card } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { useTheme, radius, spacing, typography, errorMessage, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, radius, spacing, typography, errorMessage, type ThemeColors } from '@noe-arcakids/shared';
 import {
   appCategoryService,
   type ChildApp,

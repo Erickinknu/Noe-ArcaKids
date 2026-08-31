@@ -12,12 +12,11 @@ import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { studyModeService, type StudySchedule } from '@/features/study-mode/services/study-mode-service';
-import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 type StudyDay = { enabled: boolean; start: string; end: string };
 type StudyScheduleState = Record<string, StudyDay>;

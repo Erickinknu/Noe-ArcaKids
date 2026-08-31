@@ -5,10 +5,8 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { linkingService } from '@/features/linking/services/linking-service';
-import { errorMessage, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, Input, errorMessage, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function LinkScreen() {
   const { t: tr } = useTranslation();

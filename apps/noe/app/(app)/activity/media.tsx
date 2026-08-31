@@ -2,9 +2,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { Card } from '@/components/ui/card';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { Card, colors, radius, spacing, typography } from '@noe-arcakids/shared';
 
 const MOCK_MEDIA = [
   { type: 'image', from: 'WhatsApp - Grupo Familia', time: 'Hace 10 min', source: 'Recibido' },

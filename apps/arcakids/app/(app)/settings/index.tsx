@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { Card } from '@/components/ui/card';
 import { setLanguage } from '@/i18n';
 import { useParentalStatus } from '@/hooks/use-parental-status';
 import { identityService } from '@/features/identity/services/identity-service';
@@ -17,6 +16,7 @@ import {
   useTheme,
   type SupportedLanguage,
   type ThemeColors,
+  Card,
 } from '@noe-arcakids/shared';
 
 export default function SettingsScreen() {
@@ -222,7 +222,7 @@ const makeStyles = (colors: ThemeColors) =>
   actionButtonText: {
     fontSize: typography.fontSizes.caption,
     fontWeight: typography.fontWeights.semibold,
-    color: '#FFFFFF',
+    color: colors.onPrimary,
   },
   options: {
     gap: spacing.sm,

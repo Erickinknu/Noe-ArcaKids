@@ -3,11 +3,10 @@ import { Link } from 'expo-router';
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { Card } from '@/components/ui/card';
 import { useParentalStatus } from '@/hooks/use-parental-status';
 import { identityService } from '@/features/identity/services/identity-service';
 import { ROUTES } from '@/constants';
-import { useAsyncData, useNetworkStatus, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useAsyncData, useNetworkStatus, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function HomeScreen() {
   const { t: tr } = useTranslation();

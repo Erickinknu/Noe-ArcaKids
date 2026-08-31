@@ -2,9 +2,8 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { Card } from '@/components/ui/card';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { Card, colors, radius, spacing, typography } from '@noe-arcakids/shared';
 
 const MOCK_SOCIAL = [
   { name: 'TikTok', icon: 'music-note' as const, color: '#000000', time: '45 min hoy', posts: 12, messages: 3 },

@@ -2,7 +2,6 @@ import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { Card } from '@/components/ui/card';
 import { setLanguage } from '@/i18n';
 import {
   LANGUAGE_NAMES,
@@ -14,6 +13,7 @@ import {
   type SupportedLanguage,
   type ThemeColors,
   type ThemeShadows,
+  Card,
 } from '@noe-arcakids/shared';
 
 export default function SettingsScreen() {
@@ -29,7 +29,7 @@ export default function SettingsScreen() {
 
   return (
     <View style={styles.screen}>
-      <Text style={styles.title}>{tr('noe.dashboard.settings')}</Text>
+      <Text style={styles.title}>{tr('noe.settings.title')}</Text>
       <Card style={shadows.sm}>
         <Text style={styles.cardDescription}>
           {tr('settings.languageDescription')}

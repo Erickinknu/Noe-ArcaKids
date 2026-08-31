@@ -4,11 +4,10 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { ROUTES } from '@/constants';
 import { identityService } from '@/features/identity/services/identity-service';
 import { onboardingService } from '@/features/onboarding/services/onboarding-service';
-import { errorMessage, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Input, errorMessage, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 const AVATARS = ['🦊', '🐼', '🦁', '🐸', '🐙', '🦄'];
 

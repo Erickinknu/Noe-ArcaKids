@@ -4,7 +4,6 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -13,7 +12,7 @@ import { WeeklyChart } from '@/components/ui/weekly-chart';
 import { activityService, AlertItem, DailyUsage } from '@/features/activity/services/activity-service';
 import { unlockRequestService, UnlockRequest } from '@/features/unlock-request/services/unlock-request-service';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { errorMessage, useAsyncData, colors, radius, spacing, typography, shadows } from '@noe-arcakids/shared';
+import { Card, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 interface DailyBar {
   date: string;
@@ -43,7 +42,7 @@ function formatDate(dateStr: string): string {
   return d.toLocaleDateString('es', { day: 'numeric', month: 'short' });
 }
 
-function getBarColor(minutes: number): string {
+function getBarColor(minutes: number, colors: ThemeColors): string {
   if (minutes < 60) return colors.success;
   if (minutes <= 120) return colors.warning;
   return colors.danger;
@@ -69,6 +68,8 @@ export default function ActivityScreen() {
   const { t: tr } = useTranslation();
   const router = useRouter();
   const screenPadding = useScreenPadding();
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [refreshing, setRefreshing] = useState(false);
   const fetchUsage = useCallback(() => activityService.getAllChildrenUsage(7), []);
   const fetchAlerts = useCallback(() => activityService.getRecentAlerts(), []);
@@ -115,10 +116,10 @@ export default function ActivityScreen() {
       const d = new Date(); d.setDate(d.getDate() - i);
       const dateStr = d.toISOString().split('T')[0];
       const minutes = dayMap.get(dateStr) ?? 0;
-      bars.push({ date: dateStr, label: formatDate(dateStr), minutes, color: getBarColor(minutes) });
+      bars.push({ date: dateStr, label: formatDate(dateStr), minutes, color: getBarColor(minutes, colors) });
     }
     return bars;
-  }, [usageData]);
+  }, [usageData, colors]);
 
   const maxMinutes = useMemo(() => Math.max(...weeklyBars.map((b) => b.minutes), 1), [weeklyBars]);
   const hasData = childSummaries.length > 0;
@@ -150,12 +151,12 @@ export default function ActivityScreen() {
       <Text style={styles.sectionLabel}>Monitoreo detallado</Text>
       <View style={styles.monitorGrid}>
         {[
-          { icon: 'language' as const, title: 'Páginas\nweb', color: '#6366F1', path: '/activity/web' },
-          { icon: 'play-circle' as const, title: 'YouTube\nvideos', color: '#DC2626', path: '/activity/youtube' },
-          { icon: 'apps' as const, title: 'Apps\ninstaladas', color: '#D97706', path: '/activity/apps' },
-          { icon: 'people' as const, title: 'Redes\nsociales', color: '#E1306C', path: '/activity/social' },
-          { icon: 'photo-library' as const, title: 'Imágenes\nrecibidas', color: '#059669', path: '/activity/media' },
-          { icon: 'chat' as const, title: 'Conversa-\nciones', color: '#25D366', path: '/activity/conversations' },
+          { icon: 'language' as const, title: 'Páginas\nweb', color: colors.primary, path: '/activity/web' },
+          { icon: 'play-circle' as const, title: 'YouTube\nvideos', color: colors.danger, path: '/activity/youtube' },
+          { icon: 'apps' as const, title: 'Apps\ninstaladas', color: colors.warning, path: '/activity/apps' },
+          { icon: 'people' as const, title: 'Redes\nsociales', color: colors.danger, path: '/activity/social' },
+          { icon: 'photo-library' as const, title: 'Imágenes\nrecibidas', color: colors.success, path: '/activity/media' },
+          { icon: 'chat' as const, title: 'Conversa-\nciones', color: colors.success, path: '/activity/conversations' },
         ].map((item) => (
           <Pressable
             key={item.title}
@@ -282,7 +283,8 @@ export default function ActivityScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
+  StyleSheet.create({
   screen: { paddingTop: spacing.xxl, padding: spacing.lg, backgroundColor: colors.background, gap: spacing.md },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },

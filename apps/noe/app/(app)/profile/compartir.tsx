@@ -9,9 +9,8 @@ import {
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { Card } from '@/components/ui/card';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function CompartirScreen() {
   const router = useRouter();
@@ -46,7 +45,7 @@ export default function CompartirScreen() {
           puedan cuidar a sus hijos en el mundo digital.
         </Text>
         <Pressable style={styles.shareButton} onPress={handleShare}>
-          <MaterialIcons name="share" size={20} color="#fff" />
+          <MaterialIcons name="share" size={20} color={colors.onPrimary} />
           <Text style={styles.shareButtonText}>Compartir ahora</Text>
         </Pressable>
       </Card>
@@ -102,6 +101,6 @@ const makeStyles = (colors: ThemeColors) =>
   shareButtonText: {
     fontSize: typography.fontSizes.body,
     fontWeight: typography.fontWeights.bold,
-    color: '#fff',
+    color: colors.onPrimary,
   },
 });

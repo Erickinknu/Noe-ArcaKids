@@ -1,10 +1,9 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -15,7 +14,7 @@ import { linkingService, type LinkingMode, DEVICE_ADMIN_COMPONENT_SHORT } from '
 import type { ProvisioningPayload } from '@noe-arcakids/types';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import type { ChildProfile } from '@noe-arcakids/types';
-import { errorMessage, useAsyncData, colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
+import { Card, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 interface FamilyWithChildren {
   familyId: string;
@@ -25,6 +24,8 @@ interface FamilyWithChildren {
 export default function LinkingScreen() {
   const { t: tr } = useTranslation();
   const screenPadding = useScreenPadding();
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
   const [mode, setMode] = useState<LinkingMode>('child');
   const [payload, setPayload] = useState<ProvisioningPayload | null>(null);
@@ -195,7 +196,8 @@ export default function LinkingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
+  StyleSheet.create({
   screen: {
     padding: spacing.lg,
     paddingTop: spacing.xxl,

@@ -2,7 +2,8 @@ import { useMemo } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
 import type { TextInputProps } from 'react-native';
 
-import { useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { useTheme } from '../theme-context';
+import { spacing, typography, type ThemeColors } from '../theme';
 
 export interface InputProps extends TextInputProps {
   label?: string;

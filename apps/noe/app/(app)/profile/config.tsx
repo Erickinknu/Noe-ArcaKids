@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -9,12 +10,9 @@ import {
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { Card } from '@/components/ui/card';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { useTheme } from '@noe-arcakids/shared';
 import { APP_VERSION } from '@noe-arcakids/config';
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
-import type { AppColorTheme } from '@noe-arcakids/shared';
+import { Card, radius, spacing, typography, useTheme, type AppColorTheme, type ThemeColors } from '@noe-arcakids/shared';
 
 const THEME_OPTIONS: { key: AppColorTheme; label: string; icon: keyof typeof MaterialIcons.glyphMap }[] = [
   { key: 'light', label: 'Claro', icon: 'light-mode' },
@@ -25,7 +23,8 @@ const THEME_OPTIONS: { key: AppColorTheme; label: string; icon: keyof typeof Mat
 export default function ConfigScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const { theme, setTheme } = useTheme();
+  const { colors, theme, setTheme } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   return (
     <ScrollView
@@ -114,7 +113,8 @@ export default function ConfigScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     padding: spacing.lg,
     backgroundColor: colors.surface,

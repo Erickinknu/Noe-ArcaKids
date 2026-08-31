@@ -17,7 +17,6 @@ import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Avatar } from '@/components/ui/avatar';
-import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -33,6 +32,7 @@ import {
   useTheme,
   type ThemeColors,
   type ThemeShadows,
+  Card,
 } from '@noe-arcakids/shared';
 import {
   dashboardService,
@@ -295,10 +295,10 @@ export default function DashboardScreen() {
         <Text style={styles.sectionTitle}>Acciones rápidas</Text>
         <View style={styles.quickActionsRow}>
           {[
-            { icon: 'lock' as const, label: 'Bloquear\ntodos', color: '#DC2626', onPress: () => { setChildSelectAction('block'); setChildSelectVisible(true); } },
-            { icon: 'notifications-active' as const, label: 'Enviar\nalerta', color: '#D97706', onPress: () => { setChildSelectAction('alert'); setChildSelectVisible(true); } },
-            { icon: 'location-searching' as const, label: 'Ubicar\nhijos', color: '#059669', onPress: () => router.push('/activity/location' as any) },
-            { icon: 'school' as const, label: 'Modo\nestudio', color: '#6366F1', onPress: () => router.push('/rules/modo-estudio' as any) },
+            { icon: 'lock' as const, label: 'Bloquear\ntodos', color: colors.danger, onPress: () => { setChildSelectAction('block'); setChildSelectVisible(true); } },
+            { icon: 'notifications-active' as const, label: 'Enviar\nalerta', color: colors.warning, onPress: () => { setChildSelectAction('alert'); setChildSelectVisible(true); } },
+            { icon: 'location-searching' as const, label: 'Ubicar\nhijos', color: colors.success, onPress: () => router.push('/activity/location' as any) },
+            { icon: 'school' as const, label: 'Modo\nestudio', color: colors.primary, onPress: () => router.push('/rules/modo-estudio' as any) },
           ].map((action) => (
             <Pressable
               key={action.label}
@@ -463,11 +463,12 @@ function ChildSelectModal({
   actionType: 'block' | 'alert' | null;
 }) {
   const { colors, shadows } = useTheme();
+  const { t: tr } = useTranslation();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
-  const title = actionType === 'block' ? 'Seleccionar hijo a bloquear' : 'Seleccionar hijo para alerta';
+  const title = tr('noe.dashboard.selectChild');
 
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} accessibilityViewIsModal>
       <Pressable style={styles.modalOverlay} onPress={onClose}>
         <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
           <Text style={styles.modalTitle}>{title}</Text>
@@ -487,7 +488,7 @@ function ChildSelectModal({
             ItemSeparatorComponent={() => <View style={styles.modalSeparator} />}
           />
           <Pressable style={styles.modalCancelButton} onPress={onClose}>
-            <Text style={styles.modalCancelText}>Cancelar</Text>
+            <Text style={styles.modalCancelText}>{tr('common.cancel')}</Text>
           </Pressable>
         </Pressable>
       </Pressable>
