@@ -20,10 +20,3 @@ export function checkRateLimit(key: string, windowMs?: number): void {
 
   rateLimiter.set(key, now);
 }
-
-/**
- * Reset rate limiter for a key (useful in tests).
- */
-export function resetRateLimit(key: string): void {
-  rateLimiter.delete(key);
-}

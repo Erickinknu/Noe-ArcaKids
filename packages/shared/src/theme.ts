@@ -198,7 +198,3 @@ export interface ThemeContextValue {
   deps: ThemeDeps;
   setTheme: (t: AppColorTheme) => void;
 }
-
-export function createStyles<T>(factory: (deps: ThemeDeps) => T): (deps: ThemeDeps) => T {
-  return factory;
-}
