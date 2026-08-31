@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, View, Image } from 'react-native';
+import { View, Image } from 'react-native';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -65,9 +65,9 @@ function RootNavigator() {
         >
           <Image
             source={require('@/assets/images/arca-kids.png')}
-            style={styles.logo}
             width={150}
             height={150}
+            resizeMode="contain"
           />
         </View>
       )}
@@ -82,10 +82,3 @@ export default function RootLayout() {
     </ThemeProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  logo: {
-    width: '100%',
-    height: '100%',
-  },
-});

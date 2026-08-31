@@ -42,14 +42,6 @@ supabase stop
 With the local stack, the API URL is `http://127.0.0.1:54321` and the anon key is the one
 printed by `supabase start` (or the `demo` key in `config.toml`).
 
-## Feature flags
-
-`packages/config/src/feature-flags.ts` gates upcoming functionality:
-
-- `syncEngine` - sync engine (Phase 8)
-- `linking` - device/child linking (Phase 3) - **enabled**
-- `parentalControls` - parental control features (Phase 4+)
-
 ## App metadata
 
 `packages/config/src/app-info.ts` owns `APP_VERSION` and `APP_NAMES` (single source of truth).

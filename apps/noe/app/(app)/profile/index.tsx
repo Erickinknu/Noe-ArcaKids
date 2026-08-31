@@ -53,7 +53,7 @@ export default function OtrosScreen() {
       tr('noe.profile.signOut'),
       tr('noe.profile.signOutConfirm'),
       [
-        { text: tr('noe.common.cancel'), style: 'cancel' },
+        { text: tr('common.cancel'), style: 'cancel' },
         {
           text: tr('noe.profile.signOut'),
           style: 'destructive',

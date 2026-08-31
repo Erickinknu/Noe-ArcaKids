@@ -14,7 +14,7 @@ export default function LoadingScreen() {
         />
       </View>
       <View style={styles.spinnerContainer}>
-        <ActivityIndicator size="large" color="#208AEF" />
+        <ActivityIndicator size="large" color="#FFFFFF" />
       </View>
     </View>
   );

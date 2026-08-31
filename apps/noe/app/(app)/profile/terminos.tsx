@@ -1,13 +1,16 @@
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { colors, spacing, typography } from '@noe-arcakids/shared';
+import { useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function TerminosScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   return (
     <ScrollView
@@ -39,7 +42,7 @@ export default function TerminosScreen() {
 
       <Text style={styles.sectionTitle}>4. Limitación de responsabilidad</Text>
       <Text style={styles.body}>
-        NOE se proporciona &quot;tal cual&quot; sin garant&iacute;as. No nos hacemos responsables por
+        NOE se proporciona “tal cual” sin garantías. No nos hacemos responsables por
         daños derivados del uso de la app.
       </Text>
 
@@ -48,7 +51,8 @@ export default function TerminosScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     padding: spacing.lg,
     backgroundColor: colors.surface,

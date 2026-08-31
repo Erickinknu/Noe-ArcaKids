@@ -1,21 +1,29 @@
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, StyleSheet, Text, useColorScheme } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { useTheme } from '@noe-arcakids/shared';
 
 export function ThemeToggle(_props: { size?: number }) {
   const { t: tr } = useTranslation();
-  const { theme, setTheme } = useTheme();
-  const isDark = theme === 'dark';
+  const { theme, setTheme, resolved } = useTheme();
+  const systemScheme = useColorScheme();
+  const isDark = resolved === 'dark' || (theme === 'system' && systemScheme === 'dark');
 
   const toggleTheme = () => {
     setTheme(isDark ? 'light' : 'dark');
   };
 
   return (
-    <Pressable style={styles.container} onPress={toggleTheme}>
+    <Pressable
+      style={styles.container}
+      onPress={toggleTheme}
+      accessibilityRole="button"
+      accessibilityLabel={isDark ? tr('arcakids.theme.light') : tr('arcakids.theme.dark')}
+    >
       <Text style={styles.icon}>{isDark ? '☀️' : '🌙'}</Text>
-      <Text style={styles.label}>{isDark ? tr('light_mode') : tr('dark_mode')}</Text>
+      <Text style={styles.label}>
+        {isDark ? tr('arcakids.theme.light') : tr('arcakids.theme.dark')}
+      </Text>
     </Pressable>
   );
 }

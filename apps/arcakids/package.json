@@ -13,6 +13,7 @@
     "build:android": "cd android && gradlew.bat assembleDebug"
   },
   "dependencies": {
+    "@expo/vector-icons": "^15.0.2",
     "@noe-arcakids/shared": "*",
     "@noe-arcakids/storage": "*",
     "@noe-arcakids/supabase": "*",
@@ -36,8 +37,7 @@
     "react-native-reanimated": "4.5.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
-    "react-native-worklets": "0.10.1",
-    "zustand": "^5.0.15"
+    "react-native-worklets": "0.10.1"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",

@@ -5,9 +5,8 @@ import * as Linking from 'expo-linking';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { authService } from '@/features/auth/services/auth-service';
-import { errorMessage, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Input, errorMessage, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 import { ROUTES } from '@/constants';
 
 /**

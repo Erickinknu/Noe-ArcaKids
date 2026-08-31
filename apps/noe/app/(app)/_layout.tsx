@@ -1,10 +1,10 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { Redirect, Tabs } from 'expo-router';
 import { StyleSheet, View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
-import { colors, typography, spacing } from '@noe-arcakids/shared';
+import { useTheme, typography, spacing, type ThemeColors } from '@noe-arcakids/shared';
 
 import { useAuthStore } from '@/stores/auth-store';
 import { ROUTES } from '@/constants';
@@ -13,6 +13,8 @@ const TAB_BAR_BASE_HEIGHT = 56;
 
 export default function AppLayout() {
   const { t: tr } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const status = useAuthStore((state) => state.status);
   const insets = useSafeAreaInsets();
 
@@ -51,7 +53,7 @@ export default function AppLayout() {
         options={{
           title: tr('noe.tabs.children'),
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="family-restroom" color={color} focused={focused} />
+            <TabIcon name="family-restroom" color={color} focused={focused} styles={styles} />
           ),
         }}
       />
@@ -60,7 +62,7 @@ export default function AppLayout() {
         options={{
           title: tr('noe.tabs.control'),
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="shield" color={color} focused={focused} />
+            <TabIcon name="shield" color={color} focused={focused} styles={styles} />
           ),
         }}
       />
@@ -73,7 +75,7 @@ export default function AppLayout() {
               <MaterialIcons
                 name="home"
                 size={24}
-                color={focused ? '#FFFFFF' : color}
+                color={focused ? colors.onPrimary : color}
               />
             </View>
           ),
@@ -84,7 +86,7 @@ export default function AppLayout() {
         options={{
           title: tr('noe.tabs.activity'),
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="bar-chart" color={color} focused={focused} />
+            <TabIcon name="bar-chart" color={color} focused={focused} styles={styles} />
           ),
         }}
       />
@@ -93,7 +95,7 @@ export default function AppLayout() {
         options={{
           title: 'Otros',
           tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="more-horiz" color={color} focused={focused} />
+            <TabIcon name="more-horiz" color={color} focused={focused} styles={styles} />
           ),
         }}
       />
@@ -132,7 +134,17 @@ export default function AppLayout() {
   );
 }
 
-function TabIcon({ name, color, focused }: { name: string; color: ColorValue; focused: boolean }) {
+function TabIcon({
+  name,
+  color,
+  focused,
+  styles,
+}: {
+  name: string;
+  color: ColorValue;
+  focused: boolean;
+  styles: ReturnType<typeof makeStyles>;
+}) {
   return (
     <MaterialIcons
       name={name as any}
@@ -143,7 +155,8 @@ function TabIcon({ name, color, focused }: { name: string; color: ColorValue; fo
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   tabBarLabel: {
     fontSize: typography.fontSizes.caption,
     fontWeight: typography.fontWeights.medium,

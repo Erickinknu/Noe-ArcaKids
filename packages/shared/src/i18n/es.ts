@@ -138,6 +138,13 @@ export const es = {
         thirty: '+30 min',
         sixty: '+60 min',
       },
+      connectedCount: 'Conectados {{count}} de {{total}}',
+      noChildrenOnline: 'Ning\u00fan hijo en l\u00ednea',
+      seeAll: 'Ver todo',
+      recentActivity: 'Actividad reciente',
+      overLimit: 'Sobre el l\u00edmite',
+      details: 'Detalles',
+      selectChild: 'Seleccionar hijo',
     },
     tabs: {
       home: 'Inicio',
@@ -157,6 +164,11 @@ export const es = {
       familyPlaceholder: 'p. ej. Los P\u00e9rez',
       saveFamilyName: 'Guardar nombre de la familia',
       signOut: 'Cerrar sesi\u00f3n',
+      signOutConfirm: '\u00bfSeguro que quieres cerrar sesi\u00f3n?',
+      signOutCancel: 'Cancelar',
+    },
+    settings: {
+      title: 'Configuraci\u00f3n',
     },
     children: {
       title: 'Hijos',
@@ -239,6 +251,8 @@ export const es = {
       offlineAlert: 'Alerta de desconexi\u00f3n',
       offlineAlertDesc: 'Aviso cuando un dispositivo se desconecta',
       save: 'Guardar preferencias',
+      savedFlash: 'Preferencias guardadas',
+      loadError: 'No se pudieron cargar las preferencias',
     },
     rules: {
       title: 'Reglas parentales',
@@ -364,6 +378,15 @@ export const es = {
       title: 'Mis apps',
       subtitle: 'Tus apps favoritas',
       empty: 'No hay apps para mostrar.',
+    },
+    theme: {
+      light: 'Modo claro',
+      dark: 'Modo oscuro',
+    },
+    blocked: {
+      title: 'Dispositivo bloqueado',
+      body:
+        'Tu padre ha bloqueado este dispositivo.\nContacta a tu padre para desbloquearlo.',
     },
   },
 } as const;

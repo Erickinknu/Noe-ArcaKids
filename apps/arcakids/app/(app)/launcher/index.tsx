@@ -58,7 +58,12 @@ export default function LauncherScreen() {
   return (
     <View style={styles.screen}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable
+          onPress={() => router.back()}
+          style={styles.backButton}
+          accessibilityRole="button"
+          accessibilityLabel={tr('arcakids.onboarding.back')}
+        >
           <Text style={styles.backText}>←</Text>
         </Pressable>
         <Text style={styles.title}>{tr('arcakids.launcher.title')}</Text>

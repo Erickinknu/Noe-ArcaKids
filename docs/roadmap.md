@@ -11,7 +11,7 @@
 | FASE 5 | Geolocalizacion y geocercas | [PENDIENTE — Backend de la tabla `geofences` creado; servicio JS y nativo `ParentalLocation` PENDIENTE en ARCA KIDS] |
 | FASE 6 | Notificaciones, pasos, gamificacion, modo estudio | [PENDIENTE — Tabla `push_tokens`/`unlock_requests` y services existen pero la UI/backend push no estan conectados; modo estudio solo local] |
 | FASE 7 | Permisos avanzados, servicios Android en segundo plano, foreground services, overlays | [PENDIENTE — Depende de la capa nativa de la FASE 4] |
-| FASE 8 | Sync engine completo (offline queue -> Supabase), realtime, Edge Functions, storage | [PENDIENTE — Existe un `offline-sync-engine.ts` esqueleto en ARCA KIDS que apunta a una tabla `offline_actions` NO migrada y que contradice `FEATURE_FLAGS.syncEngine: false`; se descarta/retoma en esta fase] |
+| FASE 8 | Sync engine completo (offline queue -> Supabase), realtime, Edge Functions, storage | [PENDIENTE — El esqueleto `offline-sync-engine.ts` ya fue eliminado y el flag `FEATURE_FLAGS.syncEngine` removido (código muerto). El sync engine se implementará desde cero en esta fase contra una migración real `offline_actions`] |
 
 ## Rules
 

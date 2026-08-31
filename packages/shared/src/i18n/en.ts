@@ -135,6 +135,13 @@ export const en = {
         thirty: '+30 min',
         sixty: '+60 min',
       },
+      connectedCount: 'Connected {{count}} of {{total}}',
+      noChildrenOnline: 'No children online',
+      seeAll: 'See all',
+      recentActivity: 'Recent activity',
+      overLimit: 'Over limit',
+      details: 'Details',
+      selectChild: 'Select child',
     },
     tabs: {
       home: 'Home',
@@ -154,6 +161,11 @@ export const en = {
       familyPlaceholder: 'e.g. The Smiths',
       saveFamilyName: 'Save family name',
       signOut: 'Sign out',
+      signOutConfirm: 'Are you sure you want to sign out?',
+      signOutCancel: 'Cancel',
+    },
+    settings: {
+      title: 'Settings',
     },
     children: {
       title: 'Children',
@@ -234,6 +246,8 @@ export const en = {
       offlineAlert: 'Offline alert',
       offlineAlertDesc: 'Alert when a device goes offline',
       save: 'Save preferences',
+      savedFlash: 'Preferences saved',
+      loadError: 'Failed to load preferences',
     },
     rules: {
       title: 'Parental rules',
@@ -356,6 +370,15 @@ export const en = {
       title: 'My apps',
       subtitle: 'Your favorite apps',
       empty: 'No apps to show.',
+    },
+    theme: {
+      light: 'Light mode',
+      dark: 'Dark mode',
+    },
+    blocked: {
+      title: 'Device blocked',
+      body:
+        'Your parent has blocked this device.\nContact your parent to unlock it.',
     },
   },
 } as const;

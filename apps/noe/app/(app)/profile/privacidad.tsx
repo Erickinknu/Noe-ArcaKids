@@ -1,13 +1,16 @@
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { colors, spacing, typography } from '@noe-arcakids/shared';
+import { useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function PrivacidadScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   return (
     <ScrollView
@@ -49,7 +52,8 @@ export default function PrivacidadScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     padding: spacing.lg,
     backgroundColor: colors.surface,
