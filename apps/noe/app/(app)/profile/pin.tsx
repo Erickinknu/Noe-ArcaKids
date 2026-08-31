@@ -12,10 +12,9 @@ import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { pinService } from '@/features/pin/services/pin-service';
-import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 const PIN_LENGTH = 4;
 const WEAK_PINS = ['0000', '1111', '2222', '3333', '4444', '5555', '6666', '7777', '8888', '9999', '1234', '4321'];
@@ -49,7 +48,7 @@ export default function PinScreen() {
       return 'El PIN solo puede contener números';
     }
     if (WEAK_PINS.includes(newPin)) {
-      return 'No uses combinaciones simples como "1234" o a&ntilde;os de nacimiento. Se pueden adivinar f&aacute;cilmente.';
+      return 'No uses combinaciones simples como "1234" o años de nacimiento. Se pueden adivinar fácilmente.';
     }
     return null;
   }
@@ -217,7 +216,7 @@ export default function PinScreen() {
         <View style={styles.warningBox}>
           <MaterialIcons name="warning" size={18} color={colors.warning} />
           <Text style={styles.warningText}>
-            No uses combinaciones simples como &quot;1234&quot; o un a&ntilde;o de nacimiento. Dicho c&oacute;digo se puede descifrar f&aacute;cilmente.
+            No uses combinaciones simples como “1234” o un año de nacimiento. Dicho código se puede descifrar fácilmente.
           </Text>
         </View>
 

@@ -9,6 +9,14 @@ function isOnline(lastSeenAt: string | null): boolean {
   return diff < 5 * 60 * 1000;
 }
 
+function localToday(): string {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export const dashboardRepository = {
   async getFamilySummary(): Promise<FamilySummary> {
     const client = requireSupabaseClient();
@@ -43,7 +51,7 @@ export const dashboardRepository = {
       .select('child_id, daily_limit_minutes')
       .in('child_id', childIds);
 
-    const today = new Date().toISOString().split('T')[0];
+    const today = localToday();
     const { data: usage } = await client
       .from('usage_reports')
       .select('child_id, minutes')

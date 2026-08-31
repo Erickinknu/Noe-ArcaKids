@@ -90,7 +90,8 @@ export class NotificationService {
     usedMinutes: number,
     limitMinutes: number
   ): Promise<string> {
-    const percentUsed = Math.round((usedMinutes / limitMinutes) * 100);
+    const percentUsed =
+      limitMinutes > 0 ? Math.round((usedMinutes / limitMinutes) * 100) : 100;
     return this.scheduleNotification({
       title: 'Límite de uso diario',
       body: `${childName} ha usado ${usedMinutes} min de ${limitMinutes} min (${percentUsed}%)`,

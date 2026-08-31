@@ -7,6 +7,13 @@ export interface DailyUsage {
   minutes: number;
 }
 
+function localDateKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
 export const activityService = {
   async getAllChildrenUsage(days: number = 7): Promise<DailyUsage[]> {
     const client = requireSupabaseClient();
@@ -31,7 +38,7 @@ export const activityService = {
 
     const startDate = new Date();
     startDate.setDate(startDate.getDate() - days);
-    const startDateStr = startDate.toISOString().split('T')[0];
+    const startDateStr = localDateKey(startDate);
 
     const childIds = children.map((c) => c.id);
     const childNameMap = new Map(children.map((c) => [c.id, c.display_name]));
