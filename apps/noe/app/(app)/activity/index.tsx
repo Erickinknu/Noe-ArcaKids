@@ -12,9 +12,8 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { WeeklyChart } from '@/components/ui/weekly-chart';
 import { activityService, AlertItem, DailyUsage } from '@/features/activity/services/activity-service';
 import { unlockRequestService, UnlockRequest } from '@/features/unlock-request/services/unlock-request-service';
-import { useAsyncData } from '@/hooks/use-async-data';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { errorMessage, colors, radius, spacing, typography, shadows } from '@noe-arcakids/shared';
+import { errorMessage, useAsyncData, colors, radius, spacing, typography, shadows } from '@noe-arcakids/shared';
 
 interface DailyBar {
   date: string;

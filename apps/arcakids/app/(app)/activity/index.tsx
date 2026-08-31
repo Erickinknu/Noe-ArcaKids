@@ -3,10 +3,9 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { Card } from '@/components/ui/card';
-import { useAsyncData } from '@/hooks/use-async-data';
 import { useParentalStatus } from '@/hooks/use-parental-status';
 import { identityService } from '@/features/identity/services/identity-service';
-import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { useAsyncData, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 const APP_COLORS = [
   '#F59E0B',

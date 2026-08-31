@@ -3,7 +3,6 @@ import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { useAsyncData } from '@/hooks/use-async-data';
 import { identityService } from '@/features/identity/services/identity-service';
 import {
   parentalService,
@@ -12,7 +11,7 @@ import {
   parentalBridge,
   type LaunchableApp,
 } from '@/features/parental/native/parental-bridge';
-import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { useAsyncData, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 const TILE_COLORS = [
   '#F59E0B',

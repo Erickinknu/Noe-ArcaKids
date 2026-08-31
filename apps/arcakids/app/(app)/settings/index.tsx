@@ -4,7 +4,6 @@ import { useTranslation } from 'react-i18next';
 
 import { Card } from '@/components/ui/card';
 import { setLanguage } from '@/i18n';
-import { useAsyncData } from '@/hooks/use-async-data';
 import { useParentalStatus } from '@/hooks/use-parental-status';
 import { identityService } from '@/features/identity/services/identity-service';
 import { parentalBridge } from '@/features/parental/native/parental-bridge';
@@ -14,6 +13,7 @@ import {
   radius,
   spacing,
   typography,
+  useAsyncData,
   useTheme,
   type SupportedLanguage,
   type ThemeColors,

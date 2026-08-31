@@ -4,12 +4,10 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { Card } from '@/components/ui/card';
-import { useNetworkStatus } from '@/hooks/use-network-status';
-import { useAsyncData } from '@/hooks/use-async-data';
 import { useParentalStatus } from '@/hooks/use-parental-status';
 import { identityService } from '@/features/identity/services/identity-service';
 import { ROUTES } from '@/constants';
-import { useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { useAsyncData, useNetworkStatus, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function HomeScreen() {
   const { t: tr } = useTranslation();

@@ -8,8 +8,7 @@ import { Input } from '@/components/ui/input';
 import { ROUTES } from '@/constants';
 import { identityService } from '@/features/identity/services/identity-service';
 import { onboardingService } from '@/features/onboarding/services/onboarding-service';
-import { errorMessage } from '@/hooks/use-async-data';
-import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { errorMessage, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 const AVATARS = ['🦊', '🐼', '🦁', '🐸', '🐙', '🦄'];
 

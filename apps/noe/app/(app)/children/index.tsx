@@ -17,8 +17,7 @@ import { familyService } from '@/features/family/services/family-service';
 import { parentalService } from '@/features/parental/services/parental-service';
 import { deviceControlService } from '@/features/device-control/services/device-control-service';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
-import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
+import { errorMessage, useAsyncData, colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
 
 const AVATARS = ['🐻', '🐰', '🐱', '🐶', '🦊', '🐼', '🦁', '🐸', '🐵', '🦋', '🌟', '🚀'];
 

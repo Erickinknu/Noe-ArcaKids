@@ -8,9 +8,8 @@ import { Input } from '@/components/ui/input';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { identityService } from '@/features/identity/services/identity-service';
 import type { ChildInfo } from '@/features/identity/repositories/identity-repository';
-import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
 import { useAchievements } from '@/features/achievements';
-import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 const AVATARS = ['🦊', '🐼', '🦁', '🐸', '🐙', '🦄'];
 

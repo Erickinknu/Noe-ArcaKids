@@ -7,9 +7,8 @@ import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { errorMessage } from '@/hooks/use-async-data';
 import { linkingService } from '@/features/linking/services/linking-service';
-import { useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { errorMessage, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function LinkScreen() {
   const { t: tr } = useTranslation();

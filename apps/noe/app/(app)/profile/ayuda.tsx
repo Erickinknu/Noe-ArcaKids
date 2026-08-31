@@ -64,53 +64,55 @@ export default function AyudaScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  screen: {
-    padding: spacing.lg,
-    backgroundColor: colors.surface,
-    gap: spacing.md,
-  },
-  headerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-  },
-  headerTitle: {
-    fontSize: typography.fontSizes.heading,
-    fontWeight: typography.fontWeights.bold,
-    color: colors.text,
-  },
-  faqItem: {
-    paddingVertical: spacing.md,
-  },
-  faqBorder: {
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-  },
-  faqQ: {
-    fontSize: typography.fontSizes.body,
-    fontWeight: typography.fontWeights.medium,
-    color: colors.text,
-    marginBottom: spacing.xs,
-  },
-  faqA: {
-    fontSize: typography.fontSizes.caption,
-    color: colors.textMuted,
-    lineHeight: 18,
-  },
-  linkRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    padding: spacing.lg,
-    backgroundColor: colors.background,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-  },
-  linkText: {
-    fontSize: typography.fontSizes.body,
-    color: colors.primary,
-    fontWeight: typography.fontWeights.medium,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    screen: {
+      padding: spacing.lg,
+      backgroundColor: colors.surface,
+      gap: spacing.md,
+    },
+    headerRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    headerTitle: {
+      fontSize: typography.fontSizes.heading,
+      fontWeight: typography.fontWeights.bold,
+      color: colors.text,
+    },
+    faqItem: {
+      paddingVertical: spacing.md,
+    },
+    faqBorder: {
+      borderBottomWidth: StyleSheet.hairlineWidth,
+      borderBottomColor: colors.border,
+    },
+    faqQ: {
+      fontSize: typography.fontSizes.body,
+      fontWeight: typography.fontWeights.medium,
+      color: colors.text,
+      marginBottom: spacing.xs,
+    },
+    faqA: {
+      fontSize: typography.fontSizes.caption,
+      color: colors.textMuted,
+      lineHeight: 18,
+    },
+    linkRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      padding: spacing.lg,
+      backgroundColor: colors.background,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.lg,
+    },
+    linkText: {
+      fontSize: typography.fontSizes.body,
+      color: colors.primary,
+      fontWeight: typography.fontWeights.medium,
+    },
+  });
+

@@ -7,11 +7,10 @@ import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { useAsyncData } from '@/hooks/use-async-data';
 import { webFilterService, CATEGORIES, WebFilter } from '@/features/web-filter/services/web-filter-service';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
-import { errorMessage, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 import type { ChildProfile } from '@noe-arcakids/types';
 
 export default function FiltradoWebScreen() {

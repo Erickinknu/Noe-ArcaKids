@@ -1,1 +1,0 @@
-export { useNetworkStatus } from '@noe-arcakids/shared';

@@ -14,9 +14,8 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
 import { deviceControlService } from '@/features/device-control/services/device-control-service';
-import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
+import { errorMessage, useAsyncData, colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
 
 const AVATARS = ['🐻', '🐰', '🐱', '🐶', '🦊', '🐼', '🦁', '🐸', '🐵', '🦋', '🌟', '🚀'];

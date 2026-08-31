@@ -19,12 +19,11 @@ import { ErrorState } from '@/components/ui/error-state';
 import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
-import { useAsyncData } from '@/hooks/use-async-data';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
 import type { MyFamily } from '@/features/family/repositories/family-repository';
-import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { useAsyncData, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function FamiliaScreen() {
   const { t: tr } = useTranslation();

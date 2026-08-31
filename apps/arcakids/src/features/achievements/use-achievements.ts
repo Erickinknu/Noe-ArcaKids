@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { useAsyncData } from '@/hooks/use-async-data';
+import { useAsyncData } from '@noe-arcakids/shared';
 import { identityService } from '@/features/identity/services/identity-service';
 
 export interface UseAchievementsReturn {

@@ -14,9 +14,8 @@ import { familyService } from '@/features/family/services/family-service';
 import { linkingService, type LinkingMode, DEVICE_ADMIN_COMPONENT_SHORT } from '@/features/linking/services/linking-service';
 import type { ProvisioningPayload } from '@noe-arcakids/types';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
 import type { ChildProfile } from '@noe-arcakids/types';
-import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
+import { errorMessage, useAsyncData, colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
 
 interface FamilyWithChildren {
   familyId: string;
