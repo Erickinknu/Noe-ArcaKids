@@ -53,3 +53,5 @@ APK/
 # Stray prebuild output at repo root (should only live under apps/)
 android/
 app.json
+# Penpot MCP secrets
+secrets/

@@ -7,14 +7,16 @@ import * as SplashScreen from 'expo-splash-screen';
 import { initI18n } from '@/i18n';
 import { networkService } from '@/services/network-service';
 import { useDevicePoller } from '@/hooks/use-device-poller';
+import { ThemeProvider, useTheme } from '@noe-arcakids/shared';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-export default function RootLayout() {
+function RootNavigator() {
   const [i18nReady, setI18nReady] = useState(false);
   const router = useRouter();
   const segments = useSegments();
   const { isBlocked } = useDevicePoller();
+  const { colors, resolved } = useTheme();
 
   useEffect(() => {
     let mounted = true;
@@ -52,12 +54,12 @@ export default function RootLayout() {
   return (
     <>
       <Stack screenOptions={{ headerShown: false }} />
-      <StatusBar style="auto" />
+      <StatusBar style={resolved === 'dark' ? 'light' : 'dark'} />
       {i18nReady ? null : (
         <View
           style={{
             flex: 1,
-            backgroundColor: '#208AEF',
+            backgroundColor: colors.primary,
             justifyContent: 'center',
             alignItems: 'center',
           }}
@@ -71,6 +73,14 @@ export default function RootLayout() {
         </View>
       )}
     </>
+  );
+}
+
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootNavigator />
+    </ThemeProvider>
   );
 }
 

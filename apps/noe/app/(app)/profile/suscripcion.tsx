@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, Pressable, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -5,7 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 const PLANS = [
   {
@@ -34,6 +35,8 @@ const PLANS = [
 export default function SuscripcionScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   return (
     <ScrollView
@@ -81,7 +84,8 @@ export default function SuscripcionScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     padding: spacing.lg,
     backgroundColor: colors.surface,

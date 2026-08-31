@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -10,11 +11,13 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { Card } from '@/components/ui/card';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function CompartirScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   async function handleShare() {
     try {
@@ -51,7 +54,8 @@ export default function CompartirScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     padding: spacing.lg,
     backgroundColor: colors.surface,

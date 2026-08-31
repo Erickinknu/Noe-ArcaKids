@@ -5,10 +5,15 @@ import com.facebook.react.bridge.NativeModule
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.uimanager.ViewManager
 
-class DeviceOwnerPackage : ReactPackage {
+class ArcakidsPackage : ReactPackage {
     override fun createNativeModules(reactContext: ReactApplicationContext): List<NativeModule> {
-        return listOf(DeviceOwnerModule(reactContext))
+        return listOf(
+            DeviceOwnerModule(reactContext),
+            ParentalUsageModule(reactContext),
+            ParentalLocationModule(reactContext)
+        )
     }
+
     override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
         return emptyList()
     }

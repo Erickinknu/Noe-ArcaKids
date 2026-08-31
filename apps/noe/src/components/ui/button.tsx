@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useMemo, useState, type ReactNode } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -8,7 +8,7 @@ import {
   type TextStyle,
 } from 'react-native';
 
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 type ButtonVariant = 'primary' | 'secondary' | 'danger' | 'ghost' | 'outline';
 type ButtonSize = 'sm' | 'md' | 'lg';
@@ -26,28 +26,35 @@ interface ButtonProps {
   textStyle?: TextStyle;
 }
 
-const variantStyles: Record<ButtonVariant, { container: ViewStyle; text: TextStyle }> = {
-  primary: {
-    container: { backgroundColor: colors.primary },
-    text: { color: colors.onPrimary },
-  },
-  secondary: {
-    container: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
-    text: { color: colors.text },
-  },
-  danger: {
-    container: { backgroundColor: colors.danger },
-    text: { color: colors.onPrimary },
-  },
-  ghost: {
-    container: { backgroundColor: 'transparent' },
-    text: { color: colors.primary },
-  },
-  outline: {
-    container: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
-    text: { color: colors.text },
-  },
-};
+interface VariantStyles {
+  container: ViewStyle;
+  text: TextStyle;
+}
+
+function variantStylesFor(colors: ThemeColors): Record<ButtonVariant, VariantStyles> {
+  return {
+    primary: {
+      container: { backgroundColor: colors.primary },
+      text: { color: colors.onPrimary },
+    },
+    secondary: {
+      container: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
+      text: { color: colors.text },
+    },
+    danger: {
+      container: { backgroundColor: colors.danger },
+      text: { color: colors.onPrimary },
+    },
+    ghost: {
+      container: { backgroundColor: 'transparent' },
+      text: { color: colors.primary },
+    },
+    outline: {
+      container: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
+      text: { color: colors.text },
+    },
+  };
+}
 
 const sizeStyles: Record<ButtonSize, { container: ViewStyle; text: TextStyle }> = {
   sm: {
@@ -76,8 +83,10 @@ export function Button({
   style,
   textStyle,
 }: ButtonProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(), []);
   const [pressed, setPressed] = useState(false);
-  const v = variantStyles[variant];
+  const v = variantStylesFor(colors)[variant];
   const s = sizeStyles[size];
   const content = children ?? label;
 
@@ -114,20 +123,21 @@ export function Button({
   );
 }
 
-const styles = StyleSheet.create({
-  base: {
-    borderRadius: radius.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  text: {
-    fontWeight: typography.fontWeights.medium,
-  },
-  disabled: {
-    opacity: 0.5,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-});
+const makeStyles = () =>
+  StyleSheet.create({
+    base: {
+      borderRadius: radius.md,
+      alignItems: 'center',
+      justifyContent: 'center',
+      flexDirection: 'row',
+    },
+    text: {
+      fontWeight: typography.fontWeights.medium,
+    },
+    disabled: {
+      opacity: 0.5,
+    },
+    pressed: {
+      opacity: 0.7,
+    },
+  });

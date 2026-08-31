@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -20,12 +20,14 @@ import { useAsyncData } from '@/hooks/use-async-data';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { familyService } from '@/features/family/services/family-service';
 import type { MyFamily } from '@/features/family/repositories/family-repository';
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function CuentaScreen() {
   const { t: tr } = useTranslation();
   const router = useRouter();
   const screenPadding = useScreenPadding();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [displayName, setDisplayName] = useState('');
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
@@ -101,7 +103,8 @@ export default function CuentaScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     padding: spacing.lg,
     backgroundColor: colors.surface,

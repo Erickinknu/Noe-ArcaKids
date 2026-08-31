@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useState, useRef, useMemo } from 'react';
 import { useFocusEffect } from 'expo-router';
 import {
   View,
@@ -25,13 +25,14 @@ import { ProgressBar } from '@/components/ui/progress-bar';
 import { StatusDot } from '@/components/ui/status-dot';
 import { Button } from '@/components/ui/button';
 import {
-  colors,
   errorMessage,
   radius,
-  shadows,
   spacing,
   typography,
   useNetworkStatus,
+  useTheme,
+  type ThemeColors,
+  type ThemeShadows,
 } from '@noe-arcakids/shared';
 import {
   dashboardService,
@@ -49,6 +50,8 @@ const FETCH_TIMEOUT_MS = 10_000;
 
 export default function DashboardScreen() {
   const { t: tr } = useTranslation();
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const router = useRouter();
   const screenPadding = useScreenPadding();
   const { isOnline } = useNetworkStatus();
@@ -433,6 +436,8 @@ function SummaryCard({
   label: string;
   color: string;
 }) {
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
     <View style={styles.summaryCard}>
       <View style={[styles.summaryIconWrap, { backgroundColor: color + '18' }]}>
@@ -457,6 +462,8 @@ function ChildSelectModal({
   onSelect: (childId: string) => void;
   actionType: 'block' | 'alert' | null;
 }) {
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const title = actionType === 'block' ? 'Seleccionar hijo a bloquear' : 'Seleccionar hijo para alerta';
 
   return (
@@ -502,6 +509,8 @@ function ChildRow({
   onAddTime: (child: ChildSummary, minutes: number) => void;
 }) {
   const { t: tr } = useTranslation();
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const router = useRouter();
   const usageRatio =
     child.dailyLimitMinutes != null && child.dailyLimitMinutes > 0
@@ -593,7 +602,8 @@ function ChildRow({
    STYLES
 ═════════════════════════════════════════════════════════════════════════════════════════════════ */
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.surface,

@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
@@ -9,10 +9,12 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { errorMessage } from '@/hooks/use-async-data';
 import { linkingService } from '@/features/linking/services/linking-service';
-import { colors, spacing, typography } from '@noe-arcakids/shared';
+import { useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function LinkScreen() {
   const { t: tr } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [code, setCode] = useState('');
   const [scanning, setScanning] = useState(false);
   const [linking, setLinking] = useState(false);
@@ -97,7 +99,8 @@ export default function LinkScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
     padding: spacing.lg,

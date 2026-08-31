@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   Alert,
   Pressable,
@@ -25,7 +25,7 @@ import type { ChildProfile, ParentalRules } from '@noe-arcakids/types';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
 import { parentalService } from '@/features/parental/services/parental-service';
-import { errorMessage, colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
+import { errorMessage, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 interface FamilyData {
   familyId: string;
@@ -36,6 +36,8 @@ type ViewMode = 'list' | 'child';
 
 export default function RulesScreen() {
   const { t: tr } = useTranslation();
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const router = useRouter();
   const screenPadding = useScreenPadding();
   const [viewMode, setViewMode] = useState<ViewMode>('list');
@@ -363,7 +365,8 @@ export default function RulesScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
+  StyleSheet.create({
   screen: { padding: spacing.lg, backgroundColor: colors.background, gap: spacing.md },
   title: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
   subtitle: { fontSize: typography.fontSizes.body, color: colors.textMuted, lineHeight: 22 },

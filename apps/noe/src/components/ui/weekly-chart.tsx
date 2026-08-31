@@ -1,7 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { useMemo } from 'react';
 
-import { colors, radius, spacing, typography, shadows } from '@noe-arcakids/shared';
+import { useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 import { Avatar } from '@/components/ui/avatar';
 import { Card } from '@/components/ui/card';
 import { SectionHeader } from '@/components/ui/section-header';
@@ -33,6 +34,8 @@ interface WeeklyChartProps {
 
 export function WeeklyChart({ childSummaries, weeklyBars, maxMinutes }: WeeklyChartProps) {
   const { t: tr } = useTranslation();
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
 
   return (
     <Card style={styles.card}>
@@ -67,7 +70,8 @@ export function WeeklyChart({ childSummaries, weeklyBars, maxMinutes }: WeeklyCh
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
+  StyleSheet.create({
   card: { ...shadows.sm },
   childRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   childInfo: { flex: 1 },

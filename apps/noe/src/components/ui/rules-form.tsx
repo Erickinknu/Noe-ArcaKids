@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useMemo } from 'react';
 import { StyleSheet, Switch, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -8,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { ErrorState } from '@/components/ui/error-state';
-import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
+import { useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 interface ChildRulesData {
   rules: import('@noe-arcakids/types').ParentalRules | null;
@@ -53,6 +54,8 @@ export default function RulesForm({
   setBedtimeEnd,
 }: RulesFormProps) {
   const { t: tr } = useTranslation();
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [savedFlashLocal] = useState(false);
   // Use childData directly from props - component re-renders when props change
 
@@ -129,7 +132,8 @@ export default function RulesForm({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
+  StyleSheet.create({
   container: {
     padding: spacing.lg,
     gap: spacing.md,

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
+import { View, ActivityIndicator, Text, useColorScheme } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -7,10 +7,35 @@ import * as SplashScreen from 'expo-splash-screen';
 import { initI18n } from '@/i18n';
 import { networkService } from '@/services/network-service';
 import { useAuthStore } from '@/stores/auth-store';
+import { ThemeProvider, useTheme } from '@noe-arcakids/shared';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 
-export default function RootLayout() {
+function LoadingScreen() {
+  const { colors } = useTheme();
+  return (
+    <View
+      style={{
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: colors.primaryLight,
+      }}
+    >
+      <Text style={{ fontSize: 34, fontWeight: 'bold', color: colors.primary, letterSpacing: 2 }}>
+        NOE
+      </Text>
+      <Text style={{ fontSize: 14, color: colors.textSecondary, marginTop: 8 }}>
+        Parental Control
+      </Text>
+      <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
+    </View>
+  );
+}
+
+function RootNavigator() {
+  const { resolved } = useTheme();
+
   const initialize = useAuthStore((state) => state.initialize);
   const [ready, setReady] = useState(false);
 
@@ -51,39 +76,21 @@ export default function RootLayout() {
   }, [ready]);
 
   if (!ready) {
-    return (
-      <View style={styles.loading}>
-        <Text style={styles.brand}>NOE</Text>
-        <Text style={styles.subtitle}>Parental Control</Text>
-        <ActivityIndicator size="large" color="#208AEF" style={{ marginTop: 20 }} />
-      </View>
-    );
+    return <LoadingScreen />;
   }
 
   return (
     <>
       <Stack screenOptions={{ headerShown: false }} />
-      <StatusBar style="auto" />
+      <StatusBar style={resolved === 'dark' ? 'light' : 'dark'} />
     </>
   );
 }
 
-const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#E6F4FE',
-  },
-  brand: {
-    fontSize: 34,
-    fontWeight: 'bold',
-    color: '#208AEF',
-    letterSpacing: 2,
-  },
-  subtitle: {
-    fontSize: 14,
-    color: '#5A6B7D',
-    marginTop: 8,
-  },
-});
+export default function RootLayout() {
+  return (
+    <ThemeProvider>
+      <RootNavigator />
+    </ThemeProvider>
+  );
+}

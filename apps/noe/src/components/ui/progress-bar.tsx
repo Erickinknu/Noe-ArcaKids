@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { View, Text, StyleSheet, type DimensionValue } from 'react-native';
 
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 interface ProgressBarProps {
   value: number;
@@ -10,16 +11,18 @@ interface ProgressBarProps {
   label?: string;
 }
 
-function getColor(ratio: number): string {
+function getColor(ratio: number, colors: ThemeColors): string {
   if (ratio >= 1) return colors.danger;
   if (ratio >= 0.8) return colors.warning;
   return colors.primary;
 }
 
 export function ProgressBar({ value, max, height = 8, showLabel = false, label }: ProgressBarProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const ratio = max > 0 ? Math.min(value / max, 1.2) : 0;
   const fillWidth = `${Math.min(ratio * 100, 100)}%`;
-  const color = getColor(ratio);
+  const color = getColor(ratio, colors);
 
   return (
     <View style={styles.container}>
@@ -35,21 +38,22 @@ export function ProgressBar({ value, max, height = 8, showLabel = false, label }
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    gap: spacing.xs,
-  },
-  track: {
-    width: '100%',
-    borderRadius: radius.full,
-    backgroundColor: colors.surface,
-    overflow: 'hidden',
-  },
-  fill: {
-    borderRadius: radius.full,
-  },
-  label: {
-    fontSize: typography.fontSizes.caption,
-    color: colors.textMuted,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      gap: spacing.xs,
+    },
+    track: {
+      width: '100%',
+      borderRadius: radius.full,
+      backgroundColor: colors.surface,
+      overflow: 'hidden',
+    },
+    fill: {
+      borderRadius: radius.full,
+    },
+    label: {
+      fontSize: typography.fontSizes.caption,
+      color: colors.textMuted,
+    },
+  });

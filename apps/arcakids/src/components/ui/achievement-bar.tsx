@@ -1,7 +1,8 @@
+import { useMemo } from 'react';
 import { StyleSheet, View, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 interface AchievementBarProps {
   achievement: {
@@ -15,6 +16,8 @@ interface AchievementBarProps {
 
 export function AchievementBar({ achievement, onCheckProgress }: AchievementBarProps) {
   const { t: tr } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   return (
     <View style={styles.container}>
@@ -30,7 +33,8 @@ export function AchievementBar({ achievement, onCheckProgress }: AchievementBarP
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     padding: spacing.md,
     backgroundColor: colors.surface,

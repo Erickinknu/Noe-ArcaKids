@@ -1,10 +1,11 @@
+import { useMemo } from 'react';
 import { View, StyleSheet, Text, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { Card } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { SectionHeader } from '@/components/ui/section-header';
-import { colors, radius, spacing, typography, shadows } from '@noe-arcakids/shared';
+import { useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 import type { BlockedApp } from '@noe-arcakids/types';
 
 export default function BlockedAppsSection({
@@ -15,6 +16,8 @@ export default function BlockedAppsSection({
   onRemoveApp: (id: string) => void;
 }) {
   const { t: tr } = useTranslation();
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
 
   if (!childData) {
     return null;
@@ -47,35 +50,36 @@ export default function BlockedAppsSection({
   );
 }
 
-const styles = StyleSheet.create({
-  appList: {
-    gap: spacing.xs,
-    marginBottom: spacing.md,
-  },
-  appRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  appInfo: {
-    flex: 1,
-    marginRight: spacing.sm,
-  },
-  appLabel: {
-    fontSize: typography.fontSizes.body,
-    color: colors.text,
-  },
-  appPackage: {
-    fontSize: typography.fontSizes.caption,
-    color: colors.textMuted,
-  },
-  removeText: {
-    color: colors.danger,
-    fontSize: typography.fontSizes.caption,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    appList: {
+      gap: spacing.xs,
+      marginBottom: spacing.md,
+    },
+    appRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      paddingVertical: spacing.sm,
+      paddingHorizontal: spacing.md,
+      borderRadius: radius.lg,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    appInfo: {
+      flex: 1,
+      marginRight: spacing.sm,
+    },
+    appLabel: {
+      fontSize: typography.fontSizes.body,
+      color: colors.text,
+    },
+    appPackage: {
+      fontSize: typography.fontSizes.caption,
+      color: colors.textMuted,
+    },
+    removeText: {
+      color: colors.danger,
+      fontSize: typography.fontSizes.caption,
+    },
+  });

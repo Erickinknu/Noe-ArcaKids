@@ -44,6 +44,17 @@ Screen -> Hook -> Service -> Repository -> data source (Supabase / local storage
 - `NetworkService` + `useNetworkStatus()` expose connectivity to React.
 - `SyncService` defines the interface (`sync`, `queue`, `flush`, `isOnline`) for the future sync engine. The engine itself is NOT implemented in this phase.
 
+## ARCA KIDS native Android layer (status)
+
+The ARCA KIDS app ships a complete TypeScript bridge layer (`parental-bridge`, `device-owner-module`,
+`location-module`, `permission-handler`, device-control service + Realtime subscriptions) and backend
+connectivity for rule evaluation (via anonymous RPCs scoped by `device_uuid`). However, the **native
+Android layer is largely unimplemented**: the only real native module code is `DeviceOwnerModule.kt`
+(`isDeviceOwner` / `isAdminActive`). The bridge methods for UsageStats, enforcement / foreground
+service, launcher grid, app blocking, overlay, provisioning extras, and geolocation resolve to
+`undefined` at runtime. This is tracked in `docs/roadmap.md` (FASE 4) — do not treat ARCA KIDS native
+capabilities as implemented until the corresponding Kotlin modules exist and compile.
+
 ## Auth & identity
 
 - NOE (parent): email + password, password recovery, persistent session (Supabase auth with AsyncStorage persistence).

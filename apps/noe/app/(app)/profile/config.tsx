@@ -11,7 +11,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { Card } from '@/components/ui/card';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { useTheme } from '@/providers/theme-provider';
+import { useTheme } from '@noe-arcakids/shared';
+import { APP_VERSION } from '@noe-arcakids/config';
 import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
 import type { AppColorTheme } from '@noe-arcakids/shared';
 
@@ -106,7 +107,7 @@ export default function ConfigScreen() {
         <View style={styles.optionRow}>
           <MaterialIcons name="info" size={22} color={colors.textMuted} />
           <Text style={styles.optionText}>Versión</Text>
-          <Text style={styles.optionValue}>0.1.0.7</Text>
+          <Text style={styles.optionValue}>{APP_VERSION}</Text>
         </View>
       </Card>
     </ScrollView>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -11,15 +11,18 @@ import { parentalBridge } from '@/features/parental/native/parental-bridge';
 import {
   LANGUAGE_NAMES,
   SUPPORTED_LANGUAGES,
-  colors,
   radius,
   spacing,
   typography,
+  useTheme,
   type SupportedLanguage,
+  type ThemeColors,
 } from '@noe-arcakids/shared';
 
 export default function SettingsScreen() {
   const { t: tr, i18n } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [current, setCurrent] = useState<SupportedLanguage>(i18n.language as SupportedLanguage);
   const { data: childInfo } = useAsyncData(() => identityService.getChildInfo());
   const isLinked = Boolean(childInfo?.childId && childInfo?.familyId);
@@ -155,7 +158,8 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
     padding: spacing.lg,

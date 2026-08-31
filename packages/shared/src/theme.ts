@@ -3,8 +3,8 @@ import { Platform, type ViewStyle } from 'react-native';
 export type AppColorTheme = 'light' | 'dark' | 'system';
 
 const lightColors = {
-  primary: '#2F6BFF',
-  primaryLight: '#EBF2FF',
+  primary: '#0072DE',
+  primaryLight: '#E6F4FE',
   onPrimary: '#FFFFFF',
   background: '#FFFFFF',
   surface: '#F5F6F8',
@@ -21,6 +21,10 @@ const lightColors = {
   warning: '#D97706',
   warningLight: '#FFFBEB',
   overlay: 'rgba(0,0,0,0.4)',
+  inputBorder: '#CBD5E1',
+  inputPlaceholder: '#94A3B8',
+  inputRadius: 10,
+  inputMinHeight: 48,
 } as const;
 
 const darkColors = {
@@ -42,6 +46,10 @@ const darkColors = {
   warning: '#FBBF24',
   warningLight: '#451A03',
   overlay: 'rgba(0,0,0,0.6)',
+  inputBorder: '#475569',
+  inputPlaceholder: '#64748B',
+  inputRadius: 10,
+  inputMinHeight: 48,
 } as const;
 
 export const colors = lightColors;
@@ -57,8 +65,8 @@ export const spacing = {
 
 export const radius = {
   sm: 8,
-  md: 12,
-  lg: 16,
+  md: 10,
+  lg: 14,
   xl: 20,
   full: 999,
 } as const;
@@ -83,33 +91,33 @@ export const typography = {
 const lightShadows = Platform.select({
   ios: {
     sm: {
-      shadowColor: '#000',
+      shadowColor: '#0F172A',
       shadowOffset: { width: 0, height: 1 },
-      shadowOpacity: 0.05,
+      shadowOpacity: 0.06,
       shadowRadius: 2,
     } as ViewStyle,
     md: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 4 },
       shadowOpacity: 0.08,
-      shadowRadius: 4,
+      shadowRadius: 10,
     } as ViewStyle,
     lg: {
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
+      shadowColor: '#0F172A',
+      shadowOffset: { width: 0, height: 12 },
+      shadowOpacity: 0.12,
+      shadowRadius: 24,
     } as ViewStyle,
   },
   android: {
     sm: { elevation: 1 },
-    md: { elevation: 3 },
-    lg: { elevation: 6 },
+    md: { elevation: 4 },
+    lg: { elevation: 8 },
   },
   default: {
     sm: { elevation: 1 },
-    md: { elevation: 3 },
-    lg: { elevation: 6 },
+    md: { elevation: 4 },
+    lg: { elevation: 8 },
   },
 }) as { sm: ViewStyle; md: ViewStyle; lg: ViewStyle };
 
@@ -125,36 +133,36 @@ export const getColors = (theme: AppColorTheme) => {
   return lightColors;
 };
 
-export const getShadows = (theme: AppColorTheme) => {
-  if (theme === 'dark') {
+export const getShadowsForScheme = (scheme: 'light' | 'dark') => {
+  if (scheme === 'dark') {
     return Platform.select({
       ios: {
         sm: {
           shadowColor: '#000',
           shadowOffset: { width: 0, height: 1 },
-          shadowOpacity: 0.1,
-          shadowRadius: 4,
+          shadowOpacity: 0.15,
+          shadowRadius: 2,
         } as ViewStyle,
         md: {
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 2 },
-          shadowOpacity: 0.12,
-          shadowRadius: 6,
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.2,
+          shadowRadius: 10,
         } as ViewStyle,
         lg: {
           shadowColor: '#000',
-          shadowOffset: { width: 0, height: 4 },
-          shadowOpacity: 0.15,
-          shadowRadius: 12,
+          shadowOffset: { width: 0, height: 12 },
+          shadowOpacity: 0.25,
+          shadowRadius: 24,
         } as ViewStyle,
       },
       android: {
-        sm: { elevation: 2 },
+        sm: { elevation: 1 },
         md: { elevation: 4 },
         lg: { elevation: 8 },
       },
       default: {
-        sm: { elevation: 2 },
+        sm: { elevation: 1 },
         md: { elevation: 4 },
         lg: { elevation: 8 },
       },
@@ -162,3 +170,35 @@ export const getShadows = (theme: AppColorTheme) => {
   }
   return shadows;
 };
+
+export type ThemeResolvedScheme = 'light' | 'dark';
+
+type InputThemeKeys = 'inputBorder' | 'inputPlaceholder' | 'inputRadius' | 'inputMinHeight';
+export type ThemeColors = {
+  [K in keyof typeof lightColors as K extends InputThemeKeys ? never : K]: string;
+} & {
+  [K in InputThemeKeys]: string | number;
+};
+
+export type ThemeShadows = ReturnType<typeof getShadowsForScheme>;
+
+export interface ThemeDeps {
+  colors: ThemeColors;
+  shadows: ThemeShadows;
+  spacing: typeof spacing;
+  radius: typeof radius;
+  typography: typeof typography;
+}
+
+export interface ThemeContextValue {
+  theme: AppColorTheme;
+  resolved: ThemeResolvedScheme;
+  colors: ThemeColors;
+  shadows: ThemeShadows;
+  deps: ThemeDeps;
+  setTheme: (t: AppColorTheme) => void;
+}
+
+export function createStyles<T>(factory: (deps: ThemeDeps) => T): (deps: ThemeDeps) => T {
+  return factory;
+}

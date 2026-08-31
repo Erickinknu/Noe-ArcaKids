@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -9,12 +9,14 @@ import { ROUTES } from '@/constants';
 import { identityService } from '@/features/identity/services/identity-service';
 import { onboardingService } from '@/features/onboarding/services/onboarding-service';
 import { errorMessage } from '@/hooks/use-async-data';
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 const AVATARS = ['🦊', '🐼', '🦁', '🐸', '🐙', '🦄'];
 
 export default function OnboardingScreen() {
   const { t: tr } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
   const [avatar, setAvatar] = useState(AVATARS[0]);
@@ -96,7 +98,8 @@ export default function OnboardingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
     justifyContent: 'center',

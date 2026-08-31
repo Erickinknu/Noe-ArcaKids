@@ -7,5 +7,12 @@
       }
     }
   },
-  "model": "ollama/qwen3.6"
+  "model": "ollama/qwen3.6",
+  "mcp": {
+    "penpot": {
+      "type": "remote",
+      "url": "https://design.penpot.app/mcp/stream?userToken={file:secrets/penpot.token}",
+      "enabled": true
+    }
+  }
 }

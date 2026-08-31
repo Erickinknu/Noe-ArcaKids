@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -10,12 +10,14 @@ import { identityService } from '@/features/identity/services/identity-service';
 import type { ChildInfo } from '@/features/identity/repositories/identity-repository';
 import { errorMessage, useAsyncData } from '@/hooks/use-async-data';
 import { useAchievements } from '@/features/achievements';
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 const AVATARS = ['🦊', '🐼', '🦁', '🐸', '🐙', '🦄'];
 
 export default function ProfileScreen() {
   const { t: tr } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [name, setName] = useState('');
   const [avatar, setAvatar] = useState(AVATARS[0]);
   const [saving, setSaving] = useState(false);
@@ -133,7 +135,8 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     padding: spacing.lg,
     paddingTop: 80,

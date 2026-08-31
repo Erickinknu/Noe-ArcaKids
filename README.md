@@ -9,7 +9,7 @@ Parental control system. Two independent Android apps sharing one Supabase backe
 
 React Native (Expo) + TypeScript, Expo Router, Supabase, npm workspaces monorepo.
 
-> Status: **Phase 0 - base architecture**. No parental control features are implemented yet (by design). See `docs/roadmap.md`.
+> Status: **In progress — Phase 4 (parental control)**. Backend (Supabase: schema, RLS, RPCs, Realtime command queue) and the NOE (parent) app are largely built. The ARCA KIDS (child) app has its TypeScript bridges/services and backend connectivity for rules, but the **native Android layer (UsageStats, enforcement service, app blocking, launcher, geolocation) is mostly pending** — only the Device Owner basics exist. See `docs/roadmap.md` and the implementation plan in this README's "Next" section or `docs/architecture.md`.
 
 ## Quick start
 

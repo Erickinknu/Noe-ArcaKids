@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View, Pressable, TextInput, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -11,12 +11,14 @@ import { useAsyncData } from '@/hooks/use-async-data';
 import { webFilterService, CATEGORIES, WebFilter } from '@/features/web-filter/services/web-filter-service';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
-import { errorMessage, colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { errorMessage, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 import type { ChildProfile } from '@noe-arcakids/types';
 
 export default function FiltradoWebScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [newSite, setNewSite] = useState('');
   const [saving, setSaving] = useState(false);
@@ -204,7 +206,8 @@ export default function FiltradoWebScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: { padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   headerTitle: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },

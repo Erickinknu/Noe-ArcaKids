@@ -1,9 +1,10 @@
+import { useMemo } from 'react';
 import { StyleSheet, Text, View, Alert, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { Avatar } from '@/components/ui/avatar';
 import { formatDuration, relativeTime } from '@/features/dashboard/services/dashboard-service';
-import { colors, radius, shadows, spacing, typography } from '@noe-arcakids/shared';
+import { useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import { ProgressBar } from '@/components/ui/progress-bar';
@@ -23,6 +24,8 @@ export default function ChildCard({
 }) {
   const { t: tr } = useTranslation();
   const router = useRouter();
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
 
   const handlePause = () => {
     if (!familyId) return;
@@ -197,7 +200,8 @@ export default function ChildCard({
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
+  StyleSheet.create({
   childCard: {
     padding: spacing.lg,
     borderRadius: radius.lg,

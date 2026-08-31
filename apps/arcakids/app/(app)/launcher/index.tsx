@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -11,7 +12,7 @@ import {
   parentalBridge,
   type LaunchableApp,
 } from '@/features/parental/native/parental-bridge';
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 const TILE_COLORS = [
   '#F59E0B',
@@ -34,6 +35,8 @@ function tileColor(packageName: string): string {
 
 export default function LauncherScreen() {
   const { t: tr } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const { data, loading, error } = useAsyncData(async () => {
     const device = await identityService.getLocalDevice();
@@ -99,7 +102,8 @@ export default function LauncherScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
     padding: spacing.lg,

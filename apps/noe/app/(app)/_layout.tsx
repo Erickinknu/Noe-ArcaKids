@@ -6,7 +6,6 @@ import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '@noe-arcakids/shared';
 
-import { ThemeProvider } from '@/providers/theme-provider';
 import { useAuthStore } from '@/stores/auth-store';
 import { ROUTES } from '@/constants';
 
@@ -30,23 +29,22 @@ export default function AppLayout() {
   }
 
   return (
-    <ThemeProvider>
-      <Tabs
-        screenOptions={{
-          headerShown: false,
-          tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: {
-          backgroundColor: colors.background,
-          borderTopColor: colors.borderLight,
-          borderTopWidth: 1,
-          height: TAB_BAR_BASE_HEIGHT + insets.bottom,
-          paddingBottom: insets.bottom,
-          paddingTop: spacing.xs,
-        },
-        tabBarLabelStyle: styles.tabBarLabel,
-      }}
-    >
+    <Tabs
+      screenOptions={{
+        headerShown: false,
+        tabBarActiveTintColor: colors.primary,
+      tabBarInactiveTintColor: colors.textMuted,
+      tabBarStyle: {
+        backgroundColor: colors.background,
+        borderTopColor: colors.borderLight,
+        borderTopWidth: 1,
+        height: TAB_BAR_BASE_HEIGHT + insets.bottom,
+        paddingBottom: insets.bottom,
+        paddingTop: spacing.xs,
+      },
+      tabBarLabelStyle: styles.tabBarLabel,
+    }}
+  >
       {/* ── Tab order: Hijos, Control, Inicio (center), Actividad, Otros ── */}
       <Tabs.Screen
         name="children"
@@ -131,7 +129,6 @@ export default function AppLayout() {
       <Tabs.Screen name="activity/conversations" options={{ href: null }} />
       <Tabs.Screen name="activity/location" options={{ href: null }} />
     </Tabs>
-    </ThemeProvider>
   );
 }
 

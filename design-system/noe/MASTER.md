@@ -1,4 +1,4 @@
-# Design System Master File
+# Design System Master File — NOE
 
 > **LOGIC:** When building a specific page, first check `design-system/pages/[page-name].md`.
 > If that file exists, its rules **override** this Master file.
@@ -6,9 +6,10 @@
 
 ---
 
-**Project:** NOE
-**Generated:** 2026-08-24 08:52:58
-**Category:** Analytics Dashboard
+**Project:** NOE (app parental — Android / Expo React Native)
+**Category:** Parental Control / Family Safety — Mobile
+**Audience:** Padres y tutores. Confianza, seguridad, claridad, accesibilidad.
+**Stack:** React Native (Expo) — `src/providers/theme-provider.tsx`
 
 ---
 
@@ -16,188 +17,148 @@
 
 ### Color Palette
 
-| Role | Hex | CSS Variable |
-|------|-----|--------------|
-| Primary | `#0F172A` | `--color-primary` |
-| Secondary | `#1E293B` | `--color-secondary` |
-| CTA/Accent | `#22C55E` | `--color-cta` |
-| Background | `#020617` | `--color-background` |
-| Text | `#F8FAFC` | `--color-text` |
+| Role | Hex | Uso |
+|------|-----|-----|
+| Primary | `#0369A1` | Acciones principales, enlaces, estado activo |
+| Secondary | `#0EA5E9` | Acentos, gráficos, badges informativos |
+| Accent | `#22C55E` | CTA, confirmaciones, "todo seguro / activo" |
+| Danger | `#EF4444` | Alertas, bloqueos, errores |
+| Warn | `#F59E0B` | Avisos, pendiente de revisión |
+| Background | `#F8FAFC` | Fondo principal (claro, limpio) |
+| Surface | `#FFFFFF` | Tarjetas, modales |
+| Text | `#0F172A` | Texto principal |
+| Muted | `#475569` | Texto secundario |
+| Border | `#E2E8F0` | Bordes, divisores |
 
-**Color Notes:** Dark bg + green positive indicators
+**Notas:** Azul de seguridad (confianza) + verde "protegido" (tranquilidad). Feedback de estado siempre verde/ámbar/rojo además de texto (no solo color).
 
 ### Typography
 
-- **Heading Font:** Fira Code
-- **Body Font:** Fira Sans
-- **Mood:** dashboard, data, analytics, code, technical, precise
-- **Google Fonts:** [Fira Code + Fira Sans](https://fonts.google.com/share?selection.family=Fira+Code:wght@400;500;600;700|Fira+Sans:wght@300;400;500;600;700)
+- **Heading:** Lexend (clara, accesible, propia de productos de seguridad/trust)
+- **Body:** Source Sans 3 (legible en pantalla, buena en móvil)
+- **Google Fonts:** https://fonts.googleapis.com/css2?family=Lexend:wght@400;500;600;700&family=Source+Sans+3:wght@400;500;600;700&display=swap
 
-**CSS Import:**
-```css
-@import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600;700&family=Fira+Sans:wght@300;400;500;600;700&display=swap');
-```
+| Token | FontSize | Weight | Uso |
+|-------|----------|--------|-----|
+| `--text-title` | 28 | 700 | Títulos de pantalla |
+| `--text-h1` | 22 | 600 | Encabezados de sección |
+| `--text-body` | 16 | 400 | Texto, labels, inputs |
+| `--text-body-lg` | 17 | 400 | Body principal |
+| `--text-caption` | 13 | 400 | Metadatos, fechas |
+| `--text-label` | 14 | 600 | Labels, chips |
 
-### Spacing Variables
+**target: legible en móvil; mínimo 16px para body, 44pt hit targets.**
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `--space-xs` | `4px` / `0.25rem` | Tight gaps |
-| `--space-sm` | `8px` / `0.5rem` | Icon gaps, inline spacing |
-| `--space-md` | `16px` / `1rem` | Standard padding |
-| `--space-lg` | `24px` / `1.5rem` | Section padding |
-| `--space-xl` | `32px` / `2rem` | Large gaps |
-| `--space-2xl` | `48px` / `3rem` | Section margins |
-| `--space-3xl` | `64px` / `4rem` | Hero padding |
+### Spacing (8pt grid)
 
-### Shadow Depths
+| Token | Valor |
+|-------|-------|
+| `--space-xs` | 4 |
+| `--space-sm` | 8 |
+| `--space-md` | 16 |
+| `--space-lg` | 24 |
+| `--space-xl` | 32 |
+| `--space-2xl` | 48 |
 
-| Level | Value | Usage |
-|-------|-------|-------|
-| `--shadow-sm` | `0 1px 2px rgba(0,0,0,0.05)` | Subtle lift |
-| `--shadow-md` | `0 4px 6px rgba(0,0,0,0.1)` | Cards, buttons |
-| `--shadow-lg` | `0 10px 15px rgba(0,0,0,0.1)` | Modals, dropdowns |
-| `--shadow-xl` | `0 20px 25px rgba(0,0,0,0.15)` | Hero images, featured cards |
+### Radii & Shadows
+
+| Token | Valor | Uso |
+|-------|-------|-----|
+| `--radius-md` | 10 | Inputs, botones |
+| `--radius-lg` | 14 | Tarjetas |
+| `--radius-2xl` | 20 | Modales, FAB |
+| `--shadow-sm` | `0 1px 2px rgba(15,23,42,0.06)` | Divisores sutiles |
+| `--shadow-md` | `0 4px 10px rgba(15,23,42,0.08)` | Tarjetas |
+| `--shadow-lg` | `0 12px 24px rgba(15,23,42,0.12)` | Modales, hojas |
 
 ---
 
-## Component Specs
+## Componentes
 
-### Buttons
+### Botones (hit target ≥ 44pt)
 
-```css
-/* Primary Button */
-.btn-primary {
-  background: #22C55E;
-  color: white;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
+- **Primario:** bg `#0369A1`, texto blanco, radius 10, peso 600.
+- **Accent/CTA:** bg `#22C55E`, texto blanco — para confirmar/guardar.
+- **Secundario/Outline:** borde `#CBD5E1`, texto Primary.
+- **Peligro:** bg `#EF4444`, texto blanco — para acciones destructivas.
+- Estados presionados: `opacity .85` / `scale .98`. Transición 150-200ms.
 
-.btn-primary:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
+### Tarjetas
 
-/* Secondary Button */
-.btn-secondary {
-  background: transparent;
-  color: #0F172A;
-  border: 2px solid #0F172A;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-```
-
-### Cards
-
-```css
-.card {
-  background: #020617;
-  border-radius: 12px;
-  padding: 24px;
-  box-shadow: var(--shadow-md);
-  transition: all 200ms ease;
-  cursor: pointer;
-}
-
-.card:hover {
-  box-shadow: var(--shadow-lg);
-  transform: translateY(-2px);
-}
-```
+- Fondo `#FFFFFF`, radius 14, `--shadow-md`, padding 16-24.
+- Presionables: `cursor-pointer` (web) + feedback táctil (android ripple).
+- Título 16-17/600 + subtítulo muted 13-14 + trailing chevron/estado.
 
 ### Inputs
 
-```css
-.input {
-  padding: 12px 16px;
-  border: 1px solid #E2E8F0;
-  border-radius: 8px;
-  font-size: 16px;
-  transition: border-color 200ms ease;
-}
+- Borde `#CBD5E1`, radius 10, padding 14, body 16.
+- Focus: borde Primary + ring 3px `rgba(3,105,161,0.2)`.
+- Labels siempre visibles (a11y), error → borde `#EF4444` + mensaje de texto.
 
-.input:focus {
-  border-color: #0F172A;
-  outline: none;
-  box-shadow: 0 0 0 3px #0F172A20;
-}
-```
+### Toggle / Switch (Reglas ON/OFF)
 
-### Modals
+- ON: track `#0369A1`/`#22C55E` + knobe blanco.
+- OFF: track `#CBD5E1`.
+- Todo toggle va acompañado de texto descriptivo (nunca color solo).
 
-```css
-.modal-overlay {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(4px);
-}
+### Chips / Badges de estado
 
-.modal {
-  background: white;
-  border-radius: 16px;
-  padding: 32px;
-  box-shadow: var(--shadow-xl);
-  max-width: 500px;
-  width: 90%;
-}
-```
+- `#22C55E` (seguro/activo), `#F59E0B` (revisar), `#EF4444` (bloqueado), `#0EA5E9` (info).
+- Siempre con icono + label de texto.
+
+### Bottom Navigation (tabs)
+
+- 5 destinos máximo, icono + label 10-11px, activo = Primary.
 
 ---
 
-## Style Guidelines
+## Patrones de pantalla (mobile)
 
-**Style:** Data-Dense Dashboard
+### Dashboard (Inicio)
+1. Saludo + nombre del padre + notificaciones.
+2. Tarjetas resumen por hijo (avatars, estatus, últimos eventos).
+3. KPIs de hoy: tiempo de uso, bloqueos, alarmas (0 estado = verde "Sin alertas").
+4. Lista de actividad reciente.
+- Estados vacíos con copy tranquilizador + CTA claro.
 
-**Keywords:** Multiple charts/widgets, data tables, KPI cards, minimal padding, grid layout, space-efficient, maximum data visibility
+### Login / Registro
+- Single-column, form centrado, max-width 400px.
+- Email con `inputmode=email`, password toggle visibility.
+- Errores inline bajo el campo. "Recordarme" + "Olvidé mi contraseña".
+- CTA primario "Iniciar sesión" + link secundario a registro.
 
-**Best For:** Business intelligence dashboards, financial analytics, enterprise reporting, operational dashboards, data warehousing
+### Children (lista)
+- Tarjetas de hijos con avatar/gradiente, nombre, edad, estatus en línea.
+- Tocar → detalle del hijo (reglas, actividad, dispositivos).
 
-**Key Effects:** Hover tooltips, chart zoom on click, row highlighting on hover, smooth filter animations, data loading spinners
-
-### Page Pattern
-
-**Pattern Name:** App Store Style Landing
-
-- **Conversion Strategy:** Show real screenshots. Include ratings (4.5+ stars). QR code for mobile. Platform-specific CTAs.
-- **CTA Placement:** Download buttons prominent (App Store + Play Store) throughout
-- **Section Order:** 1. Hero with device mockup, 2. Screenshots carousel, 3. Features with icons, 4. Reviews/ratings, 5. Download CTAs
-
----
-
-## Anti-Patterns (Do NOT Use)
-
-- ❌ Ornate design
-- ❌ No filtering
-
-### Additional Forbidden Patterns
-
-- ❌ **Emojis as icons** — Use SVG icons (Heroicons, Lucide, Simple Icons)
-- ❌ **Missing cursor:pointer** — All clickable elements must have cursor:pointer
-- ❌ **Layout-shifting hovers** — Avoid scale transforms that shift layout
-- ❌ **Low contrast text** — Maintain 4.5:1 minimum contrast ratio
-- ❌ **Instant state changes** — Always use transitions (150-300ms)
-- ❌ **Invisible focus states** — Focus states must be visible for a11y
+### Rules (Reglas)
+- Grupos: Apps, Horarios, Filtrado web, Geofencing, Modo estudio.
+- Cada regla: tarjeta con toggle + resumen de estado.
+- Modales inferiores (bottom sheet) para editar con slots claros.
 
 ---
 
-## Pre-Delivery Checklist
+## Anti-patterns (NO usar)
 
-Before delivering any UI code, verify:
+- ❌ Morado/rosa "AI gradient" (rompe la confianza).
+- ❌ Diseño infantil/playful en NOE (eso es para ARCA KIDS).
+- ❌ Emojis como iconos — usar SVG (Lucide/Heroicons en web; vector icons en RN).
+- ❌ Formularios con keys por defecto (usar inputmode adecuado: numérico para PIN, email, etc.).
+- ❌ Tablas anchas en móvil (usar cards o scroll horizontal).
+- ❌ Onboarding obligatorio sin poder saltar (Skip/Back siempre).
+- ❌ Status solo con color — siempre texto + color + icono.
+- ❌ Bloquear back button del Android (tratar de forma predecible).
 
-- [ ] No emojis used as icons (use SVG instead)
-- [ ] All icons from consistent icon set (Heroicons/Lucide)
-- [ ] `cursor-pointer` on all clickable elements
-- [ ] Hover states with smooth transitions (150-300ms)
-- [ ] Light mode: text contrast 4.5:1 minimum
-- [ ] Focus states visible for keyboard navigation
-- [ ] `prefers-reduced-motion` respected
-- [ ] Responsive: 375px, 768px, 1024px, 1440px
-- [ ] No content hidden behind fixed navbars
-- [ ] No horizontal scroll on mobile
+---
+
+## Checklist Pre-Entrega
+
+- [ ] Iconos SVG/vector set consistente (sin emojis).
+- [ ] Hit targets ≥ 44pt en táctiles.
+- [ ] Contraste texto ≥ 4.5:1 (muted = `#475569` mínimo).
+- [ ] Estados focus visibles (a11y).
+- [ ] Estados de carga/error/offline en pantallas con datos.
+- [ ] Keyboard adecuado por input (PIN numérico, email, etc.).
+- [ ] `prefers-reduced-motion` / reducir animaciones.
+- [ ] Draw/test responsive: solo móvil (Android), pero sin scroll horizontal.
+- [ ] Copy en ES (default) + EN.

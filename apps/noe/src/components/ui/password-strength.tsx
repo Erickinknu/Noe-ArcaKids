@@ -1,12 +1,15 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors, spacing, typography } from '@noe-arcakids/shared';
+import { useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 interface Props {
   password: string;
 }
 
-function getStrength(password: string): { level: number; label: string; color: string } {
+function getStrength(
+  password: string,
+  colors: ThemeColors
+): { level: number; label: string; color: string } {
   let score = 0;
   if (password.length >= 8) score++;
   if (password.length >= 12) score++;
@@ -21,9 +24,12 @@ function getStrength(password: string): { level: number; label: string; color: s
 }
 
 export function PasswordStrength({ password }: Props) {
+  const { colors } = useTheme();
+  const styles = React.useMemo(() => makeStyles(colors), [colors]);
+
   if (!password) return null;
 
-  const { level, label, color } = getStrength(password);
+  const { level, label, color } = getStrength(password, colors);
 
   return (
     <View style={styles.container}>
@@ -43,26 +49,27 @@ export function PasswordStrength({ password }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    marginTop: spacing.xs,
-  },
-  barContainer: {
-    flex: 1,
-    flexDirection: 'row',
-    gap: 4,
-  },
-  bar: {
-    flex: 1,
-    height: 4,
-    borderRadius: 2,
-  },
-  label: {
-    fontSize: typography.fontSizes.caption,
-    fontWeight: typography.fontWeights.medium,
-    minWidth: 50,
-  },
-});
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+      marginTop: spacing.xs,
+    },
+    barContainer: {
+      flex: 1,
+      flexDirection: 'row',
+      gap: 4,
+    },
+    bar: {
+      flex: 1,
+      height: 4,
+      borderRadius: 2,
+    },
+    label: {
+      fontSize: typography.fontSizes.caption,
+      fontWeight: typography.fontWeights.medium,
+      minWidth: 50,
+    },
+  });

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -7,16 +7,19 @@ import { setLanguage } from '@/i18n';
 import {
   LANGUAGE_NAMES,
   SUPPORTED_LANGUAGES,
-  colors,
+  useTheme,
   radius,
-  shadows,
   spacing,
   typography,
   type SupportedLanguage,
+  type ThemeColors,
+  type ThemeShadows,
 } from '@noe-arcakids/shared';
 
 export default function SettingsScreen() {
   const { t: tr, i18n } = useTranslation();
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [current, setCurrent] = useState<SupportedLanguage>(i18n.language as SupportedLanguage);
 
   function handleSelect(lng: SupportedLanguage) {
@@ -53,7 +56,8 @@ export default function SettingsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
     padding: spacing.lg,

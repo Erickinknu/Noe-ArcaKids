@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import type { ReactNode } from 'react';
-import { colors, spacing, radius, typography } from '@noe-arcakids/shared';
+import { useTheme, spacing, radius, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 interface EmptyStateProps {
   icon?: ReactNode | string;
@@ -13,6 +14,8 @@ interface EmptyStateProps {
 }
 
 export function EmptyState({ icon, title, description, action }: EmptyStateProps) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
     <View style={styles.container}>
       {icon && (
@@ -36,7 +39,8 @@ export function EmptyState({ icon, title, description, action }: EmptyStateProps
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',

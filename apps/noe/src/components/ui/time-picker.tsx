@@ -1,6 +1,6 @@
 import { View, Text, Pressable, StyleSheet, useWindowDimensions } from 'react-native';
 import { MaterialIcons } from '@expo/vector-icons';
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 const BASE_WIDTH = 375;
 
@@ -25,6 +25,8 @@ interface TimeFieldProps {
 }
 
 export function TimeField({ value, onChange, min = 0, max = 23, step = 1, label, suffix = '' }: TimeFieldProps) {
+  const { colors } = useTheme();
+  const fieldStyles = makeFieldStyles(colors);
   const { btnSize, valueMinWidth, fontSize } = useTimePickerSize();
   const increment = () => {
     const next = value + step;
@@ -61,6 +63,8 @@ interface DurationFieldProps {
 }
 
 export function DurationField({ totalMinutes, onChange, label }: DurationFieldProps) {
+  const { colors } = useTheme();
+  const fieldStyles = makeFieldStyles(colors);
   const { btnSize, valueMinWidth, fontSize } = useTimePickerSize();
   const hours = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
@@ -108,6 +112,8 @@ interface TimeInputProps {
 }
 
 export function TimeInput({ hours, minutes, onHoursChange, onMinutesChange, label }: TimeInputProps) {
+  const { colors } = useTheme();
+  const fieldStyles = makeFieldStyles(colors);
   const { btnSize, valueMinWidth, fontSize } = useTimePickerSize();
 
   return (
@@ -140,14 +146,15 @@ export function TimeInput({ hours, minutes, onHoursChange, onMinutesChange, labe
   );
 }
 
-const fieldStyles = StyleSheet.create({
-  container: { alignItems: 'center', gap: spacing.xs },
-  label: { fontSize: typography.fontSizes.caption, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  btn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primaryLight },
-  btnPressed: { backgroundColor: colors.primary, opacity: 0.8 },
-  valueBox: { flexDirection: 'row', alignItems: 'baseline', minWidth: 60, justifyContent: 'center' },
-  value: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
-  suffix: { fontSize: typography.fontSizes.caption, color: colors.textMuted, marginLeft: 2 },
-  colon: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.textMuted },
-});
+const makeFieldStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    container: { alignItems: 'center', gap: spacing.xs },
+    label: { fontSize: typography.fontSizes.caption, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
+    row: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+    btn: { width: 40, height: 40, borderRadius: 20, borderWidth: 1.5, borderColor: colors.primary, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.primaryLight },
+    btnPressed: { backgroundColor: colors.primary, opacity: 0.8 },
+    valueBox: { flexDirection: 'row', alignItems: 'baseline', minWidth: 60, justifyContent: 'center' },
+    value: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
+    suffix: { fontSize: typography.fontSizes.caption, color: colors.textMuted, marginLeft: 2 },
+    colon: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.textMuted },
+  });

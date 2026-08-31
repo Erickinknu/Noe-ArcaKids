@@ -5,6 +5,40 @@ All notable changes to the `noe-arcakids` monorepo will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [housekeeping] - 2026-08-28 (Fase A - base deuda/limpieza)
+
+### Added
+- **`@noe-arcakids/config` ahora lo consume NOE**: `APP_VERSION` se usa en `profile/index.tsx` y
+  `profile/config.tsx`, eliminando la versión hardcodeada (`0.1.0.7`) que estaba desalineada con el
+  monorepo (`0.1.0.12`). `APP_VERSION` actualizado a `0.1.0.12`.
+
+### Changed
+- **Documentación alineada con el estado real**:
+  - `docs/roadmap.md`: FASE 4 corregida — la parte nativa Android de ARCA KIDS (UsageStats,
+    EnforcementService, launcher grid, bloqueo, cableado Realtime) ya NO se declara completada;
+    solo el backend + NOE están completos. Se marca explícitamente lo que falta. FASE 8 documenta
+    que el sync engine es esqueleto contra una tabla no migrada.
+  - `README.md`: status corregido de "Phase 0" a "Phase 4 en progreso", aclarando el estado de la
+    capa nativa de ARCA KIDS.
+  - `ARCHITECTURE.md`: nueva sección "ARCA KIDS native Android layer (status)" documentando que la
+    capa nativa es mínima (solo `isDeviceOwner`/`isAdminActive`).
+- **NOE theme-provider usa el wrapper `@noe-arcakids/storage`** en lugar de `AsyncStorage` a
+  directamente, unificando la abstracción de almacenamiento (clave persistente sin cambios:
+  `@noe-arcakids/noe/app/theme`).
+
+### Removed
+- **`packages/shared/src/constants.ts`**: dead code (`STORAGE_PREFIX` no exportado en el barrel y
+  duplicado en `packages/storage/src/async-storage.ts`).
+- **`apps/arcakids/src/features/offline/`**: `OfflineSyncEngine` era un esqueleto roto — apuntaba a
+  una tabla `offline_actions` inexistente en migraciones, importaba servicios que no existen
+  (`parentalService`/`geofenceRepository`), y construía un singleton con side effects
+  (`setInterval` + listener de red) que contradice `FEATURE_FLAGS.syncEngine: false` en
+  `@noe-arcakids/config`. Jamás se importaba desde el runtime. Se retomará en la FASE 8 (sync engine)
+  contra una migración real.
+
+### Security
+- Sin cambios de seguridad.
+
 ## [0.2.0] - 2026-08-24
 
 ### Added

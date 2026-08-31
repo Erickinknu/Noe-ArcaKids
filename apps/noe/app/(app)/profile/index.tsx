@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -14,7 +14,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { authService } from '@/features/auth/services/auth-service';
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { APP_VERSION } from '@noe-arcakids/config';
+import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 interface MenuItem {
   icon: keyof typeof MaterialIcons.glyphMap;
@@ -38,6 +39,8 @@ export default function OtrosScreen() {
   const { t: tr } = useTranslation();
   const router = useRouter();
   const screenPadding = useScreenPadding();
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
   const [blockInstalls, setBlockInstalls] = useState(false);
 
   const navigate = useCallback(
@@ -224,12 +227,13 @@ export default function OtrosScreen() {
         </Text>
       </Pressable>
 
-      <Text style={styles.version}>NOE v0.1.0.7</Text>
+      <Text style={styles.version}>NOE v{APP_VERSION}</Text>
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.surface,
