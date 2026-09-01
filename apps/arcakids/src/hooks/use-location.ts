@@ -4,11 +4,11 @@ import { AppState, AppStateStatus } from 'react-native';
 import { locationModule } from '@/features/location/native/location-module';
 import {
   locationService,
-  type Geofence,
   type LocationUpdate,
   type LocationState,
 } from '@/features/location';
 import { identityService } from '@/features/identity/services/identity-service';
+import type { Geofence } from '@noe-arcakids/types';
 
 export interface UseLocationReturn {
   state: LocationState;

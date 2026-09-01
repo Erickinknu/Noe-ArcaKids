@@ -144,3 +144,49 @@ export interface DeviceOwnerState {
   isAdminActive: boolean;
   canSuspendPackages: boolean;
 }
+
+// ── Geofencing (FASE 5) ──
+
+export interface Geofence {
+  id: string;
+  familyId: string;
+  childId: string;
+  name: string;
+  latitude: number;
+  longitude: number;
+  radius: number;
+  enabled: boolean;
+  createdAt: string;
+  triggered?: boolean;
+  triggeredAt?: number | null;
+}
+
+export interface GeofenceEvent {
+  geofenceId: string;
+  childId: string;
+  type: 'enter' | 'exit';
+  timestamp: string;
+  latitude: number;
+  longitude: number;
+}
+
+// ── Push & Unlock (FASE 6) ──
+
+export interface PushToken {
+  id: string;
+  userId: string;
+  token: string;
+  platform: 'android' | 'ios';
+  createdAt: string;
+}
+
+export interface UnlockRequest {
+  id: string;
+  childId: string;
+  childName: string | null;
+  familyId: string;
+  reason: string | null;
+  status: 'pending' | 'approved' | 'denied';
+  createdAt: string;
+  resolvedAt: string | null;
+}

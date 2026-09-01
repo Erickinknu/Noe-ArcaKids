@@ -1,31 +1,30 @@
 import { DatabaseError } from '@noe-arcakids/shared';
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
-
-import type { Geofence } from '@/features/location/native/location-module';
+import type { Geofence } from '@noe-arcakids/types';
 
 interface GeofenceRow {
   id: string;
+  family_id: string;
   child_id: string;
   name: string;
   latitude: number;
   longitude: number;
   radius: number;
-  triggered: boolean;
-  triggered_at: string | null;
+  enabled: boolean;
   created_at: string;
-  updated_at: string;
 }
 
 function mapGeofence(row: GeofenceRow): Geofence {
   return {
     id: row.id,
+    familyId: row.family_id,
+    childId: row.child_id,
     name: row.name,
     latitude: row.latitude,
     longitude: row.longitude,
     radius: row.radius,
-    childId: row.child_id,
-    triggered: row.triggered,
-    triggeredAt: row.triggered_at ? new Date(row.triggered_at).getTime() : undefined,
+    enabled: row.enabled,
+    createdAt: row.created_at,
   };
 }
 
@@ -57,17 +56,18 @@ export const geofenceRepository = {
     return (data ?? []).map(mapGeofence);
   },
 
-  async create(geofence: Omit<Geofence, 'id' | 'triggered' | 'triggeredAt'>): Promise<Geofence> {
+  async create(geofence: Omit<Geofence, 'id' | 'createdAt'>): Promise<Geofence> {
     const client = requireSupabaseClient();
     const { data, error } = await client
       .from('geofences')
       .insert({
-        name: geofence.name,
+        family_id: geofence.familyId,
         child_id: geofence.childId,
+        name: geofence.name,
         latitude: geofence.latitude,
         longitude: geofence.longitude,
         radius: geofence.radius,
-        triggered: false,
+        enabled: geofence.enabled,
       })
       .select()
       .single();
@@ -80,16 +80,16 @@ export const geofenceRepository = {
 
   async update(id: string, updates: Partial<Geofence>): Promise<Geofence> {
     const client = requireSupabaseClient();
+    const updateData: Record<string, unknown> = {};
+    if (updates.name !== undefined) updateData.name = updates.name;
+    if (updates.latitude !== undefined) updateData.latitude = updates.latitude;
+    if (updates.longitude !== undefined) updateData.longitude = updates.longitude;
+    if (updates.radius !== undefined) updateData.radius = updates.radius;
+    if (updates.enabled !== undefined) updateData.enabled = updates.enabled;
+
     const { data, error } = await client
       .from('geofences')
-      .update({
-        name: updates.name,
-        latitude: updates.latitude,
-        longitude: updates.longitude,
-        radius: updates.radius,
-        triggered: updates.triggered,
-        triggered_at: updates.triggeredAt ? new Date(updates.triggeredAt).toISOString() : null,
-      })
+      .update(updateData)
       .eq('id', id)
       .select()
       .single();

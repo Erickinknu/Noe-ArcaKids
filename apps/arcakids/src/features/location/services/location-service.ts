@@ -2,6 +2,9 @@ import { locationModule } from '@/features/location/native/location-module';
 import { identityService } from '@/features/identity/services/identity-service';
 import { notificationService } from '@/features/notifications';
 import { parentalService } from '@/features/parental/services/parental-service';
+import { geofenceRepository } from '@/features/location/repositories/geofence-repository';
+import { requireSupabaseClient } from '@noe-arcakids/supabase';
+import type { Geofence, GeofenceEvent } from '@noe-arcakids/types';
 
 export interface LocationUpdate {
   id: string;
@@ -11,17 +14,6 @@ export interface LocationUpdate {
   accuracy: number;
   deviceUuid: string;
   childId: string;
-}
-
-export interface Geofence {
-  id: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  radius: number; // meters
-  childId: string;
-  triggered: boolean;
-  triggeredAt?: number | null;
 }
 
 export interface LocationState {
@@ -47,8 +39,6 @@ export class LocationService {
   }
 
   private loadGeofences() {
-    // TODO: Load geofences from Supabase or local storage
-    // this.geofences = await geofenceRepository.getAll();
     console.log('Geofences loaded (stub)');
   }
 
@@ -62,17 +52,18 @@ export class LocationService {
       }
     }
 
-    // Load existing geofences
-    await this.loadGeofencesFromStorage();
+    await this.loadGeofencesFromSupabase();
 
-    // Start monitoring — always report GPS, with or without geofences
     this.startLocationMonitoring();
   }
 
-  private async loadGeofencesFromStorage() {
-    // TODO: Load from Supabase or AsyncStorage
-    // this.geofences = await geofenceRepository.getAll();
-    console.log('Loading geofences from storage (stub)');
+  private async loadGeofencesFromSupabase() {
+    try {
+      this.geofences = await geofenceRepository.getAll();
+      console.log('Geofences loaded from Supabase:', this.geofences.length);
+    } catch (e) {
+      console.error('Failed to load geofences:', e);
+    }
   }
 
   startLocationMonitoring() {
@@ -82,7 +73,6 @@ export class LocationService {
       await this.checkLocationAndGeofences();
     }, this.geofenceCheckInterval);
 
-    // Immediate check
     this.checkLocationAndGeofences().catch(console.error);
   }
 
@@ -110,63 +100,82 @@ export class LocationService {
     this.lastReading = update;
     this.saveLocationUpdate(update);
 
-    // Check against all geofences
-    for (const geofence of this.geofences) {
-      if (geofence.triggered) continue; // Already triggered today
-
-      // Use locationModule.isInsideGeofence instead of this.isInsideGeofence
-      const inside = await locationModule.isInsideGeofence(
-        reading.latitude,
-        reading.longitude,
-        {
-          id: geofence.id,
-          name: geofence.name,
-          latitude: geofence.latitude,
-          longitude: geofence.longitude,
-          radius: geofence.radius,
-          triggered: geofence.triggered,
-          childId: geofence.childId,
-        }
-      );
-
-      if (inside) {
-        const lastTriggered = this.geofenceTriggeredAt[geofence.id] || 0;
-        const now = Date.now();
-
-        // Debounce: only trigger once per geofence per timeout period
-        if (now - lastTriggered > this.geofenceTimeout) {
-          this.geofenceTriggeredAt = this.geofenceTriggeredAt || {};
-          this.geofenceTriggeredAt[geofence.id] = now;
-          geofence.triggered = true;
-          geofence.triggeredAt = now;
-
-          await this.handleGeofenceTrigger(geofence, update);
-        }
-      }
+    if (this.geofences.length > 0) {
+      await this.checkGeofencesViaSupabase(update);
     }
 
-    // Sync to Supabase
     await this.syncLocationUpdate(update);
   }
 
-  private async handleGeofenceTrigger(geofence: Geofence, location: LocationUpdate) {
-    // TODO: Could trigger notification, log event, etc.
-    console.log('Geofence triggered:', geofence.name, 'at', location);
+  private async checkGeofencesViaSupabase(update: LocationUpdate) {
+    const childId = update.childId;
+    if (!childId) return;
 
-    // Schedule push notification
     try {
-      await notificationService.scheduleGeofenceEnterNotification(
-        geofence.name,
-        geofence.childId ? 'Niño' : 'Usuario'
-      );
+      const client = requireSupabaseClient();
+      const { data: events, error } = await client.rpc('check_geofences', {
+        p_child_id: childId,
+        p_latitude: update.latitude,
+        p_longitude: update.longitude,
+      });
+
+      if (error) {
+        console.error('Supabase geofence check error:', error);
+        return;
+      }
+
+      if (events && events.length > 0) {
+        for (const event of events) {
+          await this.handleGeofenceEvent(event, update);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to check geofences via Supabase:', e);
+    }
+  }
+
+  private async handleGeofenceEvent(event: GeofenceEvent, location: LocationUpdate) {
+    const lastTriggered = this.geofenceTriggeredAt[event.geofenceId] || 0;
+    const now = Date.now();
+
+    if (now - lastTriggered > this.geofenceTimeout) {
+      this.geofenceTriggeredAt[event.geofenceId] = now;
+
+      const geofence = this.geofences.find(g => g.id === event.geofenceId);
+      if (geofence) {
+        geofence.triggered = true;
+        geofence.triggeredAt = now;
+      }
+
+      await this.handleGeofenceTrigger(geofence, location, event.type);
+    }
+  }
+
+  private async handleGeofenceTrigger(geofence: Geofence | undefined, location: LocationUpdate, type: 'enter' | 'exit') {
+    const geofenceName = geofence?.name || 'Zona';
+
+    console.log(`Geofence ${type}:`, geofenceName, 'at', location);
+
+    try {
+      if (type === 'enter') {
+        await notificationService.scheduleGeofenceEnterNotification(
+          geofenceName,
+          location.childId ? 'Niño' : 'Usuario'
+        );
+      }
     } catch (e) {
       console.error('Failed to schedule geofence notification:', e);
     }
 
-    // Update in storage
-    // await geofenceRepository.update(geofence.id, { triggered: true, triggeredAt: Date.now() });
+    const now = Date.now();
 
-    // Could trigger push notification, database event, etc.
+    if (geofence) {
+      try {
+        await geofenceRepository.update(geofence.id, { triggered: true, triggeredAt: now });
+      } catch (e) {
+        console.error('Failed to update geofence trigger:', e);
+      }
+    }
   }
 
   private async getDeviceUuid(): Promise<string> {
@@ -181,7 +190,6 @@ export class LocationService {
 
   private async saveLocationUpdate(update: LocationUpdate) {
     // TODO: Save to AsyncStorage or Supabase
-    // localStorage.setItem('last_location', JSON.stringify(update));
   }
 
   private async syncLocationUpdate(update: LocationUpdate) {
@@ -201,7 +209,7 @@ export class LocationService {
       isTracking: this._watchId !== undefined,
       lastReading: this.lastReading,
       geofences: [...this.geofences],
-      lastGeofenceTrigger: this.geofences.find(g => g.triggered) ?? null,
+      lastGeofenceTrigger: this.geofences.find(g => (g as any).triggered) ?? null,
     };
   }
 
@@ -215,7 +223,6 @@ export class LocationService {
 
   private saveGeofences() {
     // TODO: Persist geofences to Supabase/AsyncStorage
-    // localStorage.setItem('geofences', JSON.stringify(this.geofences));
   }
 }
 

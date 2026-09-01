@@ -1,17 +1,6 @@
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
 import { DatabaseError } from '@noe-arcakids/shared';
-
-export interface Geofence {
-  id: string;
-  familyId: string;
-  childId: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  radius: number;
-  enabled: boolean;
-  createdAt: string;
-}
+import type { Geofence, GeofenceEvent } from '@noe-arcakids/types';
 
 export const geofencingService = {
   async listGeofences(): Promise<Geofence[]> {
@@ -104,5 +93,60 @@ export const geofencingService = {
     const client = requireSupabaseClient();
     const { error } = await client.from('geofences').delete().eq('id', id);
     if (error) throw new DatabaseError(error.message);
+  },
+
+  async checkGeofences(
+    childId: string,
+    latitude: number,
+    longitude: number
+  ): Promise<GeofenceEvent[]> {
+    const client = requireSupabaseClient();
+    const { data: geofences, error } = await client
+      .from('geofences')
+      .select('*')
+      .eq('child_id', childId)
+      .eq('enabled', true);
+
+    if (error) throw new DatabaseError(error.message);
+    if (!geofences || geofences.length === 0) return [];
+
+    const events: GeofenceEvent[] = [];
+    const now = new Date().toISOString();
+
+    for (const g of geofences) {
+      const distance = this.calculateDistance(
+        latitude,
+        longitude,
+        g.latitude,
+        g.longitude
+      );
+      const isInside = distance <= g.radius;
+
+      events.push({
+        geofenceId: g.id,
+        childId,
+        type: isInside ? 'enter' : 'exit',
+        timestamp: now,
+        latitude,
+        longitude,
+      });
+    }
+    return events;
+  },
+
+  calculateDistance(
+    lat1: number,
+    lon1: number,
+    lat2: number,
+    lon2: number
+  ): number {
+    const R = 6371000;
+    const toRad = (deg: number) => deg * Math.PI / 180;
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a =
+      Math.sin(dLat / 2) ** 2 +
+      Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   },
 };
