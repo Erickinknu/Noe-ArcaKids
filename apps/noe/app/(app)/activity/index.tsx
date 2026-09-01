@@ -10,7 +10,8 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { WeeklyChart } from '@/components/ui/weekly-chart';
 import { activityService, AlertItem, DailyUsage } from '@/features/activity/services/activity-service';
-import { unlockRequestService, UnlockRequest } from '@/features/unlock-request/services/unlock-request-service';
+import { unlockRequestService } from '@/features/unlock-request/services/unlock-request-service';
+import { type UnlockRequest } from '@noe-arcakids/types';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { Card, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 

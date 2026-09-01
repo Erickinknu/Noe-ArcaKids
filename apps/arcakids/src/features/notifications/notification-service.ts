@@ -1,4 +1,6 @@
 import * as Notifications from 'expo-notifications';
+import { requireSupabaseClient } from '@noe-arcakids/supabase';
+import { identityService } from '@/features/identity/services/identity-service';
 
 export enum NotificationType {
   GEOFENCE_ENTER = 'geofence_enter',
@@ -33,6 +35,35 @@ export class NotificationService {
     } catch (e) {
       console.error('Failed to get push token:', e);
       return null;
+    }
+  }
+
+  /** Register push token with Supabase. */
+  async registerPushToken(): Promise<boolean> {
+    try {
+      const token = await this.getPushToken();
+      if (!token) return false;
+
+      const client = requireSupabaseClient();
+      const { data: { user } } = await client.auth.getUser();
+      if (!user) return false;
+
+      const { error } = await client
+        .from('push_tokens')
+        .upsert({
+          user_id: user.id,
+          token,
+          platform: 'android',
+        }, { onConflict: 'token' });
+
+      if (error) {
+        console.error('Failed to register push token:', error);
+        return false;
+      }
+      return true;
+    } catch (e) {
+      console.error('Error registering push token:', e);
+      return false;
     }
   }
 
