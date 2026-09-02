@@ -12,7 +12,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ApplicationInfo
 import android.os.Build
+import android.os.Handler
 import android.os.IBinder
+import android.os.Looper
 import androidx.core.app.NotificationCompat
 import org.json.JSONArray
 import org.json.JSONObject
@@ -26,6 +28,8 @@ class EnforcementService : Service() {
         private const val PREFS = "arcakids_enforcement"
         private const val KEY_STATE = "enforcement_state"
         private const val ACTION_STOP = "com.arcakids.child.action.STOP_ENFORCEMENT"
+        private const val POLL_NORMAL_MS = 60_000L
+        private const val POLL_ACTIVE_MS = 20_000L
 
         fun start(context: Context) {
             val intent = Intent(context, EnforcementService::class.java)
@@ -50,6 +54,16 @@ class EnforcementService : Service() {
     private lateinit var notificationManager: NotificationManager
     private var enforcer: AppControl? = null
     private var overlayManager: BlockingOverlayManager? = null
+    private var lastApplied: Pair<String, Set<String>>? = null
+    private var reactive: Boolean = false
+    private val looperHandler = Handler(Looper.getMainLooper())
+    private val pollRunnable = object : Runnable {
+        override fun run() {
+            if (!reactive) return
+            applyEnforcement()
+            looperHandler.postDelayed(this, nextPoll())
+        }
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -63,6 +77,7 @@ class EnforcementService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_STOP) {
+            stopReactiveLoop()
             enforcer?.releaseAll(); overlayManager?.stop()
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) stopForeground(STOP_FOREGROUND_REMOVE) else { @Suppress("DEPRECATION") stopForeground(true) }
             stopSelf()
@@ -70,7 +85,36 @@ class EnforcementService : Service() {
         }
         startForeground(NOTIFICATION_ID, buildNotification())
         applyEnforcement()
+        startReactiveLoop()
         return START_STICKY
+    }
+
+    override fun onDestroy() {
+        stopReactiveLoop()
+        super.onDestroy()
+    }
+
+    private fun startReactiveLoop() {
+        if (reactive) return
+        reactive = true
+        looperHandler.postDelayed(pollRunnable, nextPoll())
+    }
+
+    private fun stopReactiveLoop() {
+        reactive = false
+        looperHandler.removeCallbacks(pollRunnable)
+    }
+
+    private fun nextPoll(): Long {
+        val state = EnforcementService.loadState(this) ?: return POLL_ACTIVE_MS
+        val cal = Calendar.getInstance()
+        val dayMinutes = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+        val active = state.enforce && (
+            state.isBedtimeActive(dayMinutes) ||
+            (state.dailyLimitMinutes != null && usageToday() >= (state.dailyLimitMinutes!! - 30)) ||
+            !state.appLimits.isNullOrEmpty()
+        )
+        return if (active) POLL_ACTIVE_MS else POLL_NORMAL_MS
     }
 
     private fun applyEnforcement() {
