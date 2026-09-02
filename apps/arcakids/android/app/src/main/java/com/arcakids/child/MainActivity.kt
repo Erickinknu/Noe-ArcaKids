@@ -35,12 +35,7 @@ class MainActivity : ReactActivity() {
    * Returns the instance of the [ReactActivityDelegate]. We use [DefaultReactActivityDelegate]
    * which allows you to enable New Architecture with a single boolean flags [fabricEnabled]
    */
-    override fun onNewIntent(intent: Intent) {
-    super.onNewIntent(intent)
-    ProvisioningHandler.handleIntent(this, intent)
-  }
-
-override fun createReactActivityDelegate(): ReactActivityDelegate {
+  override fun createReactActivityDelegate(): ReactActivityDelegate {
     return ReactActivityDelegateWrapper(
           this,
           BuildConfig.IS_NEW_ARCHITECTURE_ENABLED,

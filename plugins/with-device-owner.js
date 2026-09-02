@@ -38,12 +38,11 @@ const DEVICE_ADMIN_XML = `<?xml version="1.0" encoding="utf-8"?>
 function deviceAdminReceiverJavaContent(pkg) {
   return `package ${pkg};
 
-import android.app.admin.DeviceAdminReceiver;
 import android.content.Context;
 import android.content.Intent;
 import androidx.annotation.NonNull;
 
-public class DeviceAdminReceiver extends DeviceAdminReceiver {
+public class DeviceAdminReceiver extends android.app.admin.DeviceAdminReceiver {
     @Override
     public void onEnabled(@NonNull Context context, @NonNull Intent intent) {
         super.onEnabled(context, intent);
@@ -143,7 +142,7 @@ import org.json.JSONArray
 
 class DeviceOwnerModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
-    override fun getName(): String = "DeviceOwnerModule"
+    override fun getName(): String = "DeviceOwner"
 
     private val dpm: DevicePolicyManager
         get() = reactApplicationContext.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
@@ -844,7 +843,15 @@ class BlockingOverlayManager(private val context: Context) {
     }
 
     private fun hideOverlay() {
-        currentOverlay?.let { try { windowManager.removeView(it) } catch (e: Exception) {} currentOverlay = null }
+        val overlay = currentOverlay
+        currentOverlay = null
+        if (overlay != null) {
+            try {
+                windowManager.removeView(overlay)
+            } catch (e: Exception) {
+                // view already detached
+            }
+        }
     }
 
     @Suppress("DEPRECATION")

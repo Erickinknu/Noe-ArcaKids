@@ -14,18 +14,16 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.WritableMap
 import org.json.JSONArray
-import org.json.JSONObject
 
 class DeviceOwnerModule(reactContext: ReactApplicationContext) : ReactContextBaseJavaModule(reactContext) {
 
-    override fun getName(): String = "DeviceOwnerModule"
+    override fun getName(): String = "DeviceOwner"
 
     private val dpm: DevicePolicyManager
         get() = reactApplicationContext.getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
     private val admin: ComponentName
         get() = ComponentName(reactApplicationContext, DeviceAdminReceiver::class.java)
 
-    // ---------------------------------------------------------------- state
     @ReactMethod
     fun isDeviceOwner(promise: Promise) {
         try {
@@ -47,21 +45,17 @@ class DeviceOwnerModule(reactContext: ReactApplicationContext) : ReactContextBas
     @ReactMethod
     fun canSuspendPackages(promise: Promise) {
         try {
-            promise.resolve(
-                dpm.isDeviceOwnerApp(reactApplicationContext.packageName)
-            )
+            promise.resolve(dpm.isDeviceOwnerApp(reactApplicationContext.packageName))
         } catch (e: Exception) {
             promise.reject("ERR_CAN_SUSPEND", e.message, e)
         }
     }
 
-    // ---------------------------------------------------------------- lock / suspend / restrict
     @ReactMethod
     fun lockNow(promise: Promise) {
         try {
             if (!dpm.isDeviceOwnerApp(reactApplicationContext.packageName)) {
-                promise.reject("ERR_NOT_OWNER", "App is not device owner")
-                return
+                promise.reject("ERR_NOT_OWNER", "App is not device owner"); return
             }
             dpm.lockNow()
             promise.resolve(true)
@@ -74,8 +68,7 @@ class DeviceOwnerModule(reactContext: ReactApplicationContext) : ReactContextBas
     fun setPackagesSuspended(packageNamesJson: String, suspended: Boolean, promise: Promise) {
         try {
             if (!dpm.isDeviceOwnerApp(reactApplicationContext.packageName)) {
-                promise.reject("ERR_NOT_OWNER", "App is not device owner")
-                return
+                promise.reject("ERR_NOT_OWNER", "App is not device owner"); return
             }
             val arr = JSONArray(packageNamesJson)
             val packages = Array(arr.length()) { arr.getString(it) }
@@ -91,14 +84,10 @@ class DeviceOwnerModule(reactContext: ReactApplicationContext) : ReactContextBas
     fun setUserRestriction(restriction: String, enabled: Boolean, promise: Promise) {
         try {
             if (!dpm.isDeviceOwnerApp(reactApplicationContext.packageName)) {
-                promise.reject("ERR_NOT_OWNER", "App is not device owner")
-                return
+                promise.reject("ERR_NOT_OWNER", "App is not device owner"); return
             }
-            if (enabled) {
-                dpm.addUserRestriction(admin, restriction)
-            } else {
-                dpm.clearUserRestriction(admin, restriction)
-            }
+            if (enabled) dpm.addUserRestriction(admin, restriction)
+            else dpm.clearUserRestriction(admin, restriction)
             promise.resolve(true)
         } catch (e: Exception) {
             promise.reject("ERR_USER_RESTRICTION", e.message, e)
@@ -109,8 +98,7 @@ class DeviceOwnerModule(reactContext: ReactApplicationContext) : ReactContextBas
     fun wipeData(flags: Int, promise: Promise) {
         try {
             if (!dpm.isDeviceOwnerApp(reactApplicationContext.packageName)) {
-                promise.reject("ERR_NOT_OWNER", "App is not device owner")
-                return
+                promise.reject("ERR_NOT_OWNER", "App is not device owner"); return
             }
             dpm.wipeData(flags)
             promise.resolve(true)
@@ -119,7 +107,6 @@ class DeviceOwnerModule(reactContext: ReactApplicationContext) : ReactContextBas
         }
     }
 
-    // ---------------------------------------------------------------- overlay permission (fallback path)
     @ReactMethod
     fun hasSystemAlertWindowPermission(promise: Promise) {
         try {
@@ -137,10 +124,7 @@ class DeviceOwnerModule(reactContext: ReactApplicationContext) : ReactContextBas
     fun openSystemAlertWindowSettings(promise: Promise) {
         try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                val intent = Intent(
-                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:${reactApplicationContext.packageName}")
-                )
+                val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:${reactApplicationContext.packageName}"))
                 intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 reactApplicationContext.startActivity(intent)
             }
@@ -150,7 +134,6 @@ class DeviceOwnerModule(reactContext: ReactApplicationContext) : ReactContextBas
         }
     }
 
-    // ---------------------------------------------------------------- provisioning extras
     @ReactMethod
     fun getProvisioningExtras(promise: Promise) {
         try {
@@ -172,25 +155,10 @@ class DeviceOwnerModule(reactContext: ReactApplicationContext) : ReactContextBas
         try {
             val ctx = reactApplicationContext
             ctx.getSharedPreferences("arcakids_provisioning", Context.MODE_PRIVATE)
-                .edit()
-                .clear()
-                .apply()
+                .edit().clear().apply()
             promise.resolve(true)
         } catch (e: Exception) {
             promise.reject("ERR_PROVISION_CLEAR", e.message, e)
         }
-    }
-
-    /** Persists provisioning extras, e.g. when deep-linked from a QR.
-     *  This is NOT part of the RN bridge contract (called from Java-side ProvisioningHandler). */
-    fun persistProvisioningExtras(familyId: String?, childId: String?, code: String?, payload: String?) {
-        val ctx = reactApplicationContext
-        ctx.getSharedPreferences("arcakids_provisioning", Context.MODE_PRIVATE)
-            .edit()
-            .putString("family_id", familyId)
-            .putString("child_id", childId)
-            .putString("code", code)
-            .putString("payload", payload)
-            .apply()
     }
 }

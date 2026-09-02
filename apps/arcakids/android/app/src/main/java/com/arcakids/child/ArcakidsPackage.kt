@@ -13,7 +13,6 @@ class ArcakidsPackage : ReactPackage {
             ParentalLocationModule(reactContext)
         )
     }
-
     override fun createViewManagers(reactContext: ReactApplicationContext): List<ViewManager<*, *>> {
         return emptyList()
     }

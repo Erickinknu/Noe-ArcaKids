@@ -67,7 +67,15 @@ class BlockingOverlayManager(private val context: Context) {
     }
 
     private fun hideOverlay() {
-        currentOverlay?.let { try { windowManager.removeView(it) } catch (e: Exception) {} currentOverlay = null }
+        val overlay = currentOverlay
+        currentOverlay = null
+        if (overlay != null) {
+            try {
+                windowManager.removeView(overlay)
+            } catch (e: Exception) {
+                // view already detached
+            }
+        }
     }
 
     @Suppress("DEPRECATION")
