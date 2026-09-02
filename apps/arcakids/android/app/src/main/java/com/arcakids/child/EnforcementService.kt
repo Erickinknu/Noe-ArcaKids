@@ -132,10 +132,14 @@ class EnforcementService : Service() {
             for ((pkg, limit) in limits) { if ((today[pkg] ?: 0) >= limit) blocked.add(pkg) }
         }
 
-        if (state.enforce) enforcer?.apply(blocked.toList()) else enforcer?.releaseAll()
+        val isOwner = enforcer?.isDeviceOwner == true
+        if (isOwner && state.enforce) enforcer?.apply(blocked.toList())
+        else enforcer?.releaseAll()
 
-        val nonOwner = !enforcer!!.isDeviceOwner
-        if (nonOwner && state.enforce && blocked.isNotEmpty()) overlayManager?.show(blocked.minus(setOf(packageName)))
+        // Non-owner fallback: blocking overlay covers all blocked apps (including bedtime/all apps)
+        val nonOwner = !isOwner
+        val overlayTargets = blocked.minus(setOf(packageName))
+        if (nonOwner && state.enforce && overlayTargets.isNotEmpty()) overlayManager?.show(overlayTargets)
         else overlayManager?.stop()
     }
 

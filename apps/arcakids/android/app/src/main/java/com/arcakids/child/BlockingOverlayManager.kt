@@ -3,8 +3,11 @@ package com.arcakids.child
 import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
+import android.graphics.Canvas
 import android.graphics.Color
+import android.graphics.Paint
 import android.graphics.PixelFormat
+import android.graphics.RectF
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Build
@@ -12,8 +15,11 @@ import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
 import android.view.Gravity
+import android.view.MotionEvent
+import android.view.View
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.facebook.react.bridge.ReactApplicationContext
@@ -24,7 +30,7 @@ class BlockingOverlayManager(private val context: Context) {
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private val handler = Handler(Looper.getMainLooper())
     private val blockedSet = mutableSetOf<String>()
-    private var currentOverlay: LinearLayout? = null
+    private var currentOverlay: View? = null
     private var monitoring = false
 
     private val monitor = object : Runnable {
@@ -61,60 +67,21 @@ class BlockingOverlayManager(private val context: Context) {
             WindowManager.LayoutParams.MATCH_PARENT,
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
             else @Suppress("DEPRECATION") WindowManager.LayoutParams.TYPE_PHONE,
-            WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL,
+            WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN or
+                WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL or
+                WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH,
             PixelFormat.TRANSLUCENT
         )
         params.gravity = Gravity.CENTER
 
-        val root = LinearLayout(context).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER
-            setPadding(48, 48, 48, 48)
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                setColor(Color.parseColor("#E62B2B2B"))
-                cornerRadius = 24f
-            }
+        val overlay = BlockingOverlayView(context, blockedPkg) {
+            emitEvent(blockedPkg)
+            hideOverlay()
         }
-
-        val title = TextView(context).apply {
-            text = "Tiempo de uso finalizado"
-            setTextColor(Color.WHITE)
-            textSize = 24f
-            setTypeface(null, Typeface.BOLD)
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 8)
-        }
-
-        val subtitle = TextView(context).apply {
-            text = "Esta app no está disponible por ahora."
-            setTextColor(Color.parseColor("#DDDDDD"))
-            textSize = 15f
-            gravity = Gravity.CENTER
-            setPadding(0, 0, 0, 24)
-        }
-
-        val requestBtn = Button(context).apply {
-            text = "Solicitar más tiempo"
-            setTextColor(Color.WHITE)
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.RECTANGLE
-                setColor(Color.parseColor("#208AEF"))
-                cornerRadius = 12f
-            }
-            setOnClickListener {
-                emitEvent(blockedPkg)
-                hideOverlay()
-            }
-        }
-
-        root.addView(title)
-        root.addView(subtitle)
-        root.addView(requestBtn)
 
         try {
-            windowManager.addView(root, params)
-            currentOverlay = root
+            windowManager.addView(overlay, params)
+            currentOverlay = overlay
         } catch (e: Exception) {
             currentOverlay = null
         }
@@ -162,5 +129,102 @@ class BlockingOverlayManager(private val context: Context) {
             if (p.importance == android.app.ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND) return p.processName ?: continue
         }
         return null
+    }
+}
+
+private class BlockingOverlayView(
+    context: Context,
+    private val blockedPkg: String,
+    private val onRequestTime: () -> Unit
+) : FrameLayout(context) {
+
+    private val buttonRect = RectF()
+    private val paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+    init {
+        setWillNotDraw(false)
+        isClickable = true
+        isFocusable = true
+
+        val wrapper = LinearLayout(context).apply {
+            orientation = LinearLayout.VERTICAL
+            gravity = Gravity.CENTER
+            setPadding(64, 64, 64, 64)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(Color.parseColor("#E62B2B2B"))
+                cornerRadius = 32f
+            }
+        }
+
+        val title = TextView(context).apply {
+            text = "Tiempo de uso finalizado"
+            setTextColor(Color.WHITE)
+            textSize = 24f
+            setTypeface(null, Typeface.BOLD)
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 12)
+        }
+
+        val subtitle = TextView(context).apply {
+            text = "Esta app no está disponible por ahora."
+            setTextColor(Color.parseColor("#DDDDDD"))
+            textSize = 15f
+            gravity = Gravity.CENTER
+            setPadding(0, 0, 0, 32)
+        }
+
+        val requestBtn = Button(context).apply {
+            id = android.R.id.button1
+            text = "Solicitar más tiempo"
+            setTextColor(Color.WHITE)
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.RECTANGLE
+                setColor(Color.parseColor("#208AEF"))
+                cornerRadius = 16f
+            }
+            setPadding(48, 24, 48, 24)
+            textSize = 16f
+            setTypeface(null, Typeface.BOLD)
+            setOnClickListener { onRequestTime() }
+            setOnTouchListener { v, event ->
+                v.parent?.requestDisallowInterceptTouchEvent(true)
+                v.onTouchEvent(event)
+            }
+        }
+
+        wrapper.addView(title, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+        wrapper.addView(subtitle, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
+        wrapper.addView(requestBtn, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+            gravity = Gravity.CENTER_HORIZONTAL
+            topMargin = 16
+        })
+
+        addView(wrapper, FrameLayout.LayoutParams(
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            FrameLayout.LayoutParams.MATCH_PARENT,
+            Gravity.CENTER
+        ))
+    }
+
+    override fun onDraw(canvas: Canvas) {
+        super.onDraw(canvas)
+        findViewById<View>(android.R.id.button1)?.let { btn ->
+            val loc = IntArray(2)
+            btn.getLocationOnScreen(loc)
+            buttonRect.set(loc[0].toFloat(), loc[1].toFloat(),
+                (loc[0] + btn.width).toFloat(), (loc[1] + btn.height).toFloat())
+        }
+    }
+
+    override fun dispatchTouchEvent(ev: MotionEvent): Boolean {
+        if (!buttonRect.isEmpty && !buttonRect.contains(ev.x, ev.y)) {
+            return true
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
+    override fun onTouchEvent(event: MotionEvent): Boolean {
+        return true
     }
 }

@@ -34,6 +34,17 @@ class DeviceOwnerModule(reactContext: ReactApplicationContext) : ReactContextBas
     }
 
     @ReactMethod
+    fun isDeviceOwnerProvisioned(promise: Promise) {
+        try {
+            val isOwner = dpm.isDeviceOwnerApp(reactApplicationContext.packageName)
+            val isAdmin = dpm.isAdminActive(admin)
+            promise.resolve(isOwner || isAdmin)
+        } catch (e: Exception) {
+            promise.reject("ERR_PROVISION_CHECK", e.message, e)
+        }
+    }
+
+    @ReactMethod
     fun isAdminActive(promise: Promise) {
         try {
             promise.resolve(dpm.isAdminActive(admin))

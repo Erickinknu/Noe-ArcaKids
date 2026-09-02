@@ -4,6 +4,7 @@ import type { DeviceOwnerState } from '@noe-arcakids/types';
 
 interface NativeDeviceOwner {
   isDeviceOwner(): Promise<boolean>;
+  isDeviceOwnerProvisioned(): Promise<boolean>;
   isAdminActive(): Promise<boolean>;
   canSuspendPackages(): Promise<boolean>;
   lockNow(): Promise<boolean>;
@@ -49,6 +50,11 @@ export const deviceOwnerBridge = {
   async isDeviceOwner(): Promise<boolean> {
     if (!native) return false;
     return native.isDeviceOwner();
+  },
+
+  async isDeviceOwnerProvisioned(): Promise<boolean> {
+    if (!native) return false;
+    return native.isDeviceOwnerProvisioned();
   },
 
   async lockNow(): Promise<boolean> {
