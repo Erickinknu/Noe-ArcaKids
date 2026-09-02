@@ -25,16 +25,13 @@ export default function FiltradoWebScreen() {
     const { family } = await familyService.getMyFamily();
     return childService.listChildren(family.id);
   }, []);
-  const { data: children, error: childrenError, loading: childrenLoading, reload: reloadChildren } = useAsyncData<ChildProfile[]>(fetchChildren);
+  const { data: children, error: childrenError, loading: childrenLoading } = useAsyncData<ChildProfile[]>(fetchChildren);
 
   const fetchFilters = useCallback(async () => {
     if (!selectedChildId) return [];
     return webFilterService.getFilters(selectedChildId);
   }, [selectedChildId]);
   const { data: filters, error: filtersError, loading: filtersLoading, reload: reloadFilters } = useAsyncData<WebFilter[]>(fetchFilters);
-
-  const loading = childrenLoading || (selectedChildId && filtersLoading);
-  const error = childrenError || filtersError;
 
   // Build category state from DB filters
   const categories = CATEGORIES.map((cat) => {

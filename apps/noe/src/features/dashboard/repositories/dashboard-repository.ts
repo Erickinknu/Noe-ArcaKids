@@ -37,9 +37,19 @@ export const dashboardRepository = {
       .select('id, display_name, avatar_url, created_at')
       .eq('family_id', family.id);
 
-    if (!children || children.length === 0) throw new DatabaseError('No children found');
+    const childIds = (children ?? []).map((c) => c.id);
 
-    const childIds = children.map((c) => c.id);
+    if (childIds.length === 0) {
+      return {
+        parentName: user.user_metadata?.name ?? user.email?.split('@')[0] ?? 'Parent',
+        children: [],
+        connectedCount: 0,
+        totalChildren: 0,
+        totalMinutesToday: 0,
+        totalLimitMinutes: null,
+        alertsCount: 0,
+      };
+    }
 
     const { data: devices } = await client
       .from('devices')
@@ -78,7 +88,7 @@ export const dashboardRepository = {
       usageMap.set(u.child_id, current + u.minutes);
     }
 
-    const childSummaries: ChildSummary[] = children.map((c) => {
+    const childSummaries: ChildSummary[] = (children ?? []).map((c) => {
       const lastSeen = lastSeenMap.get(c.id) ?? null;
       const dailyLimit = rulesMap.get(c.id) ?? null;
       const minutesToday = usageMap.get(c.id) ?? 0;

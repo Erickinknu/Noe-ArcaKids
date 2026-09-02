@@ -1,6 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -102,6 +102,12 @@ export default function ChildrenScreen() {
     return childService.listChildren(family.id);
   }, []);
   const { data: children, error, loading, reload } = useAsyncData(fetchChildren);
+
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+    }, [reload])
+  );
 
   async function handleAdd() {
     setAdding(true);
@@ -220,13 +226,17 @@ export default function ChildrenScreen() {
             <Text style={styles.avatarLabel}>{tr('noe.children.pickAvatar')}</Text>
             <View style={styles.avatarGrid}>
               {AVATARS.map((emoji) => (
-                <View key={emoji} style={[styles.avatarWrapper, emoji === selectedAvatar && styles.avatarSelected]}>
+                <Pressable
+                  key={emoji}
+                  onPress={() => setSelectedAvatar(emoji)}
+                  style={[styles.avatarWrapper, emoji === selectedAvatar && styles.avatarSelected]}
+                >
                   <Avatar
                     name={emoji}
                     emoji={emoji}
                     size={40}
                   />
-                </View>
+                </Pressable>
               ))}
             </View>
             <Button

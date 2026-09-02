@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import * as Linking from 'expo-linking';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';

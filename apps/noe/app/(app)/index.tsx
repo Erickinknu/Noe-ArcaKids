@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState, useRef, useMemo } from 'react';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import {
   View,
   Text,
@@ -12,17 +12,14 @@ import {
   FlatList,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { useRouter } from 'expo-router';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Avatar } from '@/components/ui/avatar';
-import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ProgressBar } from '@/components/ui/progress-bar';
 import { StatusDot } from '@/components/ui/status-dot';
-import { Button } from '@/components/ui/button';
 import {
   errorMessage,
   radius,
@@ -220,17 +217,10 @@ export default function DashboardScreen() {
     );
   }
 
-  if (!data || data.children.length === 0) {
+  if (!data) {
     return (
       <View style={styles.screen}>
-        <EmptyState
-          icon={<MaterialIcons name="child-care" size={48} color={colors.primary} />}
-          title={tr('noe.dashboard.empty')}
-          action={{
-            label: tr('noe.dashboard.addChild'),
-            onPress: () => router.push(ROUTES.children),
-          }}
-        />
+        <LoadingState text={tr('common.loading')} />
       </View>
     );
   }
@@ -369,16 +359,29 @@ export default function DashboardScreen() {
           </Pressable>
         </View>
 
-        {data.children.map((child) => (
-          <ChildRow
-            key={child.id}
-            child={child}
-            familyId={familyId}
-            onRefresh={() => fetchData(true)}
-            onQuickBlock={handleQuickBlock}
-            onAddTime={handleAddTime}
-          />
-        ))}
+        {data.children.length === 0 ? (
+          <Card style={styles.emptyChildrenCard}>
+            <MaterialIcons name="child-care" size={32} color={colors.textMuted} />
+            <Text style={styles.emptyChildrenTitle}>{tr('noe.dashboard.empty')}</Text>
+            <Pressable
+              style={({ pressed }) => [styles.emptyChildrenBtn, pressed && styles.quickActionPressed]}
+              onPress={() => router.push(ROUTES.children as any)}
+            >
+              <Text style={styles.emptyChildrenBtnText}>{tr('noe.dashboard.addChild')}</Text>
+            </Pressable>
+          </Card>
+        ) : (
+          data.children.map((child) => (
+            <ChildRow
+              key={child.id}
+              child={child}
+              familyId={familyId}
+              onRefresh={() => fetchData(true)}
+              onQuickBlock={handleQuickBlock}
+              onAddTime={handleAddTime}
+            />
+          ))
+        )}
 
         {/* ── Recent activity ── */}
         {hasAlerts && (
@@ -968,5 +971,36 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     fontSize: typography.fontSizes.body,
     color: colors.textMuted,
     fontWeight: typography.fontWeights.medium,
+  },
+
+  /* ── Empty children card ── */
+  emptyChildrenCard: {
+    alignItems: 'center',
+    gap: spacing.sm,
+    padding: spacing.lg,
+    ...shadows.sm,
+  },
+  emptyChildrenTitle: {
+    fontSize: typography.fontSizes.subtitle,
+    fontWeight: typography.fontWeights.semibold,
+    color: colors.text,
+    textAlign: 'center',
+  },
+  emptyChildrenDesc: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    textAlign: 'center',
+  },
+  emptyChildrenBtn: {
+    marginTop: spacing.sm,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+  },
+  emptyChildrenBtnText: {
+    color: colors.onPrimary,
+    fontSize: typography.fontSizes.body,
+    fontWeight: typography.fontWeights.semibold,
   },
 });

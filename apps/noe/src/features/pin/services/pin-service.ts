@@ -2,6 +2,7 @@ import * as Crypto from 'expo-crypto';
 import { storage } from '@noe-arcakids/storage';
 
 const STORAGE_KEY = 'pin_config';
+const LOCK_ON_OPEN_KEY = 'pin_lock_on_open';
 
 const MAX_ATTEMPTS = 5;
 const LOCKOUT_MS = 30_000;
@@ -113,5 +114,14 @@ export const pinService = {
   async isEnabled(): Promise<boolean> {
     const config = await this.getConfig();
     return config?.enabled ?? false;
+  },
+
+  async isLockOnOpenEnabled(): Promise<boolean> {
+    const raw = await storage.get(LOCK_ON_OPEN_KEY);
+    return raw === 'true';
+  },
+
+  async setLockOnOpenEnabled(enabled: boolean): Promise<void> {
+    await storage.save(LOCK_ON_OPEN_KEY, enabled ? 'true' : 'false');
   },
 };

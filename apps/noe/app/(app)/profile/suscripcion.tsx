@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, Pressable, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, Pressable, View, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -73,7 +73,17 @@ export default function SuscripcionScreen() {
               <Text style={styles.currentBadgeText}>Plan actual</Text>
             </View>
           ) : (
-            <Button variant="primary" size="sm" style={{ marginTop: spacing.sm }}>
+            <Button
+              variant="primary"
+              size="sm"
+              style={{ marginTop: spacing.sm }}
+              onPress={() =>
+                Alert.alert(
+                  'Próximamente',
+                  'El cobro de planes se habilitará en una próxima versión. Por ahora todas las funciones de NOE están disponibles en el plan gratuito.'
+                )
+              }
+            >
               Elegir plan
             </Button>
           )}

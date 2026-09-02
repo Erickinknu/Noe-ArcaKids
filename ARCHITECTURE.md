@@ -47,13 +47,28 @@ Screen -> Hook -> Service -> Repository -> data source (Supabase / local storage
 ## ARCA KIDS native Android layer (status)
 
 The ARCA KIDS app ships a complete TypeScript bridge layer (`parental-bridge`, `device-owner-module`,
-`location-module`, `permission-handler`, device-control service + Realtime subscriptions) and backend
-connectivity for rule evaluation (via anonymous RPCs scoped by `device_uuid`). However, the **native
-Android layer is largely unimplemented**: the only real native module code is `DeviceOwnerModule.kt`
-(`isDeviceOwner` / `isAdminActive`). The bridge methods for UsageStats, enforcement / foreground
-service, launcher grid, app blocking, overlay, provisioning extras, and geolocation resolve to
-`undefined` at runtime. This is tracked in `docs/roadmap.md` (FASE 4) — do not treat ARCA KIDS native
-capabilities as implemented until the corresponding Kotlin modules exist and compile.
+`location-module`) and a **substantially implemented native Android layer** under
+`apps/arcakids/android/app/src/main/java/com/arcakids/child/`:
+
+- `DeviceOwnerModule.kt` — DPM: `isDeviceOwner`, `isAdminActive`, `canSuspendPackages`, `lockNow`,
+  `setPackagesSuspended`, `setUserRestriction`, `wipeData`, overlay permission, provisioning extras.
+- `ParentalUsageModule.kt` — UsageStats (usage today), launchable apps, `launchApp`,
+  enforcement state persistence.
+- `ParentalLocationModule.kt` — location tracking, geofence monitoring (HAVERSINE + debounce).
+- `EnforcementService.kt` (foreground service) + `AppControl` + `BlockingOverlayManager.kt`
+  (overlay fallback).
+- `ProvisioningHandler.java`, `DeviceAdminReceiver.java`, `ArcakidsPackage.kt` (registers the three
+  modules), wired into `MainApplication.kt` and `AndroidManifest.xml`.
+
+All of this is regenerated idempotently by the config plugin `plugins/with-device-owner.js` on
+`expo prebuild`. Backend connectivity for rule evaluation uses anonymous RPCs scoped by `device_uuid`.
+
+> **Known bug (P1.1, 2026-09-02):** `DeviceOwnerModule.getName()` returned `"DeviceOwnerModule"` while
+> the JS bridge reads `NativeModules.DeviceOwner`, so the Device Owner path resolved to `undefined` at
+> runtime and DPM enforcement silently fell back to the overlay. The name was aligned to
+> `"DeviceOwner"` in the Kotlin module and the config-plugin template.
+
+See `docs/implementation-status.md` for the full status matrix.
 
 ## Auth & identity
 

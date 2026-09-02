@@ -1,50 +1,77 @@
-import { useMemo } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import { EmptyState } from '@/components/ui/empty-state';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { Card, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
-const MOCK_YT = [
-  { title: 'Minecraft: Episodio 1 - ¡Nueva aventura!', channel: 'GamePlay MX', duration: '14:32', time: 'Hace 10 min' },
-  { title: 'Cómo dibujar anime paso a paso', channel: 'Arte Fácil', duration: '8:15', time: 'Hace 1 hora' },
-  { title: 'Experimentos de ciencia caseros', channel: 'Ciencia Divertida', duration: '12:47', time: 'Hace 2 horas' },
-  { title: 'Las mejores canciones infantiles 2026', channel: 'Kids Music', duration: '45:00', time: 'Ayer' },
-  { title: 'Tutorial de Roblox Studio', channel: 'Roblox Guru', duration: '22:10', time: 'Ayer' },
-];
+import { activityService, type ChildUsageSummary } from '@/features/activity/services/activity-service';
 
 export default function YoutubeScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { childId } = useLocalSearchParams<{ childId?: string }>();
+  const [usage, setUsage] = useState<ChildUsageSummary | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    async function load() {
+      if (!childId) {
+        if (mounted) setUsage(null);
+        return;
+      }
+      const data = await activityService.getChildUsageByPackage(childId, 1);
+      if (mounted) setUsage(data);
+    }
+    load();
+    return () => { mounted = false; };
+  }, [childId]);
+
+  if (!usage) {
+    return (
+      <ScrollView
+        contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]}
+      >
+        <Text style={styles.description}>Cargando...</Text>
+      </ScrollView>
+    );
+  }
+
+  const noData = !usage.packageUsages || usage.packageUsages.length === 0;
 
   return (
-    <ScrollView contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]}>
+    <ScrollView
+      contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]}
+    >
       <Pressable style={styles.headerRow} onPress={() => router.replace('/(app)/activity')}>
         <MaterialIcons name="arrow-back" size={24} color={colors.text} />
         <Text style={styles.headerTitle}>YouTube - Videos vistos</Text>
       </Pressable>
       <Text style={styles.description}>Videos que tu hijo ha visto recientemente en YouTube.</Text>
 
-      {MOCK_YT.map((item, i) => (
-        <Card key={i} style={styles.card}>
-          <View style={styles.row}>
-            <View style={styles.thumb}>
-              <MaterialIcons name="play-circle-fill" size={32} color="#FF0000" />
-            </View>
-            <View style={styles.info}>
-              <Text style={styles.videoTitle} numberOfLines={2}>{item.title}</Text>
-              <Text style={styles.channel}>{item.channel}</Text>
-              <View style={styles.metaRow}>
-                <Text style={styles.duration}>{item.duration}</Text>
-                <Text style={styles.time}>· {item.time}</Text>
+      {noData ? (
+        <EmptyState
+          icon="🎬"
+          title="No hay datos de YouTube"
+          description="Aún no hay registro de videos vistos en los últimos 7 días."
+        />
+      ) : (
+        <View>
+          <Text style={styles.subTitle}>Total de minutos: {usage.totalMinutes}</Text>
+          <View style={styles.packageList}>
+            {usage.packageUsages.map((pkg, i) => (
+              <View key={pkg.packageName} style={[{ padding: spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: 8 }]}>
+                <Text style={[{ flex: 1, fontWeight: typography.fontWeights.medium }]}>{pkg.packageName}</Text>
+                <Text style={[{ textAlign: 'right' }]}>{pkg.minutes} min</Text>
               </View>
-            </View>
+            ))}
           </View>
-        </Card>
-      ))}
+        </View>
+      )}
     </ScrollView>
   );
 }
@@ -52,16 +79,28 @@ export default function YoutubeScreen() {
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
   screen: { padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
-  headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  headerTitle: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
-  description: { fontSize: typography.fontSizes.body, color: colors.textMuted, lineHeight: 22 },
-  card: { padding: spacing.md },
-  row: { flexDirection: 'row', gap: spacing.md },
-  thumb: { width: 64, height: 48, borderRadius: radius.md, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
-  info: { flex: 1 },
-  videoTitle: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.medium, color: colors.text, lineHeight: 20 },
-  channel: { fontSize: typography.fontSizes.caption, color: colors.primary, marginTop: 4 },
-  metaRow: { flexDirection: 'row', gap: spacing.xs, marginTop: 4 },
-  duration: { fontSize: typography.fontSizes.caption, color: colors.textMuted },
-  time: { fontSize: typography.fontSizes.caption, color: colors.textMuted },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  headerTitle: {
+    fontSize: typography.fontSizes.heading,
+    fontWeight: typography.fontWeights.bold,
+    color: colors.text,
+  },
+  description: {
+    fontSize: typography.fontSizes.body,
+    color: colors.textMuted,
+    lineHeight: 22,
+  },
+  subTitle: {
+    fontSize: typography.fontSizes.body,
+    fontWeight: typography.fontWeights.semibold,
+    color: colors.text,
+    marginBottom: spacing.md,
+  },
+  packageList: {
+    gap: spacing.md,
+  }
 });

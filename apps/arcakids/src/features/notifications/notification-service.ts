@@ -1,6 +1,5 @@
 import * as Notifications from 'expo-notifications';
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
-import { identityService } from '@/features/identity/services/identity-service';
 
 export enum NotificationType {
   GEOFENCE_ENTER = 'geofence_enter',

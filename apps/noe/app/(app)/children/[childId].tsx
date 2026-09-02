@@ -221,9 +221,13 @@ export default function ChildDetailScreen() {
           <Text style={styles.avatarHint}>{tr('noe.children.pickAvatar')}</Text>
           <View style={styles.avatarGrid}>
             {AVATARS.map((emoji) => (
-              <View key={emoji} style={[styles.avatarWrapper, emoji === selectedAvatar && styles.avatarSelected]}>
+              <Pressable
+                key={emoji}
+                onPress={() => setSelectedAvatar(emoji)}
+                style={[styles.avatarWrapper, emoji === selectedAvatar && styles.avatarSelected]}
+              >
                 <Avatar name={emoji} emoji={emoji} size={40} />
-              </View>
+              </Pressable>
             ))}
           </View>
         </View>

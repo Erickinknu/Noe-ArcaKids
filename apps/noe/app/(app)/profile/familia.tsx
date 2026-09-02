@@ -8,8 +8,8 @@ import {
   Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
+import type { ChildProfile } from '@noe-arcakids/types';
 
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,6 @@ import type { MyFamily } from '@/features/family/repositories/family-repository'
 import { Card, Input, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function FamiliaScreen() {
-  const { t: tr } = useTranslation();
   const router = useRouter();
   const screenPadding = useScreenPadding();
   const { colors } = useTheme();
@@ -33,18 +32,27 @@ export default function FamiliaScreen() {
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
 
-  const fetchFamily = useCallback(() => familyService.getMyFamily(), []);
-  const handleFamilyLoaded = useCallback((result: MyFamily) => {
-    setFamilyName(result.family.name);
+  const fetchFamilyAndChildren = useCallback(async () => {
+    const familyData = await familyService.getMyFamily();
+    const children = familyData.family.id
+      ? await childService.listChildren(familyData.family.id)
+      : [];
+    return { familyData, children };
   }, []);
-  const { data, error, loading, reload } = useAsyncData(fetchFamily, handleFamilyLoaded);
+  const handleFamilyLoaded = useCallback(
+    (result: { familyData: MyFamily; children: ChildProfile[] }) => {
+      setFamilyName(result.familyData.family.name);
+    },
+    []
+  );
+  const { data, error, loading, reload } = useAsyncData(fetchFamilyAndChildren, handleFamilyLoaded);
 
   async function handleRenameFamily() {
     if (!data) return;
     setSaving(true);
     setActionError(null);
     try {
-      await familyService.renameFamily(data.family.id, familyName);
+      await familyService.renameFamily(data.familyData.family.id, familyName);
     } catch (cause: any) {
       setActionError(cause?.message ?? 'Error');
     } finally {
@@ -54,6 +62,7 @@ export default function FamiliaScreen() {
 
   if (loading) return <View style={styles.screen}><LoadingState text="Cargando..." /></View>;
   if (error && !data) return <View style={styles.screen}><ErrorState message={error} onRetry={reload} /></View>;
+  if (!data) return <View style={styles.screen}><LoadingState text="Cargando..." /></View>;
 
   return (
     <ScrollView
@@ -82,7 +91,40 @@ export default function FamiliaScreen() {
       {/* Children list */}
       <SectionHeader title="Niños" />
       <Card>
-        <EmptyState icon="👶" title="Gestiona los perfiles de tus hijos" />
+        {data.children.length === 0 ? (
+          <EmptyState
+            icon="👶"
+            title="Aún no hay perfiles"
+            description="Añade el perfil de tu hijo desde la pestaña Hijos para personalizar su control."
+            action={{
+              label: 'Añadir hijo',
+              onPress: () =>
+                Alert.alert(
+                  'Crear perfil',
+                  'La creación de perfiles de hijos estará disponible próximamente.'
+                )
+              }}
+          />
+        ) : (
+          data.children.map((child) => (
+            <Pressable
+              key={child.id}
+              style={({ pressed }) => [
+                styles.childRow,
+                pressed && styles.childRowPressed,
+              ]}
+              onPress={() => router.push(`/children/${child.id}` as any)}
+            >
+              <Avatar
+                name={child.displayName}
+                emoji={child.avatarUrl ?? '👶'}
+                size={40}
+              />
+              <Text style={styles.childName}>{child.displayName}</Text>
+              <MaterialIcons name="chevron-right" size={22} color={colors.textMuted} />
+            </Pressable>
+          ))
+        )}
       </Card>
 
       {/* Adults / Members */}
@@ -94,17 +136,15 @@ export default function FamiliaScreen() {
         <View style={styles.inviteRow}>
           <Pressable
             style={({ pressed }) => [styles.inviteBtn, pressed && styles.inviteBtnPressed]}
-            onPress={() => Alert.alert('Invitar co-padre', 'Se abrirá el diálogo de compartir con el código de invitación de la familia.')}
+            onPress={() =>
+              Alert.alert(
+                'Invitar a otro padre/tutor',
+                'La invitación de co-padre estará disponible próximamente. Por ahora puedes compartir la app y la cuenta para que ambos administren a los niños.'
+              )
+            }
           >
             <MaterialIcons name="person-add" size={20} color={colors.primary} />
             <Text style={styles.inviteBtnText}>Invitar padre/tutor</Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.inviteBtn, pressed && styles.inviteBtnPressed]}
-            onPress={() => Alert.alert('Código de familia', `Código: ${data?.family.id?.slice(0, 8) ?? 'N/A'}\nComparte este código con el otro padre para que se una.`)}
-          >
-            <MaterialIcons name="vpn-key" size={20} color={colors.primary} />
-            <Text style={styles.inviteBtnText}>Ver código</Text>
           </Pressable>
         </View>
       </Card>
@@ -164,5 +204,20 @@ const makeStyles = (colors: ThemeColors) =>
     fontSize: typography.fontSizes.subtitle,
     fontWeight: typography.fontWeights.medium,
     color: colors.primary,
+  },
+  childRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  childRowPressed: {
+    opacity: 0.6,
+  },
+  childName: {
+    flex: 1,
+    fontSize: typography.fontSizes.body,
+    fontWeight: typography.fontWeights.medium,
+    color: colors.text,
   },
 });

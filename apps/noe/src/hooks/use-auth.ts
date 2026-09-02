@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useAuthStore, type AuthStatus } from '@/stores/auth-store';
+import { useAuthStore } from '@/stores/auth-store';
 import { authHelpers } from '@noe-arcakids/supabase';
 
 export function useAuth() {

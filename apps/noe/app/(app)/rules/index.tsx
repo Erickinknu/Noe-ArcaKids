@@ -9,7 +9,7 @@ import {
   RefreshControl,
   Switch,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -71,6 +71,12 @@ export default function RulesScreen() {
     return { familyId: family.id, children };
   }, []);
   const { data, error, loading, reload } = useAsyncData(fetchFamily);
+
+  useFocusEffect(
+    useCallback(() => {
+      reload();
+    }, [reload])
+  );
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);

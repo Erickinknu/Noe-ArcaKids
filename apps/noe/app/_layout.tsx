@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, Text, useColorScheme } from 'react-native';
+import { View, ActivityIndicator, Text } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -7,7 +7,6 @@ import * as SplashScreen from 'expo-splash-screen';
 import { initI18n } from '@/i18n';
 import { useAuthStore } from '@/stores/auth-store';
 import { ThemeProvider, useTheme, networkService, ErrorBoundary } from '@noe-arcakids/shared';
-import { captureException, captureMessage } from '@/lib/sentry';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 

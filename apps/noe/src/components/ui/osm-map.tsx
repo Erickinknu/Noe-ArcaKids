@@ -90,7 +90,6 @@ function buildHTML(markers: MapMarker[], region: OSMMapProps['region']): string 
 }
 
 export function OSMMap({ markers, region, onMarkerPress, style }: OSMMapProps) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const webViewRef = useRef<any>(null);
 
   const html = useMemo(() => buildHTML(markers, region), [markers, region]);

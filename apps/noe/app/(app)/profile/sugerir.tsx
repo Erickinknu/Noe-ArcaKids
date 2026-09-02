@@ -3,7 +3,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  View,
   Pressable,
   TextInput,
   Alert,
@@ -13,7 +12,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { Button } from '@/components/ui/button';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { Card, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { feedbackService } from '@/features/feedback/services/feedback-service';
+import { Card, errorMessage, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function SugerirScreen() {
   const router = useRouter();
@@ -21,15 +21,20 @@ export default function SugerirScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [idea, setIdea] = useState('');
-  const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
 
-  function handleSend() {
+  async function handleSend() {
     if (!idea.trim()) return;
-    setSent(true);
-    setTimeout(() => {
+    setSending(true);
+    try {
+      await feedbackService.submit(idea);
       Alert.alert('Gracias', 'Tu idea ha sido enviada. ¡Nos encanta escuchar tus sugerencias!');
       router.replace('/(app)/profile');
-    }, 500);
+    } catch (cause) {
+      Alert.alert('Error', errorMessage(cause));
+    } finally {
+      setSending(false);
+    }
   }
 
   return (
@@ -57,7 +62,7 @@ export default function SugerirScreen() {
           numberOfLines={5}
           textAlignVertical="top"
         />
-        <Button onPress={handleSend} loading={sent} disabled={!idea.trim()}>
+        <Button onPress={handleSend} loading={sending} disabled={!idea.trim()}>
           Enviar idea
         </Button>
       </Card>

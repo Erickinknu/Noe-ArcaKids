@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
-import { OSMMap, type MapMarker } from '@/components/ui/osm-map';
+import { OSMMap } from '@/components/ui/osm-map';
 
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { deviceControlService, type ChildLocation } from '@/features/device-control/services/device-control-service';

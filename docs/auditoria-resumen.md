@@ -97,15 +97,18 @@
 
 | Ítem | Estado |
 |------|--------|
-| Aplicar migración SQL a Supabase (`arca-kids-noe`, ref `jvxeiexsmnoorhhphjld`) | **En curso (D)** |
-| Builds Android de verificación (`build:android` en ambas apps) | Opcional — typecheck/lint OK |
+| Aplicar migración SQL a Supabase (`arca-kids-noe`, ref `jvxeiexsmnoorhhphjld`) | Completado (2026-08-31) |
+| Migración `20260901000000_parent_preferences.sql` | Aplicada al remoto; commitear (P0 docs/feat) |
+| **Bug capa nativa (hallazgo P0 2026-09-02)** | `DeviceOwnerModule.getName() = "DeviceOwnerModule"` ≠ `NativeModules.DeviceOwner` → DPM inerte. **Corregido en P1.1** (Kotlin + template plugin) |
+| Builds Android de verificación | NOE OK histórico; ARCA KIDS a re-verificar tras fix P1.1 |
 | Push a remoto (cuando exista) | Pendiente |
 
 ---
 
-## ✅ Verificación Final
+## ✅ Verificación Final (P0, 2026-09-02)
 
-- `npm install`: OK (911 packages, 11 moderate vulns no bloqueantes).
-- `npx tsc --noEmit`: **OK** en los 7 paquetes/workspaces.
-- `npx expo lint`: **OK** (0 errores, 32 warnings preexistentes) en NOE y ARCA KIDS.
-- Git status: **working tree clean** (tras 4 commits).
+- `npm install`: OK.
+- `npx tsc --noEmit`: **OK** en las 7 workspaces (0 errores).
+- `npx expo lint`: **OK** — 0 errores, **0 warnings** (se limpiaron imports sin uso, duplicados, directivas sobrantes, `as any` y timezone del gráfico semanal).
+- Fixes P0 aplicados: `ChildUsageSummary`→`ChildActivitySummary` en `activity/index.tsx`, gráfico semanal con fecha local (`toLocalDateKey`), `router.push` sin `as any`, `youtube.tsx` sin estado inerte.
+- `docs/implementation-status.md` creado (matriz por feature).

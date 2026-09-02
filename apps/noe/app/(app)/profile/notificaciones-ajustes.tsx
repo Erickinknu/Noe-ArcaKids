@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -11,13 +11,17 @@ import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { Card, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { notificationPreferencesService } from '@/features/notifications/services/notification-preferences-service';
+import {
+  DEFAULT_NOTIFICATION_PREFERENCES,
+  type NotificationPreferences,
+} from '@/features/notifications/repositories/notification-preferences-repository';
+import { Card, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 interface SettingToggle {
-  key: string;
+  key: keyof NotificationPreferences;
   title: string;
   subtitle: string;
-  defaultValue: boolean;
 }
 
 const SETTINGS: SettingToggle[] = [
@@ -25,43 +29,36 @@ const SETTINGS: SettingToggle[] = [
     key: 'pushEnabled',
     title: 'Notificaciones push',
     subtitle: 'Recibe alertas en tu teléfono cuando algo importante ocurra',
-    defaultValue: true,
   },
   {
     key: 'dailyReport',
     title: 'Reporte diario',
     subtitle: 'Resumen del uso diario de tus hijos a las 8:00 PM',
-    defaultValue: true,
   },
   {
     key: 'bedtimeAlert',
     title: 'Alerta de hora de dormir',
     subtitle: 'Notificación cuando se acerca la hora de dormir del niño',
-    defaultValue: false,
   },
   {
     key: 'appBlocked',
     title: 'App bloqueada / desbloqueada',
     subtitle: 'Aviso cuando cambias el estado de una app',
-    defaultValue: true,
   },
   {
     key: 'timeLimitReached',
     title: 'Límite de tiempo alcanzado',
     subtitle: 'Alerta cuando el niño alcanza su límite diario',
-    defaultValue: true,
   },
   {
     key: 'deviceOffline',
     title: 'Dispositivo desconectado',
     subtitle: 'Aviso cuando el teléfono del niño se desconecta',
-    defaultValue: true,
   },
   {
     key: 'locationAlert',
     title: 'Alerta de ubicación',
     subtitle: 'Notificación cuando el niño sale de una zona segura',
-    defaultValue: false,
   },
 ];
 
@@ -70,12 +67,29 @@ export default function NotificacionesAjustesScreen() {
   const screenPadding = useScreenPadding();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const [settings, setSettings] = useState<Record<string, boolean>>(
-    Object.fromEntries(SETTINGS.map((s) => [s.key, s.defaultValue])),
-  );
+  const [prefs, setPrefs] = useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFERENCES);
 
-  function toggle(key: string) {
-    setSettings((prev) => ({ ...prev, [key]: !prev[key] }));
+  useEffect(() => {
+    let mounted = true;
+    notificationPreferencesService
+      .getPreferences()
+      .then((p) => {
+        if (mounted) setPrefs(p);
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  function toggle(key: keyof NotificationPreferences) {
+    setPrefs((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      notificationPreferencesService
+        .updatePreferences({ [key]: next[key] as boolean })
+        .catch(() => {});
+      return next;
+    });
   }
 
   return (
@@ -102,7 +116,7 @@ export default function NotificacionesAjustesScreen() {
               <Text style={styles.rowSubtitle}>{setting.subtitle}</Text>
             </View>
             <Switch
-              value={settings[setting.key]}
+              value={prefs[setting.key]}
               onValueChange={() => toggle(setting.key)}
               trackColor={{ false: colors.border, true: colors.primary }}
               thumbColor="#fff"

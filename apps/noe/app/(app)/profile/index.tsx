@@ -14,8 +14,10 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { authService } from '@/features/auth/services/auth-service';
+import { familyService } from '@/features/family/services/family-service';
+import { profileService } from '@/features/profile/services/profile-service';
 import { APP_VERSION } from '@noe-arcakids/config';
-import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { useAsyncData, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 interface MenuItem {
   icon: keyof typeof MaterialIcons.glyphMap;
@@ -42,6 +44,25 @@ export default function OtrosScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [blockInstalls, setBlockInstalls] = useState(false);
+
+  const fetchBlockSetting = useCallback(async (): Promise<boolean> => {
+    const my = await familyService.getMyFamily();
+    if (!my.profile.id) return false;
+    return profileService.getBlockInstalls(my.profile.id);
+  }, []);
+  useAsyncData<boolean>(fetchBlockSetting, setBlockInstalls);
+
+  async function handleBlockInstallsChange(value: boolean) {
+    setBlockInstalls(value);
+    try {
+      const my = await familyService.getMyFamily();
+      if (my.profile.id) {
+        await profileService.updateBlockInstalls(my.profile.id, value);
+      }
+    } catch {
+      setBlockInstalls(!value);
+    }
+  }
 
   const navigate = useCallback(
     (path: string) => () => router.push(path as any),
@@ -89,7 +110,7 @@ export default function OtrosScreen() {
     {
       icon: 'lock',
       title: 'Código PIN',
-      subtitle: 'PIN para desbloquear el teléfono del niño',
+      subtitle: 'PIN para bloquear el acceso a NOE con contraseña',
       onPress: navigate('/profile/pin'),
     },
     {
@@ -140,7 +161,7 @@ export default function OtrosScreen() {
     subtitle:
       'Evita que se instalen nuevas aplicaciones en el dispositivo del niño controlado por ArcaKids',
     value: blockInstalls,
-    onValueChange: setBlockInstalls,
+    onValueChange: handleBlockInstallsChange,
     color: colors.danger,
   };
 

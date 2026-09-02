@@ -7,7 +7,6 @@ import {
   Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Avatar } from '@/components/ui/avatar';
@@ -16,11 +15,11 @@ import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { familyService } from '@/features/family/services/family-service';
+import { profileService } from '@/features/profile/services/profile-service';
 import type { MyFamily } from '@/features/family/repositories/family-repository';
-import { Card, Input, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, Input, errorMessage, useAsyncData, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function CuentaScreen() {
-  const { t: tr } = useTranslation();
   const router = useRouter();
   const screenPadding = useScreenPadding();
   const { colors } = useTheme();
@@ -42,12 +41,12 @@ export default function CuentaScreen() {
     setActionError(null);
     setSavedFlash(false);
     try {
-      // TODO: Call profile update service when available
-      await new Promise((r) => setTimeout(r, 500));
+      await profileService.updateDisplayName(data.profile.id, displayName);
+      await reload();
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 2000);
-    } catch (cause: any) {
-      setActionError(cause?.message ?? 'Error');
+    } catch (cause) {
+      setActionError(errorMessage(cause));
     } finally {
       setSaving(false);
     }

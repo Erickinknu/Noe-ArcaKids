@@ -1,4 +1,4 @@
-import i18next from 'i18next';
+import { t } from 'i18next';
 
 import type { ChildSummary, FamilySummary } from '../types';
 import { dashboardRepository } from '../repositories/dashboard-repository';
@@ -13,15 +13,15 @@ export function formatDuration(minutes: number): string {
 }
 
 export function relativeTime(isoString: string | null): string {
-  if (!isoString) return i18next.t('common.never');
+  if (!isoString) return t('common.never');
   const diff = Date.now() - new Date(isoString).getTime();
   const minutes = Math.floor(diff / 60000);
-  if (minutes < 1) return i18next.t('common.justNow');
-  if (minutes < 60) return i18next.t('common.minutesAgo', { minutes });
+  if (minutes < 1) return t('common.justNow');
+  if (minutes < 60) return t('common.minutesAgo', { minutes });
   const hours = Math.floor(minutes / 60);
-  if (hours < 24) return i18next.t('common.hoursAgo', { hours });
+  if (hours < 24) return t('common.hoursAgo', { hours });
   const days = Math.floor(hours / 24);
-  return i18next.t('common.daysAgo', { days });
+  return t('common.daysAgo', { days });
 }
 
 export const dashboardService = {

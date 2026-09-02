@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -6,13 +6,15 @@ import {
   View,
   Pressable,
   Switch,
+  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { useScreenPadding } from '@/hooks/use-screen-padding';
+import { pinService } from '@/features/pin/services/pin-service';
 import { APP_VERSION } from '@noe-arcakids/config';
-import { Card, radius, spacing, typography, useTheme, type AppColorTheme, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, spacing, typography, useTheme, type AppColorTheme, type ThemeColors } from '@noe-arcakids/shared';
 
 const THEME_OPTIONS: { key: AppColorTheme; label: string; icon: keyof typeof MaterialIcons.glyphMap }[] = [
   { key: 'light', label: 'Claro', icon: 'light-mode' },
@@ -25,6 +27,27 @@ export default function ConfigScreen() {
   const screenPadding = useScreenPadding();
   const { colors, theme, setTheme } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const [lockOnOpen, setLockOnOpen] = useState(false);
+
+  useEffect(() => {
+    pinService.isLockOnOpenEnabled().then(setLockOnOpen).catch(() => {});
+  }, []);
+
+  async function handleLockOnOpenChange(value: boolean) {
+    if (value) {
+      const hasPin = await pinService.isEnabled();
+      if (!hasPin) {
+        Alert.alert(
+          'Primero configura un PIN',
+          'No tienes un PIN configurado. Crea tu PIN en el menú “Código PIN” y luego podrás activar el bloqueo al abrir NOE.',
+          [{ text: 'Configurar PIN', onPress: () => router.push('/(app)/profile/pin') }, { text: 'Cancelar', style: 'cancel' }]
+        );
+        return;
+      }
+    }
+    setLockOnOpen(value);
+    await pinService.setLockOnOpenEnabled(value);
+  }
 
   return (
     <ScrollView
@@ -70,31 +93,39 @@ export default function ConfigScreen() {
       {/* ── Language ── */}
       <Text style={styles.sectionLabel}>Idioma</Text>
       <Card>
-        <View style={styles.optionRow}>
+        <Pressable style={styles.optionRow} onPress={() => router.push('/settings')}>
           <MaterialIcons name="language" size={22} color={colors.primary} />
           <Text style={styles.optionText}>Español</Text>
-          <MaterialIcons name="check" size={20} color={colors.primary} />
-        </View>
+          <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
+        </Pressable>
       </Card>
 
       {/* ── Security ── */}
       <Text style={styles.sectionLabel}>Seguridad</Text>
       <Card>
-        <View style={styles.optionRow}>
-          <MaterialIcons name="fingerprint" size={22} color={colors.primary} />
-          <Text style={styles.optionText}>Desbloqueo biométrico</Text>
+        <View style={[styles.optionRow, styles.optionMuted]}>
+          <MaterialIcons name="fingerprint" size={22} color={colors.textMuted} />
+          <View style={styles.optionBody}>
+            <Text style={styles.optionText}>Desbloqueo biométrico</Text>
+            <Text style={styles.optionSubtext}>Disponible próximamente</Text>
+          </View>
           <Switch
             value={false}
-            onValueChange={() => {}}
+            disabled
             trackColor={{ false: colors.border, true: colors.primary }}
           />
         </View>
         <View style={[styles.optionRow, { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border }]}>
           <MaterialIcons name="lock" size={22} color={colors.primary} />
-          <Text style={styles.optionText}>Bloqueo con PIN al abrir NOE</Text>
+          <View style={styles.optionBody}>
+            <Text style={styles.optionText}>Bloqueo con PIN al abrir NOE</Text>
+            <Text style={styles.optionSubtext}>
+              Pide tu PIN cada vez que abras la app
+            </Text>
+          </View>
           <Switch
-            value={false}
-            onValueChange={() => {}}
+            value={lockOnOpen}
+            onValueChange={handleLockOnOpenChange}
             trackColor={{ false: colors.border, true: colors.primary }}
           />
         </View>
@@ -148,10 +179,21 @@ const makeStyles = (colors: ThemeColors) =>
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
+  optionBody: {
+    flex: 1,
+    gap: 2,
+  },
+  optionMuted: {
+    opacity: 0.6,
+  },
   optionText: {
     flex: 1,
     fontSize: typography.fontSizes.body,
     color: colors.text,
+  },
+  optionSubtext: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
   },
   optionValue: {
     fontSize: typography.fontSizes.body,

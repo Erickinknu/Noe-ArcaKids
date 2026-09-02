@@ -1,15 +1,18 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import { Avatar } from '@/components/ui/avatar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { WeeklyChart } from '@/components/ui/weekly-chart';
 import { activityService, AlertItem, DailyUsage } from '@/features/activity/services/activity-service';
+import { childService } from '@/features/children/services/child-service';
+import { familyService } from '@/features/family/services/family-service';
 import { unlockRequestService } from '@/features/unlock-request/services/unlock-request-service';
 import { type UnlockRequest } from '@noe-arcakids/types';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
@@ -22,21 +25,19 @@ interface DailyBar {
   color: string;
 }
 
-interface ChildUsageSummary {
+interface ChildActivitySummary {
   childId: string;
   childName: string;
   totalMinutes: number;
   dailyData: DailyUsage[];
 }
 
-const INITIAL_APP_USAGE = [
-  { name: 'TikTok', minutes: 95, color: '#000000' },
-  { name: 'YouTube', minutes: 72, color: '#FF0000' },
-  { name: 'Instagram', minutes: 48, color: '#E1306C' },
-  { name: 'WhatsApp', minutes: 35, color: '#25D366' },
-  { name: 'Roblox', minutes: 28, color: '#E2231A' },
-  { name: 'Chrome', minutes: 15, color: '#4285F4' },
-];
+function toLocalDateKey(date: Date): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
 
 function formatDate(dateStr: string): string {
   const d = new Date(dateStr);
@@ -72,21 +73,46 @@ export default function ActivityScreen() {
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [refreshing, setRefreshing] = useState(false);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+
+  const fetchChildren = useCallback(async () => {
+    const { family } = await familyService.getMyFamily();
+    return childService.listChildren(family.id);
+  }, []);
+  const { data: children, error: childrenError, loading: childrenLoading, reload: reloadChildren } = useAsyncData(fetchChildren);
+
   const fetchUsage = useCallback(() => activityService.getAllChildrenUsage(7), []);
   const fetchAlerts = useCallback(() => activityService.getRecentAlerts(), []);
   const fetchUnlockRequests = useCallback(() => unlockRequestService.getPendingRequests(), []);
+  const fetchPackageUsage = useCallback(
+    () => selectedChildId ? activityService.getChildUsageByPackage(selectedChildId, 1) : Promise.resolve(null),
+    [selectedChildId],
+  );
+
   const { data: usageData, error: usageError, loading: usageLoading, reload: reloadUsage } = useAsyncData<DailyUsage[]>(fetchUsage);
   const { data: alerts, error: alertsError, loading: alertsLoading, reload: reloadAlerts } = useAsyncData<AlertItem[]>(fetchAlerts);
   const { data: unlockRequests, error: unlockError, loading: unlockLoading, reload: reloadUnlockRequests } = useAsyncData<UnlockRequest[]>(fetchUnlockRequests);
+  const { data: packageUsage, loading: packageLoading, reload: reloadPackageUsage } = useAsyncData(fetchPackageUsage);
 
-  const loading = usageLoading || alertsLoading || unlockLoading;
-  const error = usageError || alertsError || unlockError;
-  const onRetry = useCallback(() => { reloadUsage(); reloadAlerts(); reloadUnlockRequests(); }, [reloadUsage, reloadAlerts, reloadUnlockRequests]);
+  useEffect(() => {
+    if (selectedChildId) {
+      void reloadPackageUsage();
+    }
+  }, [selectedChildId, reloadPackageUsage]);
+
+  const loading = usageLoading || alertsLoading || unlockLoading || childrenLoading;
+  const error = usageError || alertsError || unlockError || childrenError;
+  const onRetry = useCallback(() => {
+    reloadUsage();
+    reloadAlerts();
+    reloadUnlockRequests();
+    reloadChildren();
+  }, [reloadUsage, reloadAlerts, reloadUnlockRequests, reloadChildren]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    Promise.all([reloadUsage(), reloadAlerts(), reloadUnlockRequests()]).finally(() => setRefreshing(false));
-  }, [reloadUsage, reloadAlerts, reloadUnlockRequests]);
+    Promise.all([reloadUsage(), reloadAlerts(), reloadUnlockRequests(), reloadChildren()]).finally(() => setRefreshing(false));
+  }, [reloadUsage, reloadAlerts, reloadUnlockRequests, reloadChildren]);
 
   const handleResolveRequest = useCallback(async (requestId: string, status: 'approved' | 'denied') => {
     try {
@@ -97,37 +123,54 @@ export default function ActivityScreen() {
     }
   }, [reloadUnlockRequests]);
 
+  const selectedChild = (children ?? []).find((c) => c.id === selectedChildId) ?? null;
+
+  const selectedUsage = useMemo(() => {
+    if (!selectedChildId || !usageData) return [];
+    return usageData.filter((e) => e.childId === selectedChildId);
+  }, [usageData, selectedChildId]);
+
   const childSummaries = useMemo(() => {
-    if (!usageData) return [];
-    const grouped = new Map<string, ChildUsageSummary>();
-    for (const e of usageData) {
+    const grouped = new Map<string, ChildActivitySummary>();
+    for (const e of selectedUsage) {
       const s = grouped.get(e.childId);
       if (s) { s.totalMinutes += e.minutes; s.dailyData.push(e); }
       else grouped.set(e.childId, { childId: e.childId, childName: e.childName, totalMinutes: e.minutes, dailyData: [e] });
     }
     return Array.from(grouped.values()).sort((a, b) => b.totalMinutes - a.totalMinutes);
-  }, [usageData]);
+  }, [selectedUsage]);
 
   const weeklyBars = useMemo(() => {
-    if (!usageData || usageData.length === 0) return [];
+    if (selectedUsage.length === 0) return [];
     const dayMap = new Map<string, number>();
-    for (const e of usageData) dayMap.set(e.reportDate, (dayMap.get(e.reportDate) ?? 0) + e.minutes);
+    for (const e of selectedUsage) dayMap.set(e.reportDate, (dayMap.get(e.reportDate) ?? 0) + e.minutes);
     const bars: DailyBar[] = [];
     for (let i = 6; i >= 0; i--) {
       const d = new Date(); d.setDate(d.getDate() - i);
-      const dateStr = d.toISOString().split('T')[0];
+      const dateStr = toLocalDateKey(d);
       const minutes = dayMap.get(dateStr) ?? 0;
       bars.push({ date: dateStr, label: formatDate(dateStr), minutes, color: getBarColor(minutes, colors) });
     }
     return bars;
-  }, [usageData, colors]);
+  }, [selectedUsage, colors]);
 
   const maxMinutes = useMemo(() => Math.max(...weeklyBars.map((b) => b.minutes), 1), [weeklyBars]);
-  const hasData = childSummaries.length > 0;
-  const hasAlerts = alerts && alerts.length > 0;
 
-  if (loading && !usageData && !alerts) return <LoadingState text={tr('noe.activity.loading')} />;
-  if (error) return <ErrorState message={error} onRetry={onRetry} />;
+  const selectedAlerts = useMemo(
+    () => (selectedChildId ? (alerts ?? []).filter((a) => a.childId === selectedChildId) : []),
+    [alerts, selectedChildId],
+  );
+  const selectedUnlockRequests = useMemo(
+    () => (selectedChildId ? (unlockRequests ?? []).filter((r) => r.childId === selectedChildId) : []),
+    [unlockRequests, selectedChildId],
+  );
+
+  const hasNoChildren = (children?.length ?? 0) === 0;
+  const hasSelectedData = selectedUsage.length > 0 || selectedAlerts.length > 0 || selectedUnlockRequests.length > 0;
+  const maxPackageMinutes = packageUsage && packageUsage.packageUsages.length > 0 ? packageUsage.packageUsages[0].minutes : 0;
+
+  if (loading && !usageData && !children) return <LoadingState text={tr('noe.activity.loading')} />;
+  if (error && !usageData && !children && !alerts) return <ErrorState message={error} onRetry={onRetry} />;
 
   return (
     <ScrollView contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]} keyboardShouldPersistTaps="handled"
@@ -148,136 +191,173 @@ export default function ActivityScreen() {
         </View>
       </View>
 
-      {/* ── Monitoreo ── */}
-      <Text style={styles.sectionLabel}>Monitoreo detallado</Text>
-      <View style={styles.monitorGrid}>
-        {[
-          { icon: 'language' as const, title: 'Páginas\nweb', color: colors.primary, path: '/activity/web' },
-          { icon: 'play-circle' as const, title: 'YouTube\nvideos', color: colors.danger, path: '/activity/youtube' },
-          { icon: 'apps' as const, title: 'Apps\ninstaladas', color: colors.warning, path: '/activity/apps' },
-          { icon: 'people' as const, title: 'Redes\nsociales', color: colors.danger, path: '/activity/social' },
-          { icon: 'photo-library' as const, title: 'Imágenes\nrecibidas', color: colors.success, path: '/activity/media' },
-          { icon: 'chat' as const, title: 'Conversa-\nciones', color: colors.success, path: '/activity/conversations' },
-        ].map((item) => (
-          <Pressable
-            key={item.title}
-            style={({ pressed }) => [styles.monitorCard, pressed && styles.monitorCardPressed]}
-            onPress={() => router.push(item.path as any)}
-          >
-            <View style={[styles.monitorIcon, { backgroundColor: item.color + '18' }]}>
-              <MaterialIcons name={item.icon} size={22} color={item.color} />
-            </View>
-            <Text style={styles.monitorTitle}>{item.title}</Text>
-          </Pressable>
-        ))}
-      </View>
-      {!hasData && !hasAlerts ? (
-        <EmptyState icon="📊" title={tr('noe.activity.emptyTitle')} description={tr('noe.activity.emptyDescription')} />
+      {hasNoChildren ? (
+        <EmptyState icon="👶" title="Todavía no tienes hijos vinculados"
+          description="Agrega o vincula un hijo en la pestaña Hijos para comenzar a monitorear su actividad." />
+      ) : !selectedChild ? (
+        <>
+          <Text style={styles.sectionLabel}>Selecciona un hijo</Text>
+          {(children ?? []).map((child) => (
+            <Pressable key={child.id} onPress={() => setSelectedChildId(child.id)}>
+              <Card style={styles.card}>
+                <View style={styles.selectRow}>
+                  <Avatar name={child.displayName} emoji={child.avatarUrl ?? undefined} size={44} />
+                  <Text style={styles.selectName}>{child.displayName}</Text>
+                  <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
+                </View>
+              </Card>
+            </Pressable>
+          ))}
+        </>
       ) : (
         <>
-          {hasData && (
-            <>
-              <SectionHeader title={tr('noe.activity.usagePerChild')} />
-              <WeeklyChart
-                childSummaries={childSummaries}
-                weeklyBars={weeklyBars}
-                maxMinutes={maxMinutes}
-              />
-            </>
-          )}
+          <Pressable style={styles.childChip} onPress={() => setSelectedChildId(null)}>
+            <Avatar name={selectedChild.displayName} emoji={selectedChild.avatarUrl ?? undefined} size={24} />
+            <Text style={styles.childChipText}>{selectedChild.displayName}</Text>
+            <MaterialIcons name="swap-horiz" size={18} color={colors.primary} />
+          </Pressable>
 
-          {/* ── App usage breakdown ── */}
-          <SectionHeader title="Uso por app (hoy)" />
-          <Card style={styles.card}>
-            {INITIAL_APP_USAGE.map((app, i) => (
-              <View key={app.name} style={[styles.appRow, i < INITIAL_APP_USAGE.length - 1 && styles.appBorder]}>
-                <View style={[styles.appDot, { backgroundColor: app.color }]} />
-                <Text style={styles.appName}>{app.name}</Text>
-                <View style={styles.appBarBg}>
-                  <View style={[styles.appBarFill, { width: `${(app.minutes / INITIAL_APP_USAGE[0].minutes) * 100}%` }]} />
+          {/* ── Monitoreo ── */}
+          <Text style={styles.sectionLabel}>Monitoreo detallado</Text>
+          <View style={styles.monitorGrid}>
+            {([
+              { icon: 'language' as const, title: 'Páginas\nweb', color: colors.primary, path: '/activity/web' },
+              { icon: 'play-circle' as const, title: 'YouTube\nvideos', color: colors.danger, path: '/activity/youtube' },
+              { icon: 'apps' as const, title: 'Apps\ninstaladas', color: colors.warning, path: '/activity/apps' },
+              { icon: 'people' as const, title: 'Redes\nsociales', color: colors.danger, path: '/activity/social' },
+              { icon: 'photo-library' as const, title: 'Imágenes\nrecibidas', color: colors.success, path: '/activity/media' },
+              { icon: 'chat' as const, title: 'Conversa-\nciones', color: colors.success, path: '/activity/conversations' },
+            ] as const).map((item) => (
+              <Pressable
+                key={item.title}
+                style={({ pressed }) => [styles.monitorCard, pressed && styles.monitorCardPressed]}
+                onPress={() => router.push({ pathname: item.path, params: { childId: selectedChild.id } })}
+              >
+                <View style={[styles.monitorIcon, { backgroundColor: item.color + '18' }]}>
+                  <MaterialIcons name={item.icon} size={22} color={item.color} />
                 </View>
-                <Text style={styles.appMinutes}>{app.minutes}min</Text>
-              </View>
+                <Text style={styles.monitorTitle}>{item.title}</Text>
+              </Pressable>
             ))}
-          </Card>
-          {hasAlerts && (
-            <>
-              <SectionHeader title={tr('noe.activity.recentAlerts')} />
-              {alerts.map((alert) => (
-                <Card key={alert.id} style={styles.card}>
-                  <View style={styles.alertRow}>
-                    <Text style={styles.alertIcon}>{getAlertIcon(alert.type)}</Text>
-                    <View style={styles.alertInfo}>
-                      <Text style={styles.alertChild}>{alert.childName}</Text>
-                      <Text style={styles.alertMessage}>{alert.message}</Text>
-                    </View>
-                    <Text style={styles.alertTime}>{formatDate(alert.timestamp)}</Text>
-                  </View>
-                </Card>
-              ))}
-            </>
-          )}
+          </View>
 
-          {/* ── Unlock requests ── */}
-          {unlockRequests && unlockRequests.length > 0 && (
+          {!hasSelectedData ? (
+            <EmptyState icon="📊" title={`Aún no hay actividad registrada para ${selectedChild.displayName}`}
+              description="Los datos de uso aparecerán aquí cuando el dispositivo de tu hijo reporte actividad." />
+          ) : (
             <>
-              <SectionHeader title="Solicitudes de desbloqueo" />
-              {unlockRequests.map((req) => (
-                <Card key={req.id} style={styles.card}>
-                  <View style={styles.unlockRow}>
-                    <MaterialIcons name="lock-open" size={20} color={colors.warning} />
-                    <View style={styles.unlockInfo}>
-                      <Text style={styles.unlockChild}>{req.childName}</Text>
-                      <Text style={styles.unlockReason}>{req.reason ?? 'Sin motivo especificado'}</Text>
-                      <Text style={styles.unlockTime}>{formatDate(req.createdAt)}</Text>
-                    </View>
-                    <View style={styles.unlockActions}>
-                      <Pressable
-                        style={({ pressed }) => [styles.unlockBtn, styles.unlockApprove, pressed && styles.unlockBtnPressed]}
-                        onPress={() => handleResolveRequest(req.id, 'approved')}
-                      >
-                        <MaterialIcons name="check" size={18} color="#fff" />
-                      </Pressable>
-                      <Pressable
-                        style={({ pressed }) => [styles.unlockBtn, styles.unlockDeny, pressed && styles.unlockBtnPressed]}
-                        onPress={() => handleResolveRequest(req.id, 'denied')}
-                      >
-                        <MaterialIcons name="close" size={18} color="#fff" />
-                      </Pressable>
-                    </View>
-                  </View>
-                </Card>
-              ))}
-            </>
-          )}
-        </>
-      )}
-
-      {/* ── Usage History Bar Chart ── */}
-      {weeklyBars.length > 0 && (
-        <>
-          <Text style={styles.sectionLabel}>Historial de uso (7 días)</Text>
-          <Card style={styles.card}>
-            <View style={styles.historyChart}>
-              {weeklyBars.map((bar) => (
-                <View key={bar.date} style={styles.historyBarColumn}>
-                  <Text style={styles.historyBarValue}>
-                    {bar.minutes > 0 ? `${bar.minutes}m` : ''}
-                  </Text>
-                  <View
-                    style={[
-                      styles.historyBar,
-                      {
-                        height: Math.max((bar.minutes / maxMinutes) * HISTORY_CHART_HEIGHT, 4),
-                        backgroundColor: bar.color,
-                      },
-                    ]}
+              {selectedUsage.length > 0 && (
+                <>
+                  <SectionHeader title={`Uso de ${selectedChild.displayName}`} />
+                  <WeeklyChart
+                    childSummaries={childSummaries}
+                    weeklyBars={weeklyBars}
+                    maxMinutes={maxMinutes}
                   />
-                  <Text style={styles.historyBarLabel}>{getDayLetter(bar.date)}</Text>
+                </>
+              )}
+
+              {/* ── App usage breakdown (hoy, real) ── */}
+              <SectionHeader title="Uso por app (hoy)" />
+              <Card style={styles.card}>
+                {packageLoading ? (
+                  <Text style={styles.mutedText}>Cargando...</Text>
+                ) : !packageUsage || packageUsage.packageUsages.length === 0 ? (
+                  <Text style={styles.mutedText}>Sin datos de uso por app para hoy.</Text>
+                ) : (
+                  packageUsage.packageUsages.map((app, i) => (
+                    <View key={app.packageName} style={[styles.appRow, i < packageUsage.packageUsages.length - 1 && styles.appBorder]}>
+                      <View style={[styles.appDot, { backgroundColor: getBarColor(app.minutes, colors) }]} />
+                      <Text style={styles.appName} numberOfLines={1}>{app.packageName}</Text>
+                      <View style={styles.appBarBg}>
+                        <View style={[styles.appBarFill, { width: `${(app.minutes / maxPackageMinutes) * 100}%` }]} />
+                      </View>
+                      <Text style={styles.appMinutes}>{app.minutes}min</Text>
+                    </View>
+                  ))
+                )}
+              </Card>
+
+              {selectedAlerts.length > 0 && (
+                <>
+                  <SectionHeader title={tr('noe.activity.recentAlerts')} />
+                  {selectedAlerts.map((alert) => (
+                    <Card key={alert.id} style={styles.card}>
+                      <View style={styles.alertRow}>
+                        <Text style={styles.alertIcon}>{getAlertIcon(alert.type)}</Text>
+                        <View style={styles.alertInfo}>
+                          <Text style={styles.alertChild}>{alert.childName}</Text>
+                          <Text style={styles.alertMessage}>{alert.message}</Text>
+                        </View>
+                        <Text style={styles.alertTime}>{formatDate(alert.timestamp)}</Text>
+                      </View>
+                    </Card>
+                  ))}
+                </>
+              )}
+
+              {/* ── Unlock requests ── */}
+              {selectedUnlockRequests.length > 0 && (
+                <>
+                  <SectionHeader title="Solicitudes de desbloqueo" />
+                  {selectedUnlockRequests.map((req) => (
+                    <Card key={req.id} style={styles.card}>
+                      <View style={styles.unlockRow}>
+                        <MaterialIcons name="lock-open" size={20} color={colors.warning} />
+                        <View style={styles.unlockInfo}>
+                          <Text style={styles.unlockChild}>{req.childName}</Text>
+                          <Text style={styles.unlockReason}>{req.reason ?? 'Sin motivo especificado'}</Text>
+                          <Text style={styles.unlockTime}>{formatDate(req.createdAt)}</Text>
+                        </View>
+                        <View style={styles.unlockActions}>
+                          <Pressable
+                            style={({ pressed }) => [styles.unlockBtn, styles.unlockApprove, pressed && styles.unlockBtnPressed]}
+                            onPress={() => handleResolveRequest(req.id, 'approved')}
+                          >
+                            <MaterialIcons name="check" size={18} color="#fff" />
+                          </Pressable>
+                          <Pressable
+                            style={({ pressed }) => [styles.unlockBtn, styles.unlockDeny, pressed && styles.unlockBtnPressed]}
+                            onPress={() => handleResolveRequest(req.id, 'denied')}
+                          >
+                            <MaterialIcons name="close" size={18} color="#fff" />
+                          </Pressable>
+                        </View>
+                      </View>
+                    </Card>
+                  ))}
+                </>
+              )}
+            </>
+          )}
+
+          {/* ── Usage History Bar Chart ── */}
+          {weeklyBars.length > 0 && (
+            <>
+              <Text style={styles.sectionLabel}>Historial de uso (7 días)</Text>
+              <Card style={styles.card}>
+                <View style={styles.historyChart}>
+                  {weeklyBars.map((bar) => (
+                    <View key={bar.date} style={styles.historyBarColumn}>
+                      <Text style={styles.historyBarValue}>
+                        {bar.minutes > 0 ? `${bar.minutes}m` : ''}
+                      </Text>
+                      <View
+                        style={[
+                          styles.historyBar,
+                          {
+                            height: Math.max((bar.minutes / maxMinutes) * HISTORY_CHART_HEIGHT, 4),
+                            backgroundColor: bar.color,
+                          },
+                        ]}
+                      />
+                      <Text style={styles.historyBarLabel}>{getDayLetter(bar.date)}</Text>
+                    </View>
+                  ))}
                 </View>
-              ))}
-            </View>
-          </Card>
+              </Card>
+            </>
+          )}
         </>
       )}
     </ScrollView>
@@ -293,6 +373,11 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   liveDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: colors.success },
   liveText: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.success },
   card: { ...shadows.sm },
+  selectRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
+  selectName: { flex: 1, fontSize: typography.fontSizes.subtitle, fontWeight: typography.fontWeights.semibold, color: colors.text },
+  childChip: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, alignSelf: 'flex-start', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primary, borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, marginBottom: spacing.xs },
+  childChipText: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.primary },
+  mutedText: { fontSize: typography.fontSizes.caption, color: colors.textMuted, lineHeight: 20 },
   alertRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   alertIcon: { fontSize: 20 },
   alertInfo: { flex: 1 },
@@ -302,7 +387,7 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   appRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm },
   appBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   appDot: { width: 10, height: 10, borderRadius: 5 },
-  appName: { width: 80, fontSize: typography.fontSizes.caption, color: colors.text, fontWeight: typography.fontWeights.medium },
+  appName: { width: 110, fontSize: typography.fontSizes.caption, color: colors.text, fontWeight: typography.fontWeights.medium },
   appBarBg: { flex: 1, height: 8, backgroundColor: colors.borderLight, borderRadius: radius.full, overflow: 'hidden' },
   appBarFill: { height: '100%', backgroundColor: colors.primary, borderRadius: radius.full },
   appMinutes: { width: 45, textAlign: 'right', fontSize: typography.fontSizes.caption, color: colors.textMuted, fontWeight: typography.fontWeights.medium },

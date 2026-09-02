@@ -16,7 +16,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { studyModeService, type StudySchedule } from '@/features/study-mode/services/study-mode-service';
-import { Card, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 type StudyDay = { enabled: boolean; start: string; end: string };
 type StudyScheduleState = Record<string, StudyDay>;

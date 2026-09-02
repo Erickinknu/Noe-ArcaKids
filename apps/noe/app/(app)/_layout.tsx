@@ -1,15 +1,17 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Redirect, Tabs } from 'expo-router';
-import { StyleSheet, View, type ColorValue } from 'react-native';
+import { StyleSheet, Text, TextInput, View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useTheme, typography, spacing, type ThemeColors } from '@noe-arcakids/shared';
+import { useTheme, typography, spacing, radius, type ThemeColors } from '@noe-arcakids/shared';
 
 import { useAuthStore } from '@/stores/auth-store';
 import { ROUTES } from '@/constants';
+import { pinService } from '@/features/pin/services/pin-service';
 
 const TAB_BAR_BASE_HEIGHT = 56;
+const PIN_LENGTH = 4;
 
 export default function AppLayout() {
   const { t: tr } = useTranslation();
@@ -17,6 +19,28 @@ export default function AppLayout() {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const status = useAuthStore((state) => state.status);
   const insets = useSafeAreaInsets();
+  const [lockOnOpen, setLockOnOpen] = useState<boolean | null>(null);
+  const [unlocked, setUnlocked] = useState(false);
+  const [pinInput, setPinInput] = useState('');
+  const [pinError, setPinError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const [lock, enabled] = await Promise.all([
+          pinService.isLockOnOpenEnabled(),
+          pinService.isEnabled(),
+        ]);
+        if (mounted) setLockOnOpen(lock && enabled);
+      } catch {
+        if (mounted) setLockOnOpen(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     console.log('[AppLayout] Rendered with status:', status);
@@ -28,6 +52,41 @@ export default function AppLayout() {
 
   if (status === 'initializing') {
     return null;
+  }
+
+  if (lockOnOpen && !unlocked) {
+    return (
+      <View style={[styles.pinGateWrap, { paddingTop: insets.top }]}>
+        <MaterialIcons name="lock" size={48} color={colors.primary} />
+        <Text style={styles.pinGateTitle}>NOE bloqueada</Text>
+        <Text style={styles.pinGateSubtitle}>Ingresa tu PIN para abrir la app</Text>
+        <TextInput
+          style={styles.pinGateInput}
+          value={pinInput}
+          onChangeText={async (text) => {
+            const clean = text.replace(/\D/g, '').slice(0, PIN_LENGTH);
+            setPinInput(clean);
+            setPinError(null);
+            if (clean.length === PIN_LENGTH) {
+              const ok = await pinService.verifyPin(clean);
+              if (ok) {
+                setUnlocked(true);
+              } else {
+                setPinError('PIN incorrecto');
+                setPinInput('');
+              }
+            }
+          }}
+          keyboardType="number-pad"
+          maxLength={PIN_LENGTH}
+          secureTextEntry
+          autoFocus
+          placeholder="••••"
+          placeholderTextColor={colors.textMuted}
+        />
+        {pinError ? <Text style={styles.pinGateError}>{pinError}</Text> : null}
+      </View>
+    );
   }
 
   return (
@@ -177,5 +236,41 @@ const makeStyles = (colors: ThemeColors) =>
   },
   homeIconWrapActive: {
     backgroundColor: colors.primary,
+  },
+  pinGateWrap: {
+    flex: 1,
+    backgroundColor: colors.surface,
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: spacing.xl,
+    gap: spacing.md,
+  },
+  pinGateTitle: {
+    fontSize: typography.fontSizes.heading,
+    fontWeight: typography.fontWeights.bold,
+    color: colors.text,
+  },
+  pinGateSubtitle: {
+    fontSize: typography.fontSizes.body,
+    color: colors.textMuted,
+    textAlign: 'center',
+  },
+  pinGateInput: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    fontSize: 24,
+    fontWeight: typography.fontWeights.bold,
+    color: colors.text,
+    textAlign: 'center',
+    letterSpacing: 12,
+    backgroundColor: colors.background,
+    width: 200,
+    marginTop: spacing.sm,
+  },
+  pinGateError: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.danger,
   },
 });

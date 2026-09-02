@@ -7,6 +7,19 @@ export interface DailyUsage {
   minutes: number;
 }
 
+export interface PackageUsage {
+  packageName: string;
+  minutes: number;
+  appLabel?: string;
+}
+
+export interface ChildUsageSummary {
+  childId: string;
+  childName: string;
+  packageUsages: PackageUsage[];
+  totalMinutes: number;
+}
+
 function localDateKey(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -60,6 +73,55 @@ export const activityService = {
     }));
   },
 
+  async getChildUsageByPackage(childId: string, days: number = 1): Promise<ChildUsageSummary> {
+    const client = requireSupabaseClient();
+
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    const startDateStr = localDateKey(startDate);
+
+    const { data, error } = await client
+      .from('usage_reports')
+      .select('package_name, minutes, app_label')
+      .eq('child_id', childId)
+      .gte('report_date', startDateStr);
+
+    if (error) throw error;
+
+    const byPackage = new Map<string, { minutes: number; appLabel?: string }>();
+    for (const row of data ?? []) {
+      const pkg = (row as { package_name?: string | null }).package_name ?? 'Otras apps';
+      if (!pkg || pkg.trim().length === 0) continue;
+      const entry = byPackage.get(pkg) ?? { minutes: 0 };
+      entry.minutes += Number(row.minutes) || 0;
+      if (row.app_label && entry.appLabel === undefined) entry.appLabel = row.app_label;
+      byPackage.set(pkg, entry);
+    }
+
+    const packageUsages = Array.from(byPackage.entries())
+      .map(([packageName, { minutes, appLabel }]) => ({
+        packageName,
+        minutes,
+        appLabel: appLabel ?? undefined,
+      }))
+      .filter((entry) => entry.minutes > 0)
+      .sort((a, b) => b.minutes - a.minutes);
+
+    // Also get child name
+    const { data: child } = await client
+      .from('children')
+      .select('display_name')
+      .eq('id', childId)
+      .single();
+
+    return {
+      childId,
+      childName: child?.display_name ?? 'Hijo',
+      packageUsages,
+      totalMinutes: packageUsages.reduce((sum, u) => sum + u.minutes, 0),
+    };
+  },
+
   async getRecentAlerts(): Promise<AlertItem[]> {
     const client = requireSupabaseClient();
 
@@ -94,6 +156,7 @@ export const activityService = {
     const alerts: AlertItem[] = (blockedApps ?? []).map((ba) => ({
       id: ba.created_at + ba.child_id,
       type: 'block' as const,
+      childId: ba.child_id,
       childName: childNameMap.get(ba.child_id) ?? 'Hijo',
       message: `${ba.app_label} fue bloqueado`,
       timestamp: ba.created_at,
@@ -106,6 +169,7 @@ export const activityService = {
 export interface AlertItem {
   id: string;
   type: 'block' | 'time' | 'location';
+  childId: string;
   childName: string;
   message: string;
   timestamp: string;

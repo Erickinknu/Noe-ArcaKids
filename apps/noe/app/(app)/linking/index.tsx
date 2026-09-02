@@ -11,9 +11,8 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
 import { linkingService, type LinkingMode, DEVICE_ADMIN_COMPONENT_SHORT } from '@/features/linking/services/linking-service';
-import type { ProvisioningPayload } from '@noe-arcakids/types';
+import type { ChildProfile, ProvisioningPayload } from '@noe-arcakids/types';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import type { ChildProfile } from '@noe-arcakids/types';
 import { Card, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 interface FamilyWithChildren {

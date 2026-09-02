@@ -6,7 +6,6 @@ import {
   View,
   Pressable,
   TextInput,
-  Alert,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -158,8 +157,8 @@ export default function PinScreen() {
           {mode === 'verify-old'
             ? 'Ingresa el PIN actual para poder cambiarlo.'
             : mode === 'create-new'
-            ? 'Ingresa el nuevo PIN que usarás para desbloquear el teléfono del niño.'
-            : 'El código PIN se utiliza para desbloquear el teléfono del niño. Solo puede ser modificado desde NOE (la app del padre).'}
+            ? 'Ingresa el nuevo PIN que usarás para desbloquear NOE.'
+            : 'El código PIN protege el acceso a NOE (la app del padre). Úsalo para bloquear la apertura de la app.'}
         </Text>
 
         {mode === 'verify-old' && (
@@ -247,8 +246,8 @@ export default function PinScreen() {
       </Card>
 
       <Text style={styles.hint}>
-        Vinculado directamente a ArcaKids. El PIN se sincroniza con el dispositivo
-        del niño automáticamente.
+        Tu PIN se guarda de forma segura en este dispositivo. Puedes activar
+        “Bloqueo con PIN al abrir NOE” desde Configuración de la app.
       </Text>
     </ScrollView>
   );

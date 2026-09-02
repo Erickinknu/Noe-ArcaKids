@@ -7,7 +7,6 @@ import * as SplashScreen from 'expo-splash-screen';
 import { initI18n } from '@/i18n';
 import { useDevicePoller } from '@/hooks/use-device-poller';
 import { ThemeProvider, useTheme, networkService, ErrorBoundary } from '@noe-arcakids/shared';
-import { captureException, captureMessage } from '@/lib/sentry';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 

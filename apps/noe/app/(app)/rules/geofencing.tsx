@@ -8,7 +8,6 @@ import {
   TextInput,
   Alert,
   Switch,
-  ActivityIndicator,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -65,7 +64,7 @@ export default function GeofencingScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [formChildId]);
 
   useEffect(() => {
     let cancelled = false;
