@@ -107,14 +107,14 @@ jobs:
           GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
 
       - name: Upload NOE APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: noe-debug-apk
           path: apps/noe/android/app/build/outputs/apk/debug/app-debug.apk
 
       - name: Upload ARCA KIDS APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: always()
         with:
           name: arcakids-debug-apk
