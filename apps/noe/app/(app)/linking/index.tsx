@@ -1,7 +1,10 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+
+import { ROUTES } from '@/constants';
 
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
@@ -22,6 +25,7 @@ interface FamilyWithChildren {
 
 export default function LinkingScreen() {
   const { t: tr } = useTranslation();
+  const router = useRouter();
   const screenPadding = useScreenPadding();
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
@@ -131,6 +135,10 @@ export default function LinkingScreen() {
           <EmptyState
             icon="👨‍👩‍👧"
             title={tr('noe.linking.noChildren')}
+            action={{
+              label: tr('noe.linking.goToChildren'),
+              onPress: () => router.push(ROUTES.children as any),
+            }}
           />
         ) : (
           <View style={styles.childList}>

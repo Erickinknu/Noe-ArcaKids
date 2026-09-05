@@ -5,6 +5,19 @@ All notable changes to the `noe-arcakids` monorepo will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-09-05
+
+### Added
+- **NOE vinculación accesible**: tarjeta **"Vincular dispositivo"** en la sección Familia (tab Otros)
+  y tarjeta **"Vincular un dispositivo"** en el Dashboard (Inicio) que navegan a la pantalla de
+  vinculación (`/linking`) con código de 8 caracteres, QR de provisioning (Device Owner) y vencimiento.
+- **NOE flujo sin hijos**: el `EmptyState` de la pantalla de vinculación gana el botón
+  "Ir a la sección Hijos" (`noe.linking.goToChildren`, es/en).
+
+### Changed
+- **Versión 1.1.0 (versionCode 2)** en NOE y ARCA KIDS: `package.json`, `app.config.ts`,
+  `android/app/build.gradle`, `APP_VERSION` del monorepo y este changelog.
+
 ## [1.0.0] - 2026-09-04
 
 ### Added

@@ -198,6 +198,7 @@ export const en = {
       chooseChild: 'Choose a child',
       noChildren: 'No children yet — add one from the Children screen first.',
       generateCode: 'Generate code for {{name}}',
+      goToChildren: 'Go to the Children section',
       codeFor: 'Code for {{name}}',
       expiresAt: 'Enter it in ARCA KIDS or scan it. Expires at {{time}}.',
       loading: 'Loading your children...',

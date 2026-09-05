@@ -201,6 +201,7 @@ export const es = {
       chooseChild: 'Elige un hijo',
       noChildren:
         'Aún no hay hijos: agrega uno desde la pantalla de Hijos primero.',
+      goToChildren: 'Ir a la sección Hijos',
       generateCode: 'Generar código para {{name}}',
       codeFor: 'Código para {{name}}',
       expiresAt:

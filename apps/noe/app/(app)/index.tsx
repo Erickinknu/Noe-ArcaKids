@@ -307,6 +307,32 @@ export default function DashboardScreen() {
           ))}
         </View>
 
+        {/* ── Vincular dispositivo ── */}
+        <Pressable
+          accessibilityRole="button"
+          style={({ pressed }) => [
+            styles.linkDeviceCard,
+            pressed && styles.quickActionPressed,
+            data.children.length === 0 && styles.linkDeviceCardDisabled,
+          ]}
+          onPress={
+            data.children.length === 0
+              ? undefined
+              : () => router.push(ROUTES.linking as any)
+          }
+        >
+          <View style={[styles.linkDeviceIcon, { backgroundColor: colors.primary + '18' }]}>
+            <MaterialIcons name="link" size={20} color={colors.primary} />
+          </View>
+          <View style={styles.linkDeviceInfo}>
+            <Text style={styles.linkDeviceTitle}>Vincular un dispositivo</Text>
+            <Text style={styles.linkDeviceDesc}>
+              Genera el código y QR para conectar la app ARCA KIDS de tu hijo.
+            </Text>
+          </View>
+          <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
+        </Pressable>
+
         {/* ── Resumen del día ── */}
         <Card style={styles.daySummaryCard}>
           <View style={styles.daySummaryHeader}>
@@ -875,6 +901,41 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     backgroundColor: colors.primaryLight,
   },
   quickActionDisabled: {
+    opacity: 0.4,
+  },
+  linkDeviceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    ...shadows.sm,
+  },
+  linkDeviceIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  linkDeviceInfo: {
+    flex: 1,
+  },
+  linkDeviceTitle: {
+    fontSize: typography.fontSizes.body,
+    fontWeight: typography.fontWeights.semibold,
+    color: colors.text,
+  },
+  linkDeviceDesc: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+    lineHeight: 16,
+  },
+  linkDeviceCardDisabled: {
     opacity: 0.4,
   },
   quickActionIcon: {

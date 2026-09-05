@@ -94,6 +94,24 @@ export default function FamiliaScreen() {
         </Button>
       </Card>
 
+      {/* Vincular dispositivo */}
+      <Card>
+        <View style={styles.linkRow}>
+          <View style={[styles.linkIconBox, { backgroundColor: colors.primaryLight }]}>
+            <MaterialIcons name="link" size={24} color={colors.primary} />
+          </View>
+          <View style={styles.linkInfo}>
+            <Text style={styles.linkTitle}>Vincular dispositivo</Text>
+            <Text style={styles.linkDesc}>
+              Genera un código y QR para conectar la app ARCA KIDS de tu hijo con esta familia.
+            </Text>
+          </View>
+        </View>
+        <Button onPress={() => router.push('/(app)/linking')} style={{ marginTop: spacing.md }}>
+          Vincular dispositivo
+        </Button>
+      </Card>
+
       {/* Children list */}
       <SectionHeader title="Niños" />
       <Card>
@@ -183,6 +201,32 @@ const makeStyles = (colors: ThemeColors) =>
     color: colors.textMuted,
     lineHeight: 18,
     marginBottom: spacing.sm,
+  },
+  linkRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
+  linkIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  linkInfo: {
+    flex: 1,
+  },
+  linkTitle: {
+    fontSize: typography.fontSizes.body,
+    fontWeight: typography.fontWeights.semibold,
+    color: colors.text,
+  },
+  linkDesc: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
+    lineHeight: 18,
   },
   inviteRow: {
     flexDirection: 'row',
