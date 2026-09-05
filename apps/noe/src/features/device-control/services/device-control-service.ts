@@ -1,7 +1,7 @@
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
 import { DatabaseError } from '@noe-arcakids/shared';
 
-import type { DeviceCommand, DevicePolicy, DeviceStatus } from '@noe-arcakids/types';
+import type { DeviceCommand, DevicePolicy, DeviceStatus, InstalledApp } from '@noe-arcakids/types';
 
 export interface DeviceState {
   childId: string;
@@ -127,6 +127,70 @@ export const deviceControlService = {
     return deviceControlService.sendCommand(deviceUuid, 'REQUEST_LOCATION');
   },
 
+  // ── FASE 11: control total desde la raíz del dispositivo ──
+
+  async lockTask(deviceUuid: string, enabled: boolean): Promise<string> {
+    return deviceControlService.sendCommand(deviceUuid, enabled ? 'LOCK_TASK' : 'UNLOCK_TASK', { enabled });
+  },
+
+  async setScreenCapture(deviceUuid: string, disabled: boolean): Promise<string> {
+    return deviceControlService.sendCommand(deviceUuid, 'SCREEN_CAPTURE', { disabled });
+  },
+
+  async setCamera(deviceUuid: string, disabled: boolean): Promise<string> {
+    return deviceControlService.sendCommand(deviceUuid, 'CAMERA', { disabled });
+  },
+
+  async hideApps(deviceUuid: string, packageNames: string[]): Promise<string> {
+    return deviceControlService.sendCommand(deviceUuid, 'HIDE_APPS', { packages: packageNames });
+  },
+
+  async unhideApps(deviceUuid: string, packageNames: string[]): Promise<string> {
+    return deviceControlService.sendCommand(deviceUuid, 'UNHIDE_APPS', { packages: packageNames });
+  },
+
+  async lockUninstall(
+    deviceUuid: string,
+    packageNames: string[],
+    locked: boolean,
+    restrictions?: Record<string, boolean>
+  ): Promise<string> {
+    return deviceControlService.sendCommand(deviceUuid, 'UNINSTALL_LOCK', {
+      packages: packageNames,
+      locked,
+      restrictions,
+    });
+  },
+
+  async forceStop(deviceUuid: string, packageNames: string[]): Promise<string> {
+    return deviceControlService.sendCommand(deviceUuid, 'FORCE_STOP', { packages: packageNames });
+  },
+
+  async wipeDevice(deviceUuid: string): Promise<string> {
+    return deviceControlService.sendCommand(deviceUuid, 'WIPE_DEVICE');
+  },
+
+  async listApps(deviceUuid: string): Promise<string> {
+    return deviceControlService.sendCommand(deviceUuid, 'LIST_APPS');
+  },
+
+  async getDeviceApps(deviceUuid: string): Promise<InstalledApp[]> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client
+      .from('device_status')
+      .select('apps')
+      .eq('device_uuid', deviceUuid)
+      .maybeSingle();
+    if (error) throw new DatabaseError(error.message);
+    const apps = (data as { apps?: unknown } | null)?.apps;
+    if (!Array.isArray(apps)) return [];
+    return (apps as { packageName?: string; label?: string }[]).flatMap((a) =>
+      typeof a.packageName === 'string'
+        ? [{ packageName: a.packageName, label: typeof a.label === 'string' ? a.label : a.packageName }]
+        : []
+    );
+  },
+
   async syncPolicy(
     deviceUuid: string,
     policy: {
@@ -220,6 +284,7 @@ export const deviceControlService = {
       longitude: (r.longitude as number | null) ?? null,
       currentApp: (r.current_app as string | null) ?? null,
       isLocked: Boolean(r.is_locked),
+      apps: Array.isArray(r.apps) ? (r.apps as InstalledApp[]) : null,
     };
   },
 };

@@ -6,6 +6,7 @@
  * Non-owner path falls back to EnforcementService overlay + parentalBridge.
  */
 
+import { locationModule } from '@/features/location/native/location-module';
 import { parentalBridge } from '@/features/parental/native/parental-bridge';
 
 import { deviceOwnerBridge } from '../native/device-owner-module';
@@ -105,8 +106,87 @@ export const deviceControlService = {
           break;
         }
         case 'REQUEST_LOCATION': {
-          // Best-effort: report via repository if location available; actual GPS fetch is handled by location hook
-          await deviceControlRepository.reportStatus(deviceUuid, { isLocked: false });
+          const reading = await locationModule.getCurrentLocation();
+          if (reading) {
+            await deviceControlRepository.reportStatus(deviceUuid, {
+              latitude: reading.latitude,
+              longitude: reading.longitude,
+              isLocked: false,
+            });
+          } else {
+            await deviceControlRepository.reportStatus(deviceUuid, { isLocked: false });
+          }
+          break;
+        }
+        case 'LOCK_TASK': {
+          const enabled = Boolean((cmd.payload ?? {}).enabled);
+          if (isOwner) {
+            if (enabled) await deviceOwnerBridge.startLockTask();
+            else await deviceOwnerBridge.stopLockTask();
+          }
+          break;
+        }
+        case 'SCREEN_CAPTURE': {
+          const disabled = Boolean((cmd.payload ?? {}).disabled);
+          if (isOwner) {
+            await deviceOwnerBridge.setScreenCaptureDisabled(disabled);
+          }
+          break;
+        }
+        case 'CAMERA': {
+          const disabled = Boolean((cmd.payload ?? {}).disabled);
+          if (isOwner) {
+            await deviceOwnerBridge.setCameraDisabled(disabled);
+          }
+          break;
+        }
+        case 'HIDE_APPS': {
+          const packages = extractPackageList(cmd.payload);
+          if (isOwner && packages.length > 0) {
+            await deviceOwnerBridge.setApplicationHidden(packages, true);
+          }
+          break;
+        }
+        case 'UNHIDE_APPS': {
+          const packages = extractPackageList(cmd.payload);
+          if (isOwner && packages.length > 0) {
+            await deviceOwnerBridge.setApplicationHidden(packages, false);
+          }
+          break;
+        }
+        case 'UNINSTALL_LOCK': {
+          const payloadN = (cmd.payload ?? {}) as {
+            packages?: string[];
+            locked?: boolean;
+            restrictions?: Record<string, boolean>;
+          };
+          if (isOwner) {
+            if (Array.isArray(payloadN.packages) && payloadN.packages.length > 0) {
+              await deviceOwnerBridge.setUninstallBlocked(payloadN.packages, Boolean(payloadN.locked));
+            }
+            const restrictions = payloadN.restrictions ?? {};
+            for (const [restriction, enabled] of Object.entries(restrictions)) {
+              await deviceOwnerBridge.setUserRestriction(restriction, Boolean(enabled));
+            }
+          }
+          break;
+        }
+        case 'FORCE_STOP': {
+          const packages = extractPackageList(cmd.payload);
+          if (isOwner && packages.length > 0) {
+            await deviceOwnerBridge.forceStopPackages(packages);
+          }
+          break;
+        }
+        case 'WIPE_DEVICE': {
+          if (isOwner) {
+            await deviceOwnerBridge.wipeData(0);
+          }
+          break;
+        }
+        case 'LIST_APPS': {
+          const apps = await deviceOwnerBridge.getInstalledApps();
+          await deviceControlRepository.reportApps(deviceUuid, apps);
           break;
         }
         default:

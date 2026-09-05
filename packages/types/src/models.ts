@@ -81,7 +81,22 @@ export type DeviceCommandType =
   | 'BLOCK_APPS'
   | 'UNBLOCK_APPS'
   | 'SET_POLICY'
-  | 'REQUEST_LOCATION';
+  | 'REQUEST_LOCATION'
+  | 'LOCK_TASK'
+  | 'UNLOCK_TASK'
+  | 'SCREEN_CAPTURE'
+  | 'CAMERA'
+  | 'HIDE_APPS'
+  | 'UNHIDE_APPS'
+  | 'UNINSTALL_LOCK'
+  | 'FORCE_STOP'
+  | 'WIPE_DEVICE'
+  | 'LIST_APPS';
+
+export interface InstalledApp {
+  packageName: string;
+  label: string;
+}
 
 export type DeviceCommandStatus = 'pending' | 'executed' | 'failed' | 'expired';
 
@@ -120,6 +135,7 @@ export interface DeviceStatus {
   longitude: number | null;
   currentApp: string | null;
   isLocked: boolean;
+  apps?: InstalledApp[] | null;
 }
 
 export interface ProvisioningPayload {

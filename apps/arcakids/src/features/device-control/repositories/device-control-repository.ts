@@ -69,4 +69,13 @@ export const deviceControlRepository = {
     });
     if (error) throw new DatabaseError(error.message);
   },
+
+  async reportApps(deviceUuid: string, apps: unknown[]): Promise<void> {
+    const client = requireSupabaseClient();
+    const { error } = await client.rpc('report_device_apps', {
+      p_device_uuid: deviceUuid,
+      p_apps: apps,
+    });
+    if (error) throw new DatabaseError(error.message);
+  },
 };

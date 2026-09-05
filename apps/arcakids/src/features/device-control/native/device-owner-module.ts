@@ -1,6 +1,6 @@
 import { NativeModules, Platform } from 'react-native';
 
-import type { DeviceOwnerState } from '@noe-arcakids/types';
+import type { DeviceOwnerState, InstalledApp } from '@noe-arcakids/types';
 
 interface NativeDeviceOwner {
   isDeviceOwner(): Promise<boolean>;
@@ -11,6 +11,14 @@ interface NativeDeviceOwner {
   setPackagesSuspended(packageNamesJson: string, suspended: boolean): Promise<string[]>;
   setUserRestriction(restriction: string, enabled: boolean): Promise<boolean>;
   wipeData(flags: number): Promise<boolean>;
+  startLockTask(): Promise<boolean>;
+  stopLockTask(): Promise<boolean>;
+  setScreenCaptureDisabled(disabled: boolean): Promise<boolean>;
+  setCameraDisabled(disabled: boolean): Promise<boolean>;
+  setApplicationHidden(packageNamesJson: string, hidden: boolean): Promise<string[]>;
+  setUninstallBlocked(packageNamesJson: string, blocked: boolean): Promise<boolean>;
+  forceStopPackages(packageNamesJson: string): Promise<boolean>;
+  getInstalledApps(): Promise<InstalledApp[]>;
   hasSystemAlertWindowPermission(): Promise<boolean>;
   openSystemAlertWindowSettings(): Promise<null>;
   getProvisioningExtras(): Promise<{
@@ -75,6 +83,46 @@ export const deviceOwnerBridge = {
   async wipeData(flags = 0): Promise<boolean> {
     assertNative('wipeData');
     return native!.wipeData(flags);
+  },
+
+  async startLockTask(): Promise<boolean> {
+    assertNative('startLockTask');
+    return native!.startLockTask();
+  },
+
+  async stopLockTask(): Promise<boolean> {
+    assertNative('stopLockTask');
+    return native!.stopLockTask();
+  },
+
+  async setScreenCaptureDisabled(disabled: boolean): Promise<boolean> {
+    assertNative('setScreenCaptureDisabled');
+    return native!.setScreenCaptureDisabled(disabled);
+  },
+
+  async setCameraDisabled(disabled: boolean): Promise<boolean> {
+    assertNative('setCameraDisabled');
+    return native!.setCameraDisabled(disabled);
+  },
+
+  async setApplicationHidden(packageNames: string[], hidden: boolean): Promise<string[]> {
+    assertNative('setApplicationHidden');
+    return native!.setApplicationHidden(JSON.stringify(packageNames), hidden);
+  },
+
+  async setUninstallBlocked(packageNames: string[], blocked: boolean): Promise<boolean> {
+    assertNative('setUninstallBlocked');
+    return native!.setUninstallBlocked(JSON.stringify(packageNames), blocked);
+  },
+
+  async forceStopPackages(packageNames: string[]): Promise<boolean> {
+    assertNative('forceStopPackages');
+    return native!.forceStopPackages(JSON.stringify(packageNames));
+  },
+
+  async getInstalledApps(): Promise<InstalledApp[]> {
+    if (!native) return [];
+    return native.getInstalledApps();
   },
 
   async hasOverlayPermission(): Promise<boolean> {

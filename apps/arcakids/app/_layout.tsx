@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 
 import { initI18n } from '@/i18n';
 import { useDevicePoller } from '@/hooks/use-device-poller';
+import { startRemoteControl, stopRemoteControl } from '@/features/device-control/services/remote-control-runner';
 import { ThemeProvider, useTheme, networkService, ErrorBoundary } from '@noe-arcakids/shared';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -27,9 +28,11 @@ function RootNavigator() {
         }
       });
     networkService.start();
+    startRemoteControl();
     return () => {
       mounted = false;
       networkService.stop();
+      stopRemoteControl();
     };
   }, []);
 

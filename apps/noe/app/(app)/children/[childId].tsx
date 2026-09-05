@@ -15,6 +15,7 @@ import { deviceControlService } from '@/features/device-control/services/device-
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { Card, Input, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
+import type { InstalledApp } from '@noe-arcakids/types';
 
 const AVATARS = ['🐻', '🐰', '🐱', '🐶', '🦊', '🐼', '🦁', '🐸', '🐵', '🦋', '🌟', '🚀'];
 
@@ -47,7 +48,17 @@ export default function ChildDetailScreen() {
     latitude: number | null;
     longitude: number | null;
     isLocked: boolean;
+    apps: InstalledApp[] | null;
   } | null>(null);
+  const [toggles, setToggles] = useState<{
+    kiosk: boolean;
+    capture: boolean;
+    camera: boolean;
+    noUninstall: boolean;
+  }>({ kiosk: false, capture: false, camera: false, noUninstall: false });
+  const [selectedApps, setSelectedApps] = useState<Record<string, boolean>>({});
+
+  const apps = deviceStatus?.apps ?? [];
 
   const fetchChild = async (): Promise<ChildDetail> => {
     const { family } = await familyService.getMyFamily();
@@ -94,6 +105,7 @@ export default function ChildDetailScreen() {
           latitude: status?.latitude ?? null,
           longitude: status?.longitude ?? null,
           isLocked: status?.isLocked ?? false,
+          apps: status?.apps ?? null,
         });
       } else {
         // fallback to device_status by child_id
@@ -107,13 +119,14 @@ export default function ChildDetailScreen() {
             latitude: row.latitude as number | null,
             longitude: row.longitude as number | null,
             isLocked: Boolean(row.is_locked),
+            apps: Array.isArray(row.apps) ? (row.apps as InstalledApp[]) : null,
           });
         } else {
-          setDeviceStatus({ deviceUuid: null, lastSeen: null, battery: null, latitude: null, longitude: null, isLocked: false });
+          setDeviceStatus({ deviceUuid: null, lastSeen: null, battery: null, latitude: null, longitude: null, isLocked: false, apps: null });
         }
       }
     } catch {
-      setDeviceStatus({ deviceUuid: null, lastSeen: null, battery: null, latitude: null, longitude: null, isLocked: false });
+      setDeviceStatus({ deviceUuid: null, lastSeen: null, battery: null, latitude: null, longitude: null, isLocked: false, apps: null });
     }
   }, [childId]);
 
@@ -157,38 +170,143 @@ export default function ChildDetailScreen() {
     );
   }
 
-  async function runCommand(
-    kind: 'lock' | 'unlock' | 'location' | 'status'
-  ) {
+  type ControlAction =
+    | 'lock'
+    | 'unlock'
+    | 'location'
+    | 'status'
+    | 'kioskOn'
+    | 'kioskOff'
+    | 'captureOn'
+    | 'captureOff'
+    | 'cameraOn'
+    | 'cameraOff'
+    | 'uninstallLock'
+    | 'uninstallUnlock'
+    | 'apps'
+    | 'block'
+    | 'unblock'
+    | 'forceStop'
+    | 'hide'
+    | 'unhide'
+    | 'wipe';
+
+  async function runCommand(kind: ControlAction) {
     if (!deviceStatus?.deviceUuid) {
       setCommandFeedback(tr('noe.deviceControl.noDevice'));
       return;
     }
+    const uuid = deviceStatus.deviceUuid;
+    const selected = Object.entries(selectedApps)
+      .filter(([, sel]) => sel)
+      .map(([pkg]) => pkg);
+
     setCommandLoading(kind);
     setCommandFeedback(null);
     try {
-      if (kind === 'lock') {
-        await deviceControlService.lockDevice(deviceStatus.deviceUuid);
-      } else if (kind === 'unlock') {
-        await deviceControlService.unlockDevice(deviceStatus.deviceUuid);
-      } else if (kind === 'location') {
-        await deviceControlService.requestLocation(deviceStatus.deviceUuid);
-      } else if (kind === 'status') {
-        await reloadDevice();
+      switch (kind) {
+        case 'lock':
+          await deviceControlService.lockDevice(uuid);
+          break;
+        case 'unlock':
+          await deviceControlService.unlockDevice(uuid);
+          break;
+        case 'location':
+          await deviceControlService.requestLocation(uuid);
+          break;
+        case 'status':
+          await reloadDevice();
+          break;
+        case 'kioskOn':
+          await deviceControlService.lockTask(uuid, true);
+          setToggles((t) => ({ ...t, kiosk: true }));
+          break;
+        case 'kioskOff':
+          await deviceControlService.lockTask(uuid, false);
+          setToggles((t) => ({ ...t, kiosk: false }));
+          break;
+        case 'captureOn':
+          await deviceControlService.setScreenCapture(uuid, true);
+          setToggles((t) => ({ ...t, capture: true }));
+          break;
+        case 'captureOff':
+          await deviceControlService.setScreenCapture(uuid, false);
+          setToggles((t) => ({ ...t, capture: false }));
+          break;
+        case 'cameraOn':
+          await deviceControlService.setCamera(uuid, true);
+          setToggles((t) => ({ ...t, camera: true }));
+          break;
+        case 'cameraOff':
+          await deviceControlService.setCamera(uuid, false);
+          setToggles((t) => ({ ...t, camera: false }));
+          break;
+        case 'uninstallLock':
+          await deviceControlService.lockUninstall(uuid, [], true, {
+            DISALLOW_INSTALL_APPS: true,
+            DISALLOW_UNINSTALL_APPS: true,
+            DISALLOW_APPS_CONTROL: true,
+          });
+          setToggles((t) => ({ ...t, noUninstall: true }));
+          break;
+        case 'uninstallUnlock':
+          await deviceControlService.lockUninstall(uuid, [], false, {
+            DISALLOW_INSTALL_APPS: false,
+            DISALLOW_UNINSTALL_APPS: false,
+            DISALLOW_APPS_CONTROL: false,
+          });
+          setToggles((t) => ({ ...t, noUninstall: false }));
+          break;
+        case 'apps':
+          await deviceControlService.listApps(uuid);
+          break;
+        case 'block':
+          await deviceControlService.blockApps(uuid, selected);
+          break;
+        case 'unblock':
+          await deviceControlService.unblockApps(uuid, selected);
+          break;
+        case 'forceStop':
+          await deviceControlService.forceStop(uuid, selected);
+          break;
+        case 'hide':
+          await deviceControlService.hideApps(uuid, selected);
+          break;
+        case 'unhide':
+          await deviceControlService.unhideApps(uuid, selected);
+          break;
+        case 'wipe':
+          await deviceControlService.wipeDevice(uuid);
+          break;
       }
       setCommandFeedback(tr('noe.deviceControl.commandSent'));
-      if (kind === 'status') {
-        // reload already done
-      } else {
-        // refresh status after short delay
-        setTimeout(() => { void reloadDevice(); }, 1500);
-      }
+      setTimeout(() => { void reloadDevice(); }, kind === 'apps' || kind === 'status' ? 2500 : 1500);
     } catch (cause) {
       setCommandFeedback(`${tr('noe.deviceControl.commandFailed')}: ${errorMessage(cause)}`);
     } finally {
       setCommandLoading(null);
     }
   }
+
+  function confirmWipe() {
+    if (!deviceStatus?.deviceUuid) return;
+    Alert.alert(
+      tr('noe.deviceControl.wipeTitle'),
+      tr('noe.deviceControl.wipeMessage'),
+      [
+        { text: tr('common.cancel'), style: 'cancel' },
+        { text: tr('noe.deviceControl.wipeButton'), style: 'destructive', onPress: () => void runCommand('wipe') },
+      ],
+    );
+  }
+
+  const toggleControl = (kind: 'kioskOn' | 'kioskOff' | 'captureOn' | 'captureOff' | 'cameraOn' | 'cameraOff' | 'uninstallLock' | 'uninstallUnlock') =>
+    () => void runCommand(kind);
+
+  const toggleSelect = (pkg: string) =>
+    setSelectedApps((prev) => ({ ...prev, [pkg]: !prev[pkg] }));
+
+  const selectedCount = Object.values(selectedApps).filter(Boolean).length;
 
   if (loading) {
     return (
@@ -319,6 +437,117 @@ export default function ChildDetailScreen() {
         {commandFeedback ? <Text style={styles.feedback}>{commandFeedback}</Text> : null}
       </Card>
 
+      {/* ── FASE 11: control total desde la raíz ── */}
+      <Card style={styles.card}>
+        <SectionHeader title={tr('noe.deviceControl.rootControls')} />
+        <Text style={styles.subtitle}>{tr('noe.deviceControl.rootSubtitle')}</Text>
+
+        {!deviceStatus?.deviceUuid ? (
+          <Text style={styles.muted}>{tr('noe.deviceControl.noDevice')}</Text>
+        ) : (
+          <View style={styles.toggleGrid}>
+            <Pressable
+              style={[styles.chip, toggles.kiosk && styles.chipActive]}
+              onPress={toggleControl(toggles.kiosk ? 'kioskOff' : 'kioskOn')}
+            >
+              <MaterialIcons name="lock-outline" size={20} color={toggles.kiosk ? colors.onPrimary : colors.text} />
+              <Text style={[styles.chipText, toggles.kiosk && styles.chipTextActive]}>
+                {tr('noe.deviceControl.kiosk')}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.chip, toggles.capture && styles.chipActive]}
+              onPress={toggleControl(toggles.capture ? 'captureOff' : 'captureOn')}
+            >
+              <MaterialIcons name="screenshot-monitor" size={20} color={toggles.capture ? colors.onPrimary : colors.text} />
+              <Text style={[styles.chipText, toggles.capture && styles.chipTextActive]}>
+                {tr('noe.deviceControl.capture')}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.chip, toggles.camera && styles.chipActive]}
+              onPress={toggleControl(toggles.camera ? 'cameraOff' : 'cameraOn')}
+            >
+              <MaterialIcons name="photo-camera" size={20} color={toggles.camera ? colors.onPrimary : colors.text} />
+              <Text style={[styles.chipText, toggles.camera && styles.chipTextActive]}>
+                {tr('noe.deviceControl.camera')}
+              </Text>
+            </Pressable>
+            <Pressable
+              style={[styles.chip, toggles.noUninstall && styles.chipActive]}
+              onPress={toggleControl(toggles.noUninstall ? 'uninstallUnlock' : 'uninstallLock')}
+            >
+              <MaterialIcons name="remove-circle-outline" size={20} color={toggles.noUninstall ? colors.onPrimary : colors.text} />
+              <Text style={[styles.chipText, toggles.noUninstall && styles.chipTextActive]}>
+                {tr('noe.deviceControl.noUninstall')}
+              </Text>
+            </Pressable>
+          </View>
+        )}
+      </Card>
+
+      <Card style={styles.card}>
+        <SectionHeader title={tr('noe.deviceControl.appsTitle')} />
+        <Text style={styles.subtitle}>{tr('noe.deviceControl.appsSubtitle')}</Text>
+
+        {!deviceStatus?.deviceUuid ? (
+          <Text style={styles.muted}>{tr('noe.deviceControl.noDevice')}</Text>
+        ) : (
+          <View style={{ gap: spacing.sm }}>
+            <Button
+              variant="secondary"
+              onPress={() => runCommand('apps')}
+              loading={commandLoading === 'apps'}
+            >
+              {tr('noe.deviceControl.loadApps')}
+            </Button>
+
+            {apps.length === 0 ? (
+              <Text style={styles.muted}>{tr('noe.deviceControl.noApps')}</Text>
+            ) : (
+              <>
+                <View style={styles.appList}>
+                  {apps.map((app) => (
+                    <Pressable key={app.packageName} style={styles.appRow} onPress={() => toggleSelect(app.packageName)}>
+                      <MaterialIcons
+                        name={selectedApps[app.packageName] ? 'check-circle' : 'radio-button-unchecked'}
+                        size={22}
+                        color={colors.primary}
+                      />
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.appName}>{app.label}</Text>
+                        <Text style={styles.appPackage}>{app.packageName}</Text>
+                      </View>
+                    </Pressable>
+                  ))}
+                </View>
+
+                {selectedCount > 0 ? (
+                  <View style={styles.appActions}>
+                    <Button onPress={() => runCommand('block')} loading={commandLoading === 'block'}>
+                      {tr('noe.deviceControl.blockSelected', { n: selectedCount })}
+                    </Button>
+                    <Button variant="secondary" onPress={() => runCommand('unblock')} loading={commandLoading === 'unblock'}>
+                      {tr('noe.deviceControl.unblockSelected')}
+                    </Button>
+                    <Button variant="secondary" onPress={() => runCommand('forceStop')} loading={commandLoading === 'forceStop'}>
+                      {tr('noe.deviceControl.forceStopSelected')}
+                    </Button>
+                    <Button variant="secondary" onPress={() => runCommand('hide')} loading={commandLoading === 'hide'}>
+                      {tr('noe.deviceControl.hideSelected')}
+                    </Button>
+                  </View>
+                ) : null}
+              </>
+            )}
+          </View>
+        )}
+      </Card>
+
+      <Button variant="danger" onPress={confirmWipe} loading={commandLoading === 'wipe'} disabled={!deviceStatus?.deviceUuid}>
+        {tr('noe.deviceControl.wipeButton')}
+      </Button>
+
       <Button variant="danger" onPress={handleDelete}>
         {tr('noe.children.deleteChild')}
       </Button>
@@ -418,6 +647,60 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     color: colors.success,
   },
   controlGrid: {
+    gap: spacing.sm,
+  },
+  toggleGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  chip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  chipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  chipText: {
+    fontSize: typography.fontSizes.caption,
+    fontWeight: typography.fontWeights.medium,
+    color: colors.text,
+  },
+  chipTextActive: {
+    color: colors.onPrimary,
+  },
+  appList: {
+    gap: spacing.xs,
+  },
+  appRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  appName: {
+    fontSize: typography.fontSizes.body,
+    fontWeight: typography.fontWeights.medium,
+    color: colors.text,
+  },
+  appPackage: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+  },
+  appActions: {
     gap: spacing.sm,
   },
   feedback: {

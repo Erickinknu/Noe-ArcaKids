@@ -4,14 +4,27 @@ import type { DeviceCommand } from '@noe-arcakids/types';
 /**
  * Realtime command subscription for the child device.
  *
- * Filters by device_uuid on the device_commands table. The parent inserts a
- * row via enqueue_device_command / upsert_device_policy; Supabase Realtime
- * delivers it here. Fallback polling is available via getPendingCommands RPC.
+ * Listens to `device_command_events`, a broadcast-only table fed by a trigger
+ * on `device_commands`. The source table keeps RLS closed to `anon`; the
+ * broadcast table is grant-only (SELECT to anon) so `postgres_changes` can
+ * deliver INSERT events to the child app filtered by `device_uuid=eq.<uuid>`.
+ * Fallback: `getPendingCommands` RPC polling (see remote-control-runner).
  *
- * Handled commands: LOCK, UNLOCK, BLOCK_APPS, UNBLOCK_APPS, SET_POLICY, REQUEST_LOCATION
+ * Handled commands: LOCK, UNLOCK, BLOCK_APPS, UNBLOCK_APPS, SET_POLICY,
+ * REQUEST_LOCATION, LOCK_TASK, UNLOCK_TASK, SCREEN_CAPTURE, CAMERA,
+ * HIDE_APPS, UNHIDE_APPS, UNINSTALL_LOCK, FORCE_STOP, WIPE_DEVICE, LIST_APPS
  */
 
 export type CommandHandler = (command: DeviceCommand) => Promise<void> | void;
+
+interface BroadcastEventRow {
+  id: string;
+  device_uuid: string;
+  family_id: string | null;
+  command: string;
+  payload: Record<string, unknown> | null;
+  created_at: string;
+}
 
 export function subscribeToCommands(
   deviceUuid: string,
@@ -26,32 +39,21 @@ export function subscribeToCommands(
       {
         event: 'INSERT',
         schema: 'public',
-        table: 'device_commands',
+        table: 'device_command_events',
         filter: `device_uuid=eq.${deviceUuid}`,
       },
       (payload) => {
-        const row = payload.new as {
-          id: string;
-          device_uuid: string;
-          family_id: string;
-          child_id: string | null;
-          command: string;
-          payload: Record<string, unknown> | null;
-          status: string;
-          created_at: string;
-          executed_at: string | null;
-        };
-        if (row.status !== 'pending') return;
+        const row = payload.new as BroadcastEventRow;
         const cmd: DeviceCommand = {
           id: row.id,
           deviceUuid: row.device_uuid,
-          familyId: row.family_id,
-          childId: row.child_id,
+          familyId: row.family_id ?? '',
+          childId: null,
           command: row.command as DeviceCommand['command'],
           payload: row.payload,
-          status: row.status as DeviceCommand['status'],
+          status: 'pending',
           createdAt: row.created_at,
-          executedAt: row.executed_at,
+          executedAt: null,
         };
         void Promise.resolve(handler(cmd)).catch(() => undefined);
       }

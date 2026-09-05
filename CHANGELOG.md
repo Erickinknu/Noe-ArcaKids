@@ -5,6 +5,48 @@ All notable changes to the `noe-arcakids` monorepo will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-09-05
+
+### Added
+- **ARCA KIDS control total desde la raíz (Device Owner)**:
+  - Nuevos poderes DPM en el módulo nativo `DeviceOwner`: lock-task/kiosco
+    (`start/stopLockTask` + `setLockTaskPackages`), `setScreenCaptureDisabled`,
+    `setCameraDisabled`, `setApplicationHidden`, `setUninstallBlocked`,
+    `forceStopPackage` y `getInstalledApps`.
+  - Nuevos comandos remotos `NOE → ARCA KIDS`: `LOCK_TASK`, `UNLOCK_TASK`,
+    `SCREEN_CAPTURE`, `CAMERA`, `HIDE_APPS`, `UNHIDE_APPS`, `UNINSTALL_LOCK`,
+    `FORCE_STOP`, `WIPE_DEVICE` y `LIST_APPS` (catálogo extendido en
+    `device_commands` y en `enqueue_device_command`).
+  - El canal realtime ahora funciona de verdad: nueva tabla broadcast
+    `device_command_events` (sin RLS, grant-only SELECT a `anon`) alimentada por
+    un trigger sobre `device_commands`, con la suscripción `postgres_changes`
+    filtrada por `device_uuid`; antes el suscriptor `anon` no recibía eventos
+    porque `device_commands` mantiene RLS cerrada.
+  - `remote-control-runner`: suscripción realtime + polling de comandos
+    pendientes cada 20s + resync al volver a primer plano, con dedupe por id
+    de comando; arranca en `_layout` de ARCA KIDS.
+  - `REQUEST_LOCATION` deja de ser stub: obtiene GPS real (`locationModule`) y
+    lo reporta a `device_status`.
+  - `LIST_APPS`: el dispositivo reporta sus apps instaladas a `device_status.apps`.
+- **NOE panel "Controles de raíz"** en la ficha del hijo: toggles de modo kiosco,
+  bloqueo de capturas, bloqueo de cámara y bloqueo de instalar/desinstalar
+  (restricciones `DISALLOW_INSTALL_APPS`/`DISALLOW_UNINSTALL_APPS`), carga de la
+  lista de apps instaladas con selección múltiple (bloquear / desbloquear /
+  forzar cierre / ocultar) y botón "Borrar dispositivo" (wipe remoto) con
+  confirmación. `RUN_BORRAR` vía `enqueue_device_command` `'WIPE_DEVICE'`.
+
+### Changed
+- **Versión 1.2.0 (versionCode 3)** en NOE y ARCA KIDS: `package.json`,
+  `app.config.ts`, `android/app/build.gradle`, `APP_VERSION` del monorepo,
+  lockfile y este changelog.
+
+### Notes
+- Las funciones de raíz (`setScreenCaptureDisabled`, `setCameraDisabled`,
+  `setApplicationHidden`, kiosco, wipe, etc.) se ejecutan únicamente cuando
+  ARCA KIDS es **Device Owner** del dispositivo (provisionable desde NOE vía el
+  QR de provisioning). Sin Device Owner, los comandos de bloqueo/reglas siguen
+  funcionando vía `EnforcementService` (overlay + polling).
+
 ## [1.1.0] - 2026-09-05
 
 ### Added
