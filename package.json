@@ -1,8 +1,8 @@
 {
   "name": "noe-arcakids",
-  "version": "0.1.0.13",
+  "version": "1.0.0",
   "private": true,
-  "description": "NOE + ARCA KIDS - parental control system (monorepo, phase 0: base architecture)",
+  "description": "NOE + ARCA KIDS - parental control system (monorepo)",
   "workspaces": [
     "apps/*",
     "packages/*"
@@ -10,6 +10,7 @@
   "scripts": {
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
     "validate": "npm run typecheck && npm run lint",
     "build:noe": "npm run build:android --workspace @noe-arcakids/noe",
     "build:arcakids": "npm run build:android --workspace @noe-arcakids/arcakids",
@@ -21,7 +22,13 @@
   },
   "devDependencies": {
     "@eslint-community/eslint-utils": "^4.10.1",
+    "@react-native/assets-registry": "0.86.3",
+    "@react-native/jest-preset": "^0.86.3",
+    "@types/jest": "^30.0.0",
     "@types/node": "^26.2.0",
+    "expo-doctor": "^1.18.0",
+    "jest": "^30.5.1",
+    "jest-expo": "~57.0.0",
     "react": "19.2.3",
     "react-dom": "19.2.3"
   },
@@ -30,8 +37,11 @@
     "react-dom": "19.2.3"
   },
   "dependencies": {
-    "expo": "~57.0.14",
+    "expo": "~57.0.20",
     "react": "19.2.3",
-    "react-native": "0.86.2"
+    "react-native": "0.86.3"
+  },
+  "allowScripts": {
+    "@react-native/jest-preset@0.86.3": true
   }
 }

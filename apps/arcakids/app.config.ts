@@ -1,9 +1,20 @@
 import type { ExpoConfig } from 'expo/config';
 
+const sentryOrg = process.env.SENTRY_ORG;
+const sentryProject = process.env.SENTRY_PROJECT;
+const sentryPlugins: NonNullable<ExpoConfig['plugins']> = sentryOrg && sentryProject
+  ? [
+      [
+        '@sentry/react-native/expo',
+        { organization: sentryOrg, project: sentryProject },
+      ],
+    ]
+  : [];
+
 const config: ExpoConfig = {
   name: 'ARCA KIDS',
   slug: 'arcakids',
-  version: '0.1.0.13',
+  version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/images/arca-kids.png',
   scheme: 'arcakids',
@@ -11,9 +22,11 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.arcakids.child',
+    buildNumber: '1',
   },
   android: {
     package: 'com.arcakids.child',
+    versionCode: 1,
     allowBackup: false,
     adaptiveIcon: {
       backgroundColor: '#208AEF',
@@ -48,6 +61,7 @@ const config: ExpoConfig = {
       },
     ],
     '../../plugins/with-device-owner',
+    ...sentryPlugins,
   ],
   experiments: {
     typedRoutes: true,

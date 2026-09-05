@@ -188,4 +188,20 @@ class ParentalUsageModule(private val reactContext: ReactApplicationContext) :
             promise.reject("ERR_STOP_ENFORCEMENT", e.message, e)
         }
     }
+
+    /** Persists Supabase endpoint + linked device so the FGS can report usage in background. */
+    @ReactMethod
+    fun configureUsageReporter(supabaseUrl: String, supabaseAnonKey: String, deviceUuid: String, promise: Promise) {
+        try {
+            val prefs = reactContext.getSharedPreferences("arcakids_usage_reporter", Context.MODE_PRIVATE)
+            prefs.edit()
+                .putString("supabase_url", supabaseUrl)
+                .putString("supabase_anon_key", supabaseAnonKey)
+                .putString("device_uuid", deviceUuid)
+                .apply()
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("ERR_USAGE_REPORTER", e.message, e)
+        }
+    }
 }

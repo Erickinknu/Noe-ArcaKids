@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { env } from '@noe-arcakids/config';
 import { parentalService } from '@/features/parental/services/parental-service';
 import { parentalRepository } from '@/features/parental/repositories/parental-repository';
 import { parentalBridge } from '@/features/parental/native/parental-bridge';
@@ -60,6 +61,16 @@ export function useDevicePoller() {
           ...enforcementState,
           appLimits: appLimitsObj,
         });
+
+        // Teach the native FGS the Supabase endpoint + linked device so it can
+        // report usage in the background even when the JS app is backgrounded.
+        if (env.isSupabaseConfigured) {
+          parentalBridge.configureUsageReporter({
+            supabaseUrl: env.supabaseUrl,
+            supabaseAnonKey: env.supabaseAnonKey,
+            deviceUuid: device.deviceUuid,
+          });
+        }
       }
     } catch (e) {
       console.warn('Device poller error:', e);

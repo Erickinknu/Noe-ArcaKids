@@ -33,7 +33,7 @@ function LoadingScreen() {
 }
 
 function RootNavigator() {
-  const { resolved } = useTheme();
+  const { colors, resolved } = useTheme();
 
   const initialize = useAuthStore((state) => state.initialize);
   const [ready, setReady] = useState(false);
@@ -79,10 +79,10 @@ function RootNavigator() {
   }
 
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Stack screenOptions={{ headerShown: false }} />
       <StatusBar style={resolved === 'dark' ? 'light' : 'dark'} />
-    </>
+    </View>
   );
 }
 

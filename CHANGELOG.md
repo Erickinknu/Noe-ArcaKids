@@ -5,6 +5,33 @@ All notable changes to the `noe-arcakids` monorepo will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.0.0] - 2026-09-04
+
+### Added
+- **`@noe-arcakids/config`: `APP_VERSION` unificado a `1.0.0`** (antes `0.1.0.12`), alineado con
+  `version`/`versionName` de `app.config.ts` y `build.gradle` (v1.0.0).
+- **NOE desbloqueo biométrico**: nuevo `biometric-service` (`expo-local-authentication`), toggle en
+  `Configuración de la app → Seguridad` (exige PIN previo y biometría disponible) y botón de huella
+  en el gate de apertura con PIN.
+- **NOE estados vacíos**: las acciones rápidas del Dashboard se deshabilitan cuando no hay hijos
+  registrados; Actividad/Control/Familia muestran CTA para registrar un hijo.
+
+### Changed
+- **NOE `getMyFamily`**: filtra `profiles` por `user_id = user.id` (antes devolvía un perfil arbitrario).
+- **NOE Dashboard abierto al inicio**: `initialRouteName="index"` — al abrir la app se muestra el
+  tab Inicio.
+- **Refresco por foco**: Actividad y Familia recargan con `useFocusEffect` al volver a la pestaña.
+- **ARCA KIDS Home**: tarjetas navegables (Pressable dentro de `Link asChild`) — antes eran muertas.
+- **ARCA KIDS onboarding**: flujo solo con código de familia obligatorio (teclear o QR); sin pasos
+  de nombre/avatar; si el código no vincula, no avanza.
+- **Modo oscuro**: el contenedor raíz pinta `colors.background` y `Appearance.setColorScheme()`
+  fuerza el esquema nativo según el tema elegido (termina con mezcla blanco/oscuro en pestañas).
+- **Base de datos**: se eliminaron todos los registros de hijos y datos derivados (DB en blanco).
+
+### Notes
+- La base de datos quedó con 0 hijos: cada familia debe ingresar sus hijos desde NOE (tab Hijos)
+  para activar el control; ARCA KIDS solo puede vincularse cuando existe un hijo y un código vigente.
+
 ## [housekeeping] - 2026-08-28 (Fase A - base deuda/limpieza)
 
 ### Added

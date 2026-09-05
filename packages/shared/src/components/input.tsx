@@ -10,7 +10,7 @@ export interface InputProps extends TextInputProps {
   error?: string | null;
 }
 
-export function Input({ label, error, style, ...rest }: InputProps) {
+export function Input({ label, error, style, accessibilityLabel, ...rest }: InputProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   return (
@@ -18,6 +18,7 @@ export function Input({ label, error, style, ...rest }: InputProps) {
       {label ? <Text style={styles.label}>{label}</Text> : null}
       <TextInput
         {...rest}
+        accessibilityLabel={accessibilityLabel ?? label}
         placeholderTextColor={String(colors.inputPlaceholder)}
         style={[
           styles.input,
@@ -25,7 +26,7 @@ export function Input({ label, error, style, ...rest }: InputProps) {
           style,
         ]}
       />
-      {error ? <Text style={styles.error}>{error}</Text> : null}
+      {error ? <Text style={styles.error} accessibilityLiveRegion="polite">{error}</Text> : null}
     </View>
   );
 }

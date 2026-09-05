@@ -51,7 +51,7 @@ function RootNavigator() {
   }, [isBlocked, i18nReady, segments, router]);
 
   return (
-    <>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
       <Stack screenOptions={{ headerShown: false }} />
       <StatusBar style={resolved === 'dark' ? 'light' : 'dark'} />
       {i18nReady ? null : (
@@ -71,7 +71,7 @@ function RootNavigator() {
           />
         </View>
       )}
-    </>
+    </View>
   );
 }
 

@@ -1,9 +1,20 @@
 import type { ExpoConfig } from 'expo/config';
 
+const sentryOrg = process.env.SENTRY_ORG;
+const sentryProject = process.env.SENTRY_PROJECT;
+const sentryPlugins: NonNullable<ExpoConfig['plugins']> = sentryOrg && sentryProject
+  ? [
+      [
+        '@sentry/react-native/expo',
+        { organization: sentryOrg, project: sentryProject },
+      ],
+    ]
+  : [];
+
 const config: ExpoConfig = {
   name: 'NOE',
   slug: 'noe',
-  version: '0.1.0.13',
+  version: '1.0.0',
   orientation: 'portrait',
   icon: './assets/images/noe-icon.png',
   scheme: 'noe',
@@ -11,9 +22,11 @@ const config: ExpoConfig = {
   ios: {
     supportsTablet: true,
     bundleIdentifier: 'com.noe.parent',
+    buildNumber: '1',
   },
   android: {
     package: 'com.noe.parent',
+    versionCode: 1,
     allowBackup: false,
     adaptiveIcon: {
       backgroundColor: '#E6F4FE',
@@ -25,6 +38,7 @@ const config: ExpoConfig = {
   },
   plugins: [
     'expo-router',
+    'expo-local-authentication',
     [
       'expo-splash-screen',
       {
@@ -33,6 +47,7 @@ const config: ExpoConfig = {
         imageWidth: 160,
       },
     ],
+    ...sentryPlugins,
   ],
   experiments: {
     typedRoutes: true,

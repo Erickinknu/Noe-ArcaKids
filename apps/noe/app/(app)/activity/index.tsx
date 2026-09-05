@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -113,6 +113,12 @@ export default function ActivityScreen() {
     setRefreshing(true);
     Promise.all([reloadUsage(), reloadAlerts(), reloadUnlockRequests(), reloadChildren()]).finally(() => setRefreshing(false));
   }, [reloadUsage, reloadAlerts, reloadUnlockRequests, reloadChildren]);
+
+  useFocusEffect(
+    useCallback(() => {
+      Promise.all([reloadUsage(), reloadAlerts(), reloadUnlockRequests(), reloadChildren()]).catch(() => {});
+    }, [reloadUsage, reloadAlerts, reloadUnlockRequests, reloadChildren])
+  );
 
   const handleResolveRequest = useCallback(async (requestId: string, status: 'approved' | 'denied') => {
     try {

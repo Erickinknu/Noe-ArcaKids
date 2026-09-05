@@ -75,7 +75,7 @@ export const familyRepository = {
       .select(
         'id, user_id, display_name, avatar_url, email, role, created_at, updated_at, families(id, name, created_at, updated_at)'
       )
-      .not('user_id', 'is', null)
+      .eq('user_id', user.id)
       .maybeSingle();
 
     if (error || !data) {

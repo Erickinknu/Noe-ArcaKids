@@ -31,7 +31,8 @@ export default function ProfileScreen() {
     const info = await identityService.getChildInfo();
     return info ?? { name: '', avatar: AVATARS[0] };
   }, []);
-  const { progress } = useAchievements();
+  const { achievements } = useAchievements();
+  const currentAchievement = achievements.find((a) => !a.isAchieved) ?? achievements[0];
   const { error, loading, reload, data } = useAsyncData(fetchInfo, handleLoaded);
   const childId = data?.childId;
 
@@ -76,23 +77,23 @@ export default function ProfileScreen() {
       </View>
 
       {/* Achievement Progress Section */}
-      {childId && progress && (
+      {childId && currentAchievement && (
         <Card style={{ marginTop: spacing.md }}>
-          <Text style={styles.cardTitle}>🏆 Logro actual</Text>
+          <Text style={styles.cardTitle}>{currentAchievement.icon} {currentAchievement.title}</Text>
           <View style={styles.progressContainer}>
             <Text style={styles.progressName}>Progreso</Text>
             <View style={styles.progressBarTrack}>
               <View
                 style={[
                   styles.progressBarFill,
-                  { width: `${progress.percentage}%` },
+                  { width: `${currentAchievement.percentage}%` },
                 ]}
               />
             </View>
             <Text style={styles.progressPercentage}>
-              {progress.percentage}%
+              {currentAchievement.percentage}%
             </Text>
-            {progress.isAchieved ? (
+            {currentAchievement.isAchieved ? (
               <Text style={styles.progressCompleted}>¡Logrado!</Text>
             ) : null}
           </View>

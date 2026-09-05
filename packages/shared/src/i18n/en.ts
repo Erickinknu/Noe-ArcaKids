@@ -10,6 +10,12 @@ export const en = {
     minutesAgo: '{{minutes}} min ago',
     hoursAgo: '{{hours}}h ago',
     daysAgo: '{{days}}d ago',
+    pageNotFound: 'Page not found',
+    pageNotFoundDescription:
+      "The page you're looking for doesn't exist or has moved.",
+    goHome: 'Go home',
+    errorOccurred: 'Something went wrong',
+    errorRetry: 'Try again',
   },
   validation: {
     emailRequired: 'A valid email is required.',
@@ -291,6 +297,12 @@ export const en = {
       next: 'Next',
       finish: 'Let\u2019s go!',
       back: 'Back',
+      codeTitle: 'Connect with your family',
+      codeText:
+        'Your mom or dad generated a code in NOE. Type it here to activate this device.',
+      codeTypeLabel: 'Family code',
+      codeTypePlaceholder: 'E.G. ABC12345',
+      linkButton: 'Link device',
     },
     home: {
       hi: 'Hi, {{name}}!',

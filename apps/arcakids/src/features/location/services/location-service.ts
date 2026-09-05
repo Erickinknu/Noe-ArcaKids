@@ -4,6 +4,7 @@ import { notificationService } from '@/features/notifications';
 import { parentalService } from '@/features/parental/services/parental-service';
 import { geofenceRepository } from '@/features/location/repositories/geofence-repository';
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
+import { storage } from '@noe-arcakids/storage';
 import type { Geofence, GeofenceEvent } from '@noe-arcakids/types';
 
 export interface LocationUpdate {
@@ -35,11 +36,18 @@ export class LocationService {
   public geofenceTriggeredAt: Record<string, number> = {};
 
   constructor() {
-    this.loadGeofences();
+    this.loadGeofences().catch(() => {});
   }
 
-  private loadGeofences() {
-    console.log('Geofences loaded (stub)');
+  private async loadGeofences() {
+    try {
+      const cached = await storage.get('location/geofences');
+      if (cached) {
+        this.geofences = JSON.parse(cached) as Geofence[];
+      }
+    } catch {
+      // Ignore parse errors
+    }
   }
 
   async initialize(): Promise<void> {
@@ -50,6 +58,16 @@ export class LocationService {
         console.warn('Location permission not granted');
         return;
       }
+    }
+
+    // Restore last reading from cache
+    try {
+      const cached = await storage.get('location/lastReading');
+      if (cached) {
+        this.lastReading = JSON.parse(cached) as LocationUpdate;
+      }
+    } catch {
+      // Ignore
     }
 
     await this.loadGeofencesFromSupabase();
@@ -189,7 +207,11 @@ export class LocationService {
   }
 
   private async saveLocationUpdate(update: LocationUpdate) {
-    // TODO: Save to AsyncStorage or Supabase
+    try {
+      await storage.save('location/lastReading', JSON.stringify(update));
+    } catch {
+      // Best-effort persistence
+    }
   }
 
   private async syncLocationUpdate(update: LocationUpdate) {
@@ -221,8 +243,12 @@ export class LocationService {
     }
   }
 
-  private saveGeofences() {
-    // TODO: Persist geofences to Supabase/AsyncStorage
+  private async saveGeofences() {
+    try {
+      await storage.save('location/geofences', JSON.stringify(this.geofences));
+    } catch {
+      // Best-effort persistence
+    }
   }
 }
 

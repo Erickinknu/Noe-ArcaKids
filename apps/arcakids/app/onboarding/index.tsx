@@ -5,33 +5,33 @@ import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/constants';
-import { identityService } from '@/features/identity/services/identity-service';
+import { linkingService } from '@/features/linking/services/linking-service';
 import { onboardingService } from '@/features/onboarding/services/onboarding-service';
-import { Input, errorMessage, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Input, errorMessage, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
-const AVATARS = ['🦊', '🐼', '🦁', '🐸', '🐙', '🦄'];
+const CODE_LENGTH = 8;
 
 export default function OnboardingScreen() {
   const { t: tr } = useTranslation();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [step, setStep] = useState(0);
-  const [name, setName] = useState('');
-  const [avatar, setAvatar] = useState(AVATARS[0]);
+  const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
-  const [saving, setSaving] = useState(false);
+  const [linking, setLinking] = useState(false);
 
-  async function handleFinish() {
-    setSaving(true);
+  async function handleLink() {
+    if (code.trim().length === 0) return;
+    setLinking(true);
     setError(null);
     try {
-      await identityService.saveChildProfile({ name, avatar });
+      await linkingService.redeem(code.trim());
       await onboardingService.markCompleted();
       router.replace(ROUTES.app);
     } catch (cause) {
       setError(errorMessage(cause));
     } finally {
-      setSaving(false);
+      setLinking(false);
     }
   }
 
@@ -40,9 +40,7 @@ export default function OnboardingScreen() {
       <View style={styles.screen}>
         <Text style={styles.mascot}>🧸</Text>
         <Text style={styles.title}>{tr('arcakids.onboarding.welcome')}</Text>
-        <Text style={styles.description}>
-          {tr('arcakids.onboarding.welcomeText')}
-        </Text>
+        <Text style={styles.description}>{tr('arcakids.onboarding.welcomeText')}</Text>
         <Button onPress={() => setStep(1)}>{tr('arcakids.onboarding.start')}</Button>
       </View>
     );
@@ -50,47 +48,23 @@ export default function OnboardingScreen() {
 
   return (
     <View style={styles.screen}>
-      <Text style={styles.stepLabel}>
-        {tr('arcakids.onboarding.stepOf', { current: step, total: 2 })}
-      </Text>
-      <Text style={styles.title}>
-        {step === 1 ? tr('arcakids.onboarding.nameQuestion') : tr('arcakids.onboarding.pickBuddy')}
-      </Text>
-      {step === 1 ? (
-        <>
-          <Input
-            label={tr('arcakids.onboarding.nameLabel')}
-            value={name}
-            onChangeText={setName}
-            autoComplete="name"
-            placeholder={tr('arcakids.onboarding.namePlaceholder')}
-          />
-          <Button onPress={() => setStep(2)} disabled={name.trim().length === 0}>
-            {tr('arcakids.onboarding.next')}
-          </Button>
-        </>
-      ) : (
-        <>
-          <Text style={styles.avatarPreview}>{avatar}</Text>
-          <View style={styles.avatarRow}>
-            {AVATARS.map((item) => (
-              <Pressable
-                key={item}
-                onPress={() => setAvatar(item)}
-                style={[styles.avatarOption, item === avatar && styles.avatarSelected]}
-              >
-                <Text style={styles.avatarEmoji}>{item}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <Button onPress={handleFinish} loading={saving}>
-            {tr('arcakids.onboarding.finish')}
-          </Button>
-          <Pressable onPress={() => setStep(1)}>
-            <Text style={styles.back}>{tr('arcakids.onboarding.back')}</Text>
-          </Pressable>
-        </>
-      )}
+      <Text style={styles.title}>{tr('arcakids.onboarding.codeTitle')}</Text>
+      <Text style={styles.description}>{tr('arcakids.onboarding.codeText')}</Text>
+      <Input
+        label={tr('arcakids.onboarding.codeTypeLabel')}
+        value={code}
+        onChangeText={(text) => {
+          setCode(text.replace(/[^A-Za-z0-9]/g, '').toUpperCase().slice(0, CODE_LENGTH));
+          setError(null);
+        }}
+        placeholder={tr('arcakids.onboarding.codeTypePlaceholder')}
+      />
+      <Button onPress={handleLink} loading={linking} disabled={code.trim().length === 0}>
+        {tr('arcakids.onboarding.linkButton')}
+      </Button>
+      <Pressable onPress={() => setStep(0)}>
+        <Text style={styles.back}>{tr('arcakids.onboarding.back')}</Text>
+      </Pressable>
       {error ? <Text style={styles.error}>{error}</Text> : null}
     </View>
   );
@@ -120,37 +94,6 @@ const makeStyles = (colors: ThemeColors) =>
     color: colors.textMuted,
     textAlign: 'center',
     lineHeight: 24,
-  },
-  stepLabel: {
-    fontSize: typography.fontSizes.caption,
-    color: colors.textMuted,
-    textAlign: 'center',
-  },
-  avatarPreview: {
-    fontSize: 56,
-    textAlign: 'center',
-  },
-  avatarRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    flexWrap: 'wrap',
-    gap: spacing.sm,
-  },
-  avatarOption: {
-    width: 56,
-    height: 56,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: radius.lg,
-    borderWidth: 2,
-    borderColor: colors.border,
-  },
-  avatarSelected: {
-    borderColor: colors.primary,
-    backgroundColor: colors.surface,
-  },
-  avatarEmoji: {
-    fontSize: 28,
   },
   back: {
     color: colors.textMuted,

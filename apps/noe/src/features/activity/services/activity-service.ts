@@ -20,7 +20,52 @@ export interface ChildUsageSummary {
   totalMinutes: number;
 }
 
-function localDateKey(date: Date): string {
+export type ActivityCategory = 'web' | 'youtube' | 'social' | 'media' | 'conversations' | 'games';
+
+export const CATEGORY_PACKAGES: Record<ActivityCategory, string[]> = {
+  web: [
+    'com.android.chrome',
+    'com.brave.browser',
+    'org.mozilla.firefox',
+    'com.opera.browser',
+    'com.microsoft.emmx',
+    'com.duckduckgo.mobile.android',
+  ],
+  youtube: ['com.google.android.youtube', 'com.google.android.apps.youtube.music'],
+  social: [
+    'com.instagram.android',
+    'com.facebook.katana',
+    'com.zhiliaoapp.musically',
+    'com.snapchat.android',
+    'com.twitter.android',
+    'com.linkedin.android',
+    'com.pinterest',
+    'com.reddit.frontpage',
+    'com.twitch.android.app',
+    'com.discord',
+  ],
+  media: [
+    'com.google.android.apps.photos',
+    'com.android.gallery3d',
+    'com.sec.android.gallery3d',
+    'com.google.android.youtube',
+    'com.netflix.mediaclient',
+    'com.spotify.music',
+    'com.google.android.apps.maps',
+  ],
+  conversations: [
+    'com.whatsapp',
+    'com.google.android.apps.messaging',
+    'com.facebook.orca',
+    'com.telegram.messenger',
+    'com.skype.raider',
+    'com.discord',
+    'com.slack',
+  ],
+  games: [],
+};
+
+export function localDateKey(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
@@ -119,6 +164,24 @@ export const activityService = {
       childName: child?.display_name ?? 'Hijo',
       packageUsages,
       totalMinutes: packageUsages.reduce((sum, u) => sum + u.minutes, 0),
+    };
+  },
+
+  /** Fetches usage filtered to a single activity category (web, social, etc). */
+  async getChildUsageByCategory(
+    childId: string,
+    category: ActivityCategory,
+    days: number = 7
+  ): Promise<ChildUsageSummary> {
+    const packages = CATEGORY_PACKAGES[category];
+    const summary = await activityService.getChildUsageByPackage(childId, days);
+
+    const filtered = summary.packageUsages.filter((pkg) => packages.includes(pkg.packageName));
+
+    return {
+      ...summary,
+      packageUsages: filtered,
+      totalMinutes: filtered.reduce((sum, u) => sum + u.minutes, 0),
     };
   },
 

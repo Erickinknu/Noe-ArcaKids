@@ -2,6 +2,7 @@ export * from './errors';
 export * from './i18n';
 export * from './logger';
 export * from './theme';
+export * from './fonts';
 export { ThemeProvider, useTheme } from './theme-context';
 export * from './validators';
 export * from './security';

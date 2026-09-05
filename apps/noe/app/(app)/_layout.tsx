@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Redirect, Tabs } from 'expo-router';
-import { StyleSheet, Text, TextInput, View, type ColorValue } from 'react-native';
+import { Pressable, StyleSheet, Text, TextInput, View, type ColorValue } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -9,6 +9,7 @@ import { useTheme, typography, spacing, radius, type ThemeColors } from '@noe-ar
 import { useAuthStore } from '@/stores/auth-store';
 import { ROUTES } from '@/constants';
 import { pinService } from '@/features/pin/services/pin-service';
+import { biometricService } from '@/features/security/services/biometric-service';
 
 const TAB_BAR_BASE_HEIGHT = 56;
 const PIN_LENGTH = 4;
@@ -23,6 +24,8 @@ export default function AppLayout() {
   const [unlocked, setUnlocked] = useState(false);
   const [pinInput, setPinInput] = useState('');
   const [pinError, setPinError] = useState<string | null>(null);
+  const [bioEnabled, setBioEnabled] = useState(false);
+  const [bioSupported, setBioSupported] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -43,8 +46,28 @@ export default function AppLayout() {
   }, []);
 
   useEffect(() => {
-    console.log('[AppLayout] Rendered with status:', status);
-  }, [status]);
+    let mounted = true;
+    (async () => {
+      try {
+        const [enabled, supported] = await Promise.all([
+          biometricService.isEnabled(),
+          biometricService.isSupported(),
+        ]);
+        if (mounted) {
+          setBioEnabled(enabled);
+          setBioSupported(supported);
+        }
+      } catch {
+        if (mounted) {
+          setBioEnabled(false);
+          setBioSupported(false);
+        }
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   if (status === 'unauthenticated') {
     return <Redirect href={ROUTES.login} />;
@@ -59,7 +82,21 @@ export default function AppLayout() {
       <View style={[styles.pinGateWrap, { paddingTop: insets.top }]}>
         <MaterialIcons name="lock" size={48} color={colors.primary} />
         <Text style={styles.pinGateTitle}>NOE bloqueada</Text>
-        <Text style={styles.pinGateSubtitle}>Ingresa tu PIN para abrir la app</Text>
+        <Text style={styles.pinGateSubtitle}>
+          {bioSupported && bioEnabled ? 'Usa tu huella o ingresa tu PIN' : 'Ingresa tu PIN para abrir la app'}
+        </Text>
+        {bioSupported && bioEnabled ? (
+          <Pressable
+            style={styles.bioButton}
+            onPress={async () => {
+              const ok = await biometricService.authenticate('Desbloquear NOE');
+              if (ok) setUnlocked(true);
+            }}
+          >
+            <MaterialIcons name="fingerprint" size={28} color={colors.onPrimary} />
+            <Text style={styles.bioButtonText}>Desbloquear con biometría</Text>
+          </Pressable>
+        ) : null}
         <TextInput
           style={styles.pinGateInput}
           value={pinInput}
@@ -91,6 +128,7 @@ export default function AppLayout() {
 
   return (
     <Tabs
+      initialRouteName="index"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
@@ -272,5 +310,21 @@ const makeStyles = (colors: ThemeColors) =>
   pinGateError: {
     fontSize: typography.fontSizes.caption,
     color: colors.danger,
+  },
+  bioButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.primary,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    marginTop: spacing.sm,
+  },
+  bioButtonText: {
+    color: colors.onPrimary,
+    fontSize: typography.fontSizes.body,
+    fontWeight: typography.fontWeights.semibold,
   },
 });

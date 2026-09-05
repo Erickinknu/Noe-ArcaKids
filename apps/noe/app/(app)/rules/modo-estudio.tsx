@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ScrollView,
   StyleSheet,
@@ -14,9 +14,13 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
 import { LoadingState } from '@/components/ui/loading-state';
 import { ErrorState } from '@/components/ui/error-state';
+import { Avatar } from '@/components/ui/avatar';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { studyModeService, type StudySchedule } from '@/features/study-mode/services/study-mode-service';
-import { Card, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { childService } from '@/features/children/services/child-service';
+import { familyService } from '@/features/family/services/family-service';
+import { Card, useTheme, useAsyncData, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import type { ChildProfile } from '@noe-arcakids/types';
 
 type StudyDay = { enabled: boolean; start: string; end: string };
 type StudyScheduleState = Record<string, StudyDay>;
@@ -83,10 +87,20 @@ export default function ModoEstudioScreen() {
   const [error, setError] = useState<string | null>(null);
   const [enabled, setEnabled] = useState(false);
   const [schedule, setSchedule] = useState<StudyScheduleState>(DEFAULT_STUDY);
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+
+  const fetchChildren = useCallback(async () => {
+    const { family } = await familyService.getMyFamily();
+    return childService.listChildren(family.id);
+  }, []);
+  const { data: children, loading: childrenLoading } = useAsyncData(fetchChildren);
+
+  const activeChildId = selectedChildId ?? children?.[0]?.id ?? null;
 
   useEffect(() => {
+    if (!activeChildId) return;
     studyModeService
-      .getSchedule()
+      .getSchedule(activeChildId)
       .then((s) => {
         setEnabled(s.enabled);
         if (s.days.length > 0) {
@@ -95,7 +109,7 @@ export default function ModoEstudioScreen() {
       })
       .catch((err) => setError(err?.message ?? 'Error al cargar'))
       .finally(() => setLoading(false));
-  }, []);
+  }, [activeChildId]);
 
   const toggleDay = (day: string) => {
     setSchedule((prev) => ({
@@ -105,10 +119,11 @@ export default function ModoEstudioScreen() {
   };
 
   const handleSave = async () => {
+    if (!activeChildId) return;
     setSaving(true);
     try {
       const studySchedule = fromState(enabled, schedule);
-      await studyModeService.saveSchedule(studySchedule);
+      await studyModeService.saveSchedule(studySchedule, activeChildId);
       Alert.alert('Guardado', 'Modo estudio actualizado correctamente');
     } catch (cause: any) {
       Alert.alert('Error', cause?.message ?? 'No se pudo guardar');
@@ -117,7 +132,7 @@ export default function ModoEstudioScreen() {
     }
   };
 
-  if (loading) return <LoadingState text="Cargando modo estudio..." />;
+  if (loading || childrenLoading) return <LoadingState text="Cargando modo estudio..." />;
   if (error) return <ErrorState message={error} onRetry={() => setError(null)} />;
 
   return (
@@ -129,6 +144,29 @@ export default function ModoEstudioScreen() {
       <Text style={styles.description}>
         Cuando el modo estudio está activo, las apps de entretenimiento se bloquean automáticamente según el horario de clases.
       </Text>
+
+      {/* Child selector */}
+      {(children ?? []).length > 0 && (
+        <Card>
+          <Text style={styles.sectionLabel}>Selecciona un hijo</Text>
+          {(children ?? []).map((child: ChildProfile) => (
+            <Pressable
+              key={child.id}
+              style={({ pressed }) => [styles.childRow, pressed && styles.childRowPressed,
+                activeChildId === child.id && styles.childRowActive]}
+              onPress={() => setSelectedChildId(child.id)}
+            >
+              <Avatar name={child.displayName} emoji={child.avatarUrl ?? undefined} size={32} />
+              <Text style={[styles.childName, activeChildId === child.id && styles.childNameActive]}>
+                {child.displayName}
+              </Text>
+              {activeChildId === child.id && (
+                <MaterialIcons name="check-circle" size={20} color={colors.primary} />
+              )}
+            </Pressable>
+          ))}
+        </Card>
+      )}
 
       <Card>
         <View style={styles.switchRow}>
@@ -194,9 +232,14 @@ const makeStyles = (colors: ThemeColors) =>
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   headerTitle: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
   description: { fontSize: typography.fontSizes.body, color: colors.textMuted, lineHeight: 22 },
-  sectionLabel: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginTop: spacing.sm },
+  sectionLabel: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginTop: spacing.sm, marginBottom: spacing.xs },
   switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   switchLabel: { fontSize: typography.fontSizes.body, color: colors.text, flex: 1 },
+  childRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm, borderRadius: radius.sm, paddingHorizontal: spacing.sm },
+  childRowPressed: { opacity: 0.7 },
+  childRowActive: { backgroundColor: colors.primaryLight },
+  childName: { flex: 1, fontSize: typography.fontSizes.body, color: colors.text },
+  childNameActive: { color: colors.primary, fontWeight: typography.fontWeights.semibold },
   dayRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   dayLabel: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.medium, color: colors.text },
   dayDisabled: { color: colors.textMuted },

@@ -10,6 +10,12 @@ export const es = {
     minutesAgo: 'hace {{minutes}} min',
     hoursAgo: 'hace {{hours}}h',
     daysAgo: 'hace {{days}}d',
+    pageNotFound: 'P\u00e1gina no encontrada',
+    pageNotFoundDescription:
+      'La p\u00e1gina que buscas no existe o fue movida.',
+    goHome: 'Ir al inicio',
+    errorOccurred: 'Algo sali\u00f3 mal',
+    errorRetry: 'Reintentar',
   },
   validation: {
     emailRequired: 'Se requiere un correo v\u00e1lido.',
@@ -297,6 +303,12 @@ export const es = {
       next: 'Siguiente',
       finish: '\u00a1Vamos!',
       back: 'Atr\u00e1s',
+      codeTitle: 'Conecta con tu familia',
+      codeText:
+        'Tu mam\u00e1 o pap\u00e1 gener\u00f3 un c\u00f3digo en NOE. Escr\u00edbelo aqu\u00ed para activar este dispositivo.',
+      codeTypeLabel: 'C\u00f3digo de familia',
+      codeTypePlaceholder: 'EJ: ABC12345',
+      linkButton: 'Vincular',
     },
     home: {
       hi: '\u00a1Hola, {{name}}!',

@@ -492,6 +492,22 @@ class ParentalUsageModule(private val reactContext: ReactApplicationContext) :
             promise.reject("ERR_STOP_ENFORCEMENT", e.message, e)
         }
     }
+
+    /** Persists Supabase endpoint + linked device so the FGS can report usage in background. */
+    @ReactMethod
+    fun configureUsageReporter(supabaseUrl: String, supabaseAnonKey: String, deviceUuid: String, promise: Promise) {
+        try {
+            val prefs = reactContext.getSharedPreferences("arcakids_usage_reporter", Context.MODE_PRIVATE)
+            prefs.edit()
+                .putString("supabase_url", supabaseUrl)
+                .putString("supabase_anon_key", supabaseAnonKey)
+                .putString("device_uuid", deviceUuid)
+                .apply()
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("ERR_USAGE_REPORTER", e.message, e)
+        }
+    }
 }
 `;
 }
@@ -1039,7 +1055,11 @@ import android.os.Looper
 import androidx.core.app.NotificationCompat
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.OutputStreamWriter
+import java.net.HttpURLConnection
+import java.net.URL
 import java.util.Calendar
+import java.util.concurrent.Executors
 
 class EnforcementService : Service() {
 
@@ -1051,6 +1071,9 @@ class EnforcementService : Service() {
         private const val ACTION_STOP = "com.arcakids.child.action.STOP_ENFORCEMENT"
         private const val POLL_NORMAL_MS = 60_000L
         private const val POLL_ACTIVE_MS = 20_000L
+        private const val USAGE_REPORT_INTERVAL_MS = 5 * 60_000L
+        private const val RP_REPORTER = "arcakids_usage_reporter"
+        private const val RP_LAST_REPORT = "last_usage_report_ms"
 
         fun start(context: Context) {
             val intent = Intent(context, EnforcementService::class.java)
@@ -1078,10 +1101,12 @@ class EnforcementService : Service() {
     private var lastApplied: Pair<String, Set<String>>? = null
     private var reactive: Boolean = false
     private val looperHandler = Handler(Looper.getMainLooper())
+    private val ioExecutor = Executors.newSingleThreadExecutor()
     private val pollRunnable = object : Runnable {
         override fun run() {
             if (!reactive) return
             applyEnforcement()
+            reportUsageIfStale()
             looperHandler.postDelayed(this, nextPoll())
         }
     }
@@ -1112,6 +1137,7 @@ class EnforcementService : Service() {
 
     override fun onDestroy() {
         stopReactiveLoop()
+        ioExecutor.shutdownNow()
         super.onDestroy()
     }
 
@@ -1194,6 +1220,56 @@ class EnforcementService : Service() {
         val result = mutableMapOf<String, Long>()
         for ((pkg, s) in stats) { if (pkg != packageName) { val m = s.totalTimeInForeground / 60000; if (m > 0) result[pkg] = m } }
         return result
+    }
+
+    private fun reportUsageIfStale() {
+        val reporterPrefs = getSharedPreferences(RP_REPORTER, Context.MODE_PRIVATE)
+        val url = reporterPrefs.getString("supabase_url", null)
+        val anonKey = reporterPrefs.getString("supabase_anon_key", null)
+        val deviceUuid = reporterPrefs.getString("device_uuid", null)
+        if (url.isNullOrEmpty() || anonKey.isNullOrEmpty() || deviceUuid.isNullOrEmpty()) return
+
+        val now = System.currentTimeMillis()
+        val last = reporterPrefs.getLong(RP_LAST_REPORT, 0L)
+        if (now - last < USAGE_REPORT_INTERVAL_MS) return
+
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0)
+        val reportDate = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.US).format(cal.time)
+        val usage = usageTodayMap()
+        if (usage.isEmpty()) return
+
+        ioExecutor.execute {
+            try {
+                postUsage(url, anonKey, deviceUuid, reportDate, usage)
+                getSharedPreferences(RP_REPORTER, Context.MODE_PRIVATE).edit().putLong(RP_LAST_REPORT, now).apply()
+            } catch (t: Throwable) {
+                // Transient network error: keep last_report so we retry next cycle.
+            }
+        }
+    }
+
+    private fun postUsage(url: String, anonKey: String, deviceUuid: String, reportDate: String, usage: Map<String, Long>) {
+        val entries = JSONArray()
+        for ((pkg, minutes) in usage) {
+            entries.put(JSONObject().put("package", pkg).put("minutes", minutes))
+        }
+        val body = JSONObject().put("p_device_uuid", deviceUuid).put("p_report_date", reportDate).put("p_entries", entries)
+
+        val connection = URL("\${url.trimEnd('/')}/rest/v1/rpc/report_usage_for_device").openConnection() as HttpURLConnection
+        try {
+            connection.requestMethod = "POST"
+            connection.doOutput = true
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.setRequestProperty("apikey", anonKey)
+            connection.setRequestProperty("Authorization", "Bearer $anonKey")
+            connection.connectTimeout = 8000
+            connection.readTimeout = 8000
+            OutputStreamWriter(connection.outputStream, Charsets.UTF_8).use { it.write(body.toString()) }
+            connection.inputStream.close() // drain
+        } finally {
+            connection.disconnect()
+        }
     }
 
     private fun buildNotification(): Notification {

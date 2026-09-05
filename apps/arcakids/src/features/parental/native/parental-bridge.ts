@@ -29,6 +29,11 @@ interface NativeParentalUsage {
   updateDeviceState(deviceStateJson: string): Promise<null>;
   startEnforcement(): Promise<null>;
   stopEnforcement(): Promise<null>;
+  configureUsageReporter(
+    supabaseUrl: string,
+    supabaseAnonKey: string,
+    deviceUuid: string
+  ): Promise<null>;
 }
 
 const isAndroid = Platform.OS === 'android';
@@ -104,5 +109,18 @@ export const parentalBridge = {
   async stopEnforcement(): Promise<void> {
     assertNative('stopEnforcement');
     await native!.stopEnforcement();
+  },
+
+  async configureUsageReporter(params: {
+    supabaseUrl: string;
+    supabaseAnonKey: string;
+    deviceUuid: string;
+  }): Promise<void> {
+    assertNative('configureUsageReporter');
+    await native!.configureUsageReporter(
+      params.supabaseUrl,
+      params.supabaseAnonKey,
+      params.deviceUuid
+    );
   },
 };

@@ -13,6 +13,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { pinService } from '@/features/pin/services/pin-service';
+import { biometricService } from '@/features/security/services/biometric-service';
 import { APP_VERSION } from '@noe-arcakids/config';
 import { Card, spacing, typography, useTheme, type AppColorTheme, type ThemeColors } from '@noe-arcakids/shared';
 
@@ -28,9 +29,20 @@ export default function ConfigScreen() {
   const { colors, theme, setTheme } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [lockOnOpen, setLockOnOpen] = useState(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
+  const [biometricAvailable, setBiometricAvailable] = useState(false);
 
   useEffect(() => {
     pinService.isLockOnOpenEnabled().then(setLockOnOpen).catch(() => {});
+  }, []);
+
+  useEffect(() => {
+    Promise.all([biometricService.isEnabled(), biometricService.isSupported()])
+      .then(([enabled, available]) => {
+        setBiometricEnabled(enabled);
+        setBiometricAvailable(available);
+      })
+      .catch(() => {});
   }, []);
 
   async function handleLockOnOpenChange(value: boolean) {
@@ -47,6 +59,29 @@ export default function ConfigScreen() {
     }
     setLockOnOpen(value);
     await pinService.setLockOnOpenEnabled(value);
+  }
+
+  async function handleBiometricChange(value: boolean) {
+    if (value) {
+      const hasPin = await pinService.isEnabled();
+      if (!hasPin) {
+        Alert.alert(
+          'Primero configura un PIN',
+          'No tienes un PIN configurado. Crea tu PIN en el menú “Código PIN” y luego podrás activar el desbloqueo biométrico.',
+          [{ text: 'Configurar PIN', onPress: () => router.push('/(app)/profile/pin') }, { text: 'Cancelar', style: 'cancel' }]
+        );
+        return;
+      }
+      const ok = await biometricService.setEnabled(true);
+      if (!ok) {
+        Alert.alert('No se pudo activar', 'La verificación biométrica fue cancelada o falló.');
+        return;
+      }
+      setBiometricEnabled(true);
+      return;
+    }
+    await biometricService.setEnabled(false);
+    setBiometricEnabled(false);
   }
 
   return (
@@ -103,15 +138,24 @@ export default function ConfigScreen() {
       {/* ── Security ── */}
       <Text style={styles.sectionLabel}>Seguridad</Text>
       <Card>
-        <View style={[styles.optionRow, styles.optionMuted]}>
-          <MaterialIcons name="fingerprint" size={22} color={colors.textMuted} />
+        <View style={styles.optionRow}>
+          <MaterialIcons
+            name="fingerprint"
+            size={22}
+            color={biometricAvailable ? colors.primary : colors.textMuted}
+          />
           <View style={styles.optionBody}>
             <Text style={styles.optionText}>Desbloqueo biométrico</Text>
-            <Text style={styles.optionSubtext}>Disponible próximamente</Text>
+            <Text style={styles.optionSubtext}>
+              {biometricAvailable
+                ? 'Desbloquea NOE con tu huella o rostro'
+                : 'Tu dispositivo no tiene biometría disponible'}
+            </Text>
           </View>
           <Switch
-            value={false}
-            disabled
+            value={biometricEnabled}
+            disabled={!biometricAvailable}
+            onValueChange={handleBiometricChange}
             trackColor={{ false: colors.border, true: colors.primary }}
           />
         </View>

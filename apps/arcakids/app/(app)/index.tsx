@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import { Link } from 'expo-router';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
 import { useParentalStatus } from '@/hooks/use-parental-status';
@@ -56,61 +56,71 @@ export default function HomeScreen() {
       </View>
       {!isLinked ? (
         <Link href={ROUTES.link} asChild>
-          <Card style={styles.linkBanner}>
-            <Text style={styles.linkBannerEmoji}>🔗</Text>
-            <View>
-              <Text style={styles.linkBannerTitle}>
-                {tr('arcakids.home.linkBannerTitle')}
-              </Text>
-              <Text style={styles.linkBannerText}>
-                {tr('arcakids.home.linkBannerText')}
-              </Text>
-            </View>
-          </Card>
+          <Pressable>
+            <Card style={styles.linkBanner}>
+              <Text style={styles.linkBannerEmoji}>🔗</Text>
+              <View>
+                <Text style={styles.linkBannerTitle}>
+                  {tr('arcakids.home.linkBannerTitle')}
+                </Text>
+                <Text style={styles.linkBannerText}>
+                  {tr('arcakids.home.linkBannerText')}
+                </Text>
+              </View>
+            </Card>
+          </Pressable>
         </Link>
       ) : null}
       <View style={styles.cards}>
         {isLinked ? (
           <Link href={ROUTES.launcher} asChild>
-            <Card style={styles.card}>
-              <Text style={styles.cardEmoji}>🎮</Text>
-              <View>
-                <Text style={styles.cardTitle}>
-                  {tr('arcakids.launcher.title')}
-                </Text>
-                <Text style={styles.cardSubtitle}>
-                  {tr('arcakids.launcher.subtitle')}
-                </Text>
-              </View>
-            </Card>
+            <Pressable>
+              <Card style={styles.card}>
+                <Text style={styles.cardEmoji}>🎮</Text>
+                <View>
+                  <Text style={styles.cardTitle}>
+                    {tr('arcakids.launcher.title')}
+                  </Text>
+                  <Text style={styles.cardSubtitle}>
+                    {tr('arcakids.launcher.subtitle')}
+                  </Text>
+                </View>
+              </Card>
+            </Pressable>
           </Link>
         ) : null}
         <Link href={ROUTES.activity} asChild>
-          <Card style={styles.card}>
-            <Text style={styles.cardEmoji}>⭐</Text>
-            <Text style={styles.cardTitle}>{tr('arcakids.home.activity')}</Text>
-            <Text style={styles.cardSubtitle}>
-              {tr('arcakids.home.activitySubtitle')}
-            </Text>
-          </Card>
+          <Pressable>
+            <Card style={styles.card}>
+              <Text style={styles.cardEmoji}>⭐</Text>
+              <Text style={styles.cardTitle}>{tr('arcakids.home.activity')}</Text>
+              <Text style={styles.cardSubtitle}>
+                {tr('arcakids.home.activitySubtitle')}
+              </Text>
+            </Card>
+          </Pressable>
         </Link>
         <Link href={ROUTES.profile} asChild>
-          <Card style={styles.card}>
-            <Text style={styles.cardEmoji}>🧒</Text>
-            <Text style={styles.cardTitle}>{tr('arcakids.home.profile')}</Text>
-            <Text style={styles.cardSubtitle}>
-              {tr('arcakids.home.profileSubtitle')}
-            </Text>
-          </Card>
+          <Pressable>
+            <Card style={styles.card}>
+              <Text style={styles.cardEmoji}>🧒</Text>
+              <Text style={styles.cardTitle}>{tr('arcakids.home.profile')}</Text>
+              <Text style={styles.cardSubtitle}>
+                {tr('arcakids.home.profileSubtitle')}
+              </Text>
+            </Card>
+          </Pressable>
         </Link>
         <Link href={ROUTES.settings} asChild>
-          <Card style={styles.card}>
-            <Text style={styles.cardEmoji}>⚙️</Text>
-            <Text style={styles.cardTitle}>{tr('arcakids.home.settings')}</Text>
-            <Text style={styles.cardSubtitle}>
-              {tr('arcakids.home.settingsSubtitle')}
-            </Text>
-          </Card>
+          <Pressable>
+            <Card style={styles.card}>
+              <Text style={styles.cardEmoji}>⚙️</Text>
+              <Text style={styles.cardTitle}>{tr('arcakids.home.settings')}</Text>
+              <Text style={styles.cardSubtitle}>
+                {tr('arcakids.home.settingsSubtitle')}
+              </Text>
+            </Card>
+          </Pressable>
         </Link>
       </View>
     </View>

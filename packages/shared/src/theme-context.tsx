@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
-import { useColorScheme } from 'react-native';
+import { Appearance, useColorScheme } from 'react-native';
 
 import { storage } from '@noe-arcakids/storage';
 
@@ -28,6 +28,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       .then((saved) => {
         if (saved === 'light' || saved === 'dark' || saved === 'system') {
           setThemeState(saved);
+          Appearance.setColorScheme(saved === 'system' ? 'unspecified' : saved);
         }
       })
       .catch(() => {});
@@ -46,6 +47,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
 
   const setTheme = useCallback((t: AppColorTheme) => {
     setThemeState(t);
+    Appearance.setColorScheme(t === 'system' ? 'unspecified' : t);
     storage.save(THEME_KEY, t).catch(() => {});
   }, []);
 

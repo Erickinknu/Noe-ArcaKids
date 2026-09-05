@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme, spacing, radius, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 interface ErrorStateProps {
@@ -8,19 +9,23 @@ interface ErrorStateProps {
 }
 
 export function ErrorState({ message, onRetry }: ErrorStateProps) {
+  const { t: tr } = useTranslation();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const retryLabel = tr('common.errorRetry');
   return (
     <View style={styles.container}>
       <Text style={styles.icon}>⚠️</Text>
-      <Text style={styles.title}>Algo salió mal</Text>
+      <Text style={styles.title}>{tr('common.errorOccurred')}</Text>
       <Text style={styles.message}>{message}</Text>
       {onRetry && (
         <Pressable
           style={({ pressed }) => [styles.button, pressed && styles.buttonPressed]}
           onPress={onRetry}
+          accessibilityRole="button"
+          accessibilityLabel={retryLabel}
         >
-          <Text style={styles.buttonText}>Reintentar</Text>
+          <Text style={styles.buttonText}>{retryLabel}</Text>
         </Pressable>
       )}
     </View>

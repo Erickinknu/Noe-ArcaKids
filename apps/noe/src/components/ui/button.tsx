@@ -1,4 +1,4 @@
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -7,6 +7,11 @@ import {
   type ViewStyle,
   type TextStyle,
 } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
@@ -24,6 +29,8 @@ interface ButtonProps {
   icon?: ReactNode;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  accessibilityLabel?: string;
+  accessibilityHint?: string;
 }
 
 interface VariantStyles {
@@ -82,26 +89,50 @@ export function Button({
   icon,
   style,
   textStyle,
+  accessibilityLabel,
+  accessibilityHint,
 }: ButtonProps) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(), []);
-  const [pressed, setPressed] = useState(false);
+  const scale = useSharedValue(1);
+  const opacity = useSharedValue(1);
   const v = variantStylesFor(colors)[variant];
   const s = sizeStyles[size];
   const content = children ?? label;
 
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+  }));
+
+  /* eslint-disable react-hooks/immutability */
+  const handlePressIn = () => {
+    scale.value = withTiming(0.98, { duration: 120 });
+    opacity.value = withTiming(0.85, { duration: 120 });
+  };
+
+  const handlePressOut = () => {
+    scale.value = withTiming(1, { duration: 180 });
+    opacity.value = withTiming(1, { duration: 180 });
+  };
+  /* eslint-enable react-hooks/immutability */
+
   return (
+    <Animated.View style={animatedStyle}>
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
-      onPressIn={() => setPressed(true)}
-      onPressOut={() => setPressed(false)}
+      onPressIn={handlePressIn}
+      onPressOut={handlePressOut}
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel ?? (typeof content === 'string' ? content : undefined)}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
       style={[
         styles.base,
         v.container,
         s.container,
         (disabled || loading) && styles.disabled,
-        pressed && styles.pressed,
         style,
       ]}
     >
@@ -120,6 +151,7 @@ export function Button({
         </>
       )}
     </Pressable>
+    </Animated.View>
   );
 }
 
@@ -136,8 +168,5 @@ const makeStyles = () =>
     },
     disabled: {
       opacity: 0.5,
-    },
-    pressed: {
-      opacity: 0.7,
     },
   });

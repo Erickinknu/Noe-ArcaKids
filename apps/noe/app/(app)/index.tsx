@@ -292,8 +292,12 @@ export default function DashboardScreen() {
           ].map((action) => (
             <Pressable
               key={action.label}
-              style={({ pressed }) => [styles.quickActionCard, pressed && styles.quickActionPressed]}
-              onPress={action.onPress}
+              style={({ pressed }) => [
+                styles.quickActionCard,
+                pressed && styles.quickActionPressed,
+                data.children.length === 0 && styles.quickActionDisabled,
+              ]}
+              onPress={data.children.length === 0 ? undefined : action.onPress}
             >
               <View style={[styles.quickActionIcon, { backgroundColor: action.color + '18' }]}>
                 <MaterialIcons name={action.icon} size={22} color={action.color} />
@@ -869,6 +873,9 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   quickActionPressed: {
     borderColor: colors.primary,
     backgroundColor: colors.primaryLight,
+  },
+  quickActionDisabled: {
+    opacity: 0.4,
   },
   quickActionIcon: {
     width: 44,

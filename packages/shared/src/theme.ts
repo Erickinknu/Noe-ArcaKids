@@ -72,6 +72,14 @@ export const radius = {
 } as const;
 
 export const typography = {
+  // Brand fonts (design-system MASTER.md): Lexend for headings, Source Sans 3 for body.
+  // When custom .ttf assets are added, load them via expo-font and point these names
+  // to the loaded family. Falls back to the platform default stack otherwise.
+  fontFamily: {
+    heading: undefined as string | undefined,
+    body: undefined as string | undefined,
+    mono: 'monospace',
+  },
   fontSizes: {
     caption: 12,
     subtitle: 14,

@@ -5,9 +5,9 @@ import {
   Text,
   View,
   Pressable,
-  Alert,
+  Share,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 import type { ChildProfile } from '@noe-arcakids/types';
 
@@ -46,6 +46,12 @@ export default function FamiliaScreen() {
     []
   );
   const { data, error, loading, reload } = useAsyncData(fetchFamilyAndChildren, handleFamilyLoaded);
+
+  useFocusEffect(
+    useCallback(() => {
+      void reload();
+    }, [reload])
+  );
 
   async function handleRenameFamily() {
     if (!data) return;
@@ -98,11 +104,7 @@ export default function FamiliaScreen() {
             description="Añade el perfil de tu hijo desde la pestaña Hijos para personalizar su control."
             action={{
               label: 'Añadir hijo',
-              onPress: () =>
-                Alert.alert(
-                  'Crear perfil',
-                  'La creación de perfiles de hijos estará disponible próximamente.'
-                )
+              onPress: () => router.push('/(app)/children')
               }}
           />
         ) : (
@@ -137,10 +139,10 @@ export default function FamiliaScreen() {
           <Pressable
             style={({ pressed }) => [styles.inviteBtn, pressed && styles.inviteBtnPressed]}
             onPress={() =>
-              Alert.alert(
-                'Invitar a otro padre/tutor',
-                'La invitación de co-padre estará disponible próximamente. Por ahora puedes compartir la app y la cuenta para que ambos administren a los niños.'
-              )
+              Share.share({
+                message:
+                  'Únete a la familia en NOE para administrar juntos la seguridad digital de los niños. Descarga NOE e inicia sesión para compartir el control parental.',
+              }).catch(() => {})
             }
           >
             <MaterialIcons name="person-add" size={20} color={colors.primary} />
