@@ -1,4 +1,5 @@
 import type { PostgrestError } from '@supabase/supabase-js';
+import * as Crypto from 'expo-crypto';
 
 import { DatabaseError, t } from '@noe-arcakids/shared';
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
@@ -15,11 +16,10 @@ export interface PairingCode {
 
 /**
  * Cryptographically secure 8-char alphanumeric pairing code.
- * Uses globalThis.crypto.getRandomValues (available in Hermes RN 0.86+).
+ * Uses expo-crypto (Hermes does not implement globalThis.crypto).
  */
 export function generatePairingCode(): string {
-  const bytes = new Uint8Array(CODE_LENGTH);
-  globalThis.crypto.getRandomValues(bytes);
+  const bytes = Crypto.getRandomValues(new Uint8Array(CODE_LENGTH));
   return Array.from(bytes, (b) => CODE_CHARSET[b % CODE_CHARSET.length]).join('');
 }
 

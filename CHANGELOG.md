@@ -5,6 +5,17 @@ All notable changes to the `noe-arcakids` monorepo will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.2.1] - 2026-09-07
+
+### Changed
+- **Fix del vínculo NOE → ARCA KIDS**: el código de emparejamiento y el QR ya se
+  generan en el APK release (Hermes no implementa `globalThis.crypto`; ahora se
+  usa `expo-crypto`). Además, los errores genéricos ya muestran su mensaje real
+  en la UI (antes caían en "ha ocurrido un error inesperado").
+- **Versión 1.2.1 (versionCode 4)** en NOE y ARCA KIDS: `package.json`,
+  `app.config.ts`, `android/app/build.gradle`, `APP_VERSION` del monorepo,
+  lockfile y este changelog.
+
 ## [1.2.0] - 2026-09-05
 
 ### Added

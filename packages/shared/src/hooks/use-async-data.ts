@@ -4,7 +4,9 @@ import { AppError } from '../errors';
 import { t } from '../i18n';
 
 export function errorMessage(cause: unknown): string {
-  return cause instanceof AppError ? cause.message : t('common.unexpected');
+  if (cause instanceof AppError) return cause.message;
+  if (cause instanceof Error && cause.message) return cause.message;
+  return t('common.unexpected');
 }
 
 export function useAsyncData<T>(fetcher: () => Promise<T>, onData?: (data: T) => void) {

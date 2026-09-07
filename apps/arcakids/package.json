@@ -1,7 +1,7 @@
 {
   "name": "@noe-arcakids/arcakids",
   "main": "expo-router/entry",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "private": true,
   "scripts": {
     "start": "expo start",
@@ -10,6 +10,7 @@
     "lint": "expo lint",
     "test": "jest",
     "doctor": "expo-doctor",
+    "doctor:react": "react-doctor --no-supply-chain --no-telemetry -y",
     "prebuild": "expo prebuild -p android",
     "build:android": "cd android && gradlew.bat assembleDebug"
   },
