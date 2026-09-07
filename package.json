@@ -25,7 +25,7 @@
     "@react-native/assets-registry": "0.86.3",
     "@react-native/jest-preset": "^0.86.3",
     "@types/jest": "^30.0.0",
-    "@types/node": "^26.2.0",
+    "@types/node": "^26.4.1",
     "expo-doctor": "^1.18.0",
     "jest": "^30.5.1",
     "jest-expo": "~57.0.0",
