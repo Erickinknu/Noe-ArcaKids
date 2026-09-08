@@ -5,6 +5,23 @@ All notable changes to the `noe-arcakids` monorepo will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.1] - 2026-09-08
+
+### Added
+- **El control sobrevive al reinicio**: nuevo `BootReceiver` con
+  `RECEIVE_BOOT_COMPLETED` que reinicia `EnforcementService` tras el arranque
+  del dispositivo y tras una actualización de la app (`MY_PACKAGE_REPLACED`).
+  Si el dispositivo estaba bloqueado o con reglas activas, se vuelven a aplicar
+  al encender sin necesidad de abrir ARCA KIDS.
+- **Anti-desactivación**: `DeviceAdminReceiver.onDisableRequested` devuelve
+  `""` para rechazar la desactivación del administrador desde Ajustes, de modo
+  que el hijo no pueda desactivar el control parental manualmente.
+
+### Changed
+- **Versión 1.3.1 (versionCode 6)** en NOE y ARCA KIDS: `package.json`,
+  `app.config.ts`, `android/app/build.gradle`, `APP_VERSION` del monorepo,
+  lockfile y este changelog.
+
 ## [1.3.0] - 2026-09-07
 
 ### Added
