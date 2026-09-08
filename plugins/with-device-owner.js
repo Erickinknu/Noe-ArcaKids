@@ -52,6 +52,13 @@ public class DeviceAdminReceiver extends android.app.admin.DeviceAdminReceiver {
     public void onDisabled(@NonNull Context context, @NonNull Intent intent) {
         super.onDisabled(context, intent);
     }
+
+    @Override
+    public CharSequence onDisableRequested(@NonNull Context context, @NonNull Intent intent) {
+        // Refuse voluntary deactivation so the child cannot disable parental control
+        // from Settings. Device owner is full kiosk; this guards the admin case too.
+        return "";
+    }
 }
 `;
 }
@@ -175,6 +182,29 @@ class DeviceOwnerModule(reactContext: ReactApplicationContext) : ReactContextBas
             promise.resolve(dpm.isAdminActive(admin))
         } catch (e: Exception) {
             promise.reject("ERR_ADMIN", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun enableAdmin(promise: Promise) {
+        try {
+            if (dpm.isAdminActive(admin)) {
+                promise.resolve(true); return
+            }
+            val intent = android.app.admin.DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN.let {
+                android.content.Intent(it).apply {
+                    putExtra(android.app.admin.DevicePolicyManager.EXTRA_DEVICE_ADMIN, admin)
+                    putExtra(
+                        android.app.admin.DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                        "Requerido para el control de horarios y bloqueo remoto parental."
+                    )
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            }
+            reactApplicationContext.startActivity(intent)
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERR_ENABLE_ADMIN", e.message, e)
         }
     }
 
@@ -516,13 +546,16 @@ function parentalLocationModuleContent(pkg) {
   return `package ${pkg}
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
@@ -536,6 +569,21 @@ import org.json.JSONObject
 
 class ParentalLocationModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext), LocationListener {
+
+    companion object {
+        private const val REQUEST_CODE_LOCATION = 4201
+        private val pendingPromises = mutableListOf<Promise>()
+
+        /** Called from MainActivity.onRequestPermissionsResult. */
+        fun onRequestPermissionsResult(requestCode: Int, grantResults: IntArray) {
+            if (requestCode != REQUEST_CODE_LOCATION) return
+            val granted = grantResults.isNotEmpty() &&
+                grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+            val list = pendingPromises.toList()
+            pendingPromises.clear()
+            for (p in list) p.resolve(granted)
+        }
+    }
 
     override fun getName(): String = "ParentalLocation"
 
@@ -555,13 +603,57 @@ class ParentalLocationModule(private val reactContext: ReactApplicationContext) 
     }
 
     @ReactMethod
-    fun requestPermission(promise: Promise) {
+    fun hasBackgroundPermission(promise: Promise) {
         try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                promise.resolve(true)
+                return
+            }
             val fine = ContextCompat.checkSelfPermission(reactContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-            promise.resolve(fine)
+            val background = ContextCompat.checkSelfPermission(reactContext, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
+            promise.resolve(fine && background)
         } catch (e: Exception) {
-            promise.reject("ERR_REQUEST_LOCATION", e.message, e)
+            promise.reject("ERR_BACKGROUND_PERMISSION", e.message, e)
         }
+    }
+
+    @ReactMethod
+    fun requestPermission(promise: Promise) {
+        val activity = getCurrentActivity()
+        if (activity == null) {
+            promise.resolve(false)
+            return
+        }
+        val needs = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+        val missing = needs.filter {
+            ContextCompat.checkSelfPermission(reactContext, it) != PackageManager.PERMISSION_GRANTED
+        }
+        if (missing.isEmpty()) {
+            promise.resolve(true)
+            return
+        }
+        ParentalLocationModule.pendingPromises.add(promise)
+        ActivityCompat.requestPermissions(activity, missing.toTypedArray(), 4201)
+    }
+
+    @ReactMethod
+    fun requestBackgroundPermission(promise: Promise) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            promise.resolve(true)
+            return
+        }
+        val activity = getCurrentActivity()
+        if (activity == null) {
+            promise.resolve(false)
+            return
+        }
+        val background = ContextCompat.checkSelfPermission(reactContext, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (background) {
+            promise.resolve(true)
+            return
+        }
+        ParentalLocationModule.pendingPromises.add(promise)
+        ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION), 4201)
     }
 
     @ReactMethod
@@ -1379,6 +1471,7 @@ function withArcakidsManifest(config) {
 
     // Permissions to ensure are present.
     const neededPermissions = [
+      'android.permission.ACCESS_BACKGROUND_LOCATION',
       'android.permission.FOREGROUND_SERVICE',
       'android.permission.FOREGROUND_SERVICE_SPECIAL_USE',
       'android.permission.PACKAGE_USAGE_STATS',
@@ -1487,6 +1580,19 @@ function withArcakidsFiles(config) {
         if (!content.includes('ProvisioningHandler')) {
           content = content.replace(/super\.onCreate\([^)]*\)/, (m) => `${m}\n    ProvisioningHandler.handleIntent(this, intent)`);
           dirty = true;
+        }
+        if (!dirty) {
+          // Run once to make sure the permission-result wiring is present.
+          if (!content.includes('onRequestPermissionsResult')) {
+            if (!content.includes('import android.content.pm.PackageManager')) {
+              content = content.replace('import android.content.Intent', 'import android.content.Intent\nimport android.content.pm.PackageManager');
+            }
+            content = content.replace(
+              /(\n\s*override fun createReactActivityDelegate.*?\}\}\)\s*)\n/,
+              '$1\n  override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {\n    super.onRequestPermissionsResult(requestCode, permissions, grantResults)\n    if (requestCode == 4201) {\n      ParentalLocationModule.onRequestPermissionsResult(requestCode, grantResults)\n    }\n  }\n'
+            );
+            dirty = true;
+          }
         }
         if (dirty) await fs.promises.writeFile(mainActivityPath, content, 'utf8');
       } catch (_) {}

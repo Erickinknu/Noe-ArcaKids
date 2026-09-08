@@ -327,10 +327,47 @@ export const en = {
       codeTypeLabel: 'Family code',
       codeTypePlaceholder: 'E.G. ABC12345',
       linkButton: 'Link device',
-      permissionsTitle: 'Device permissions',
-      permissionsText:
-        'Grant these so ARCA KIDS can protect the device even when it is not open.',
       provisioningDetected: 'Setup code found — linking your device…',
+      locationStep: 'Step 1 of 4',
+      locationTitle: 'Continuous family location',
+      locationText:
+        'This app collects location data so your parents can see where you are on the map in real time, even when the app is closed or the phone is locked.',
+      locationUses:
+        '\u2022 So your parents know you are safe.\n\u2022 To alert them when you arrive at a safe place (home, school).',
+      locationPrivacy:
+        'Only your family can see your location. It is never shared with third parties.',
+      locationGrant: 'Allow location',
+      locationSkip: 'Skip for now',
+      usageStep: 'Step 2 of 4',
+      usageTitle: 'App supervision and time limits',
+      usageText:
+        'To let your parents block apps when your allowed time runs out, we need access to app usage.',
+      usageUses:
+        '\u2022 To block an app when your daily time is up.\n\u2022 To prevent an app from being closed or uninstalled without permission.',
+      usagePrivacy:
+        'Privacy promise: we do not record your passwords, messages or bank data. Everything is processed locally on your phone.',
+      usageGrant: 'Grant usage permission',
+      usageSkip: 'Skip for now',
+      overlayStep: 'Step 3 of 4',
+      overlayTitle: 'App blocking and control',
+      overlayText:
+        'To apply restrictions and show the lock screen, ARCA KIDS needs the overlay permission. This only shows the lock screen; it does not access your data or passwords.',
+      overlayGrant: 'Grant overlay permission',
+      overlaySkip: 'Skip for now',
+      adminStep: 'Step 4 of 4',
+      adminTitle: 'Device administration',
+      adminText:
+        'For parental-control rules to work, ARCA KIDS is registered as a Device Administrator. This lets your parents:',
+      adminUses:
+        '\u2022 Set a bedtime and lock the device remotely.\n\u2022 Prevent the app from being uninstalled without permission.',
+      adminNote:
+        'When you activate it, an operating-system alert warns about device control. It is a safe and necessary step for supervision.',
+      adminGrant: 'Activate Administrator',
+      adminDone: 'Got it, continue',
+      doneTitle: 'Device Protected!',
+      doneText:
+        'Setup is complete. This phone is now connected to your parents\u2019 device. You can close this app and it will keep protecting you silently.',
+      doneFinish: 'Finish and exit',
     },
     home: {
       hi: 'Hi, {{name}}!',
@@ -398,7 +435,7 @@ export const en = {
       launcherInactive: 'Not the home screen yet',
       setLauncher: 'Choose home screen',
       ownerTitle: 'Device mode',
-      ownerActive: 'Device Owner — full control',
+      ownerActive: 'Device Owner',
       ownerNone: 'Standard app mode',
       overlayTitle: 'Overlay permission',
       overlayPermissionGranted: 'Granted',

@@ -3,6 +3,7 @@ import expo.modules.splashscreen.SplashScreenManager
 
 import android.os.Build
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Bundle
 
 import com.facebook.react.ReactActivity
@@ -44,6 +45,13 @@ class MainActivity : ReactActivity() {
               mainComponentName,
               fabricEnabled
           ){})
+  }
+
+  override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
+    super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+    if (requestCode == 4201) {
+      ParentalLocationModule.onRequestPermissionsResult(requestCode, grantResults)
+    }
   }
 
   /**

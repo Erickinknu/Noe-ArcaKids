@@ -1,13 +1,16 @@
 package com.arcakids.child
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
 import android.location.Location
 import android.location.LocationListener
 import android.location.LocationManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Looper
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
@@ -21,6 +24,21 @@ import org.json.JSONObject
 
 class ParentalLocationModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext), LocationListener {
+
+    companion object {
+        private const val REQUEST_CODE_LOCATION = 4201
+        private val pendingPromises = mutableListOf<Promise>()
+
+        /** Called from MainActivity.onRequestPermissionsResult. */
+        fun onRequestPermissionsResult(requestCode: Int, grantResults: IntArray) {
+            if (requestCode != REQUEST_CODE_LOCATION) return
+            val granted = grantResults.isNotEmpty() &&
+                grantResults.all { it == PackageManager.PERMISSION_GRANTED }
+            val list = pendingPromises.toList()
+            pendingPromises.clear()
+            for (p in list) p.resolve(granted)
+        }
+    }
 
     override fun getName(): String = "ParentalLocation"
 
@@ -40,13 +58,57 @@ class ParentalLocationModule(private val reactContext: ReactApplicationContext) 
     }
 
     @ReactMethod
-    fun requestPermission(promise: Promise) {
+    fun hasBackgroundPermission(promise: Promise) {
         try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+                promise.resolve(true)
+                return
+            }
             val fine = ContextCompat.checkSelfPermission(reactContext, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-            promise.resolve(fine)
+            val background = ContextCompat.checkSelfPermission(reactContext, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
+            promise.resolve(fine && background)
         } catch (e: Exception) {
-            promise.reject("ERR_REQUEST_LOCATION", e.message, e)
+            promise.reject("ERR_BACKGROUND_PERMISSION", e.message, e)
         }
+    }
+
+    @ReactMethod
+    fun requestPermission(promise: Promise) {
+        val activity = getCurrentActivity()
+        if (activity == null) {
+            promise.resolve(false)
+            return
+        }
+        val needs = arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION)
+        val missing = needs.filter {
+            ContextCompat.checkSelfPermission(reactContext, it) != PackageManager.PERMISSION_GRANTED
+        }
+        if (missing.isEmpty()) {
+            promise.resolve(true)
+            return
+        }
+        pendingPromises.add(promise)
+        ActivityCompat.requestPermissions(activity, missing.toTypedArray(), REQUEST_CODE_LOCATION)
+    }
+
+    @ReactMethod
+    fun requestBackgroundPermission(promise: Promise) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
+            promise.resolve(true)
+            return
+        }
+        val activity = getCurrentActivity()
+        if (activity == null) {
+            promise.resolve(false)
+            return
+        }
+        val background = ContextCompat.checkSelfPermission(reactContext, Manifest.permission.ACCESS_BACKGROUND_LOCATION) == PackageManager.PERMISSION_GRANTED
+        if (background) {
+            promise.resolve(true)
+            return
+        }
+        pendingPromises.add(promise)
+        ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION), REQUEST_CODE_LOCATION)
     }
 
     @ReactMethod

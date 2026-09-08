@@ -58,6 +58,29 @@ class DeviceOwnerModule(reactContext: ReactApplicationContext) : ReactContextBas
     }
 
     @ReactMethod
+    fun enableAdmin(promise: Promise) {
+        try {
+            if (dpm.isAdminActive(admin)) {
+                promise.resolve(true); return
+            }
+            val intent = android.app.admin.DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN.let {
+                android.content.Intent(it).apply {
+                    putExtra(android.app.admin.DevicePolicyManager.EXTRA_DEVICE_ADMIN, admin)
+                    putExtra(
+                        android.app.admin.DevicePolicyManager.EXTRA_ADD_EXPLANATION,
+                        "Requerido para el control de horarios y bloqueo remoto parental."
+                    )
+                    addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                }
+            }
+            reactApplicationContext.startActivity(intent)
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERR_ENABLE_ADMIN", e.message, e)
+        }
+    }
+
+    @ReactMethod
     fun canSuspendPackages(promise: Promise) {
         try {
             promise.resolve(dpm.isDeviceOwnerApp(reactApplicationContext.packageName))

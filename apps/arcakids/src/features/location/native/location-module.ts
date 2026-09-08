@@ -30,7 +30,9 @@ interface NativeLocationModule {
   startTracking(): Promise<LocationReading>;
   stopTracking(): Promise<void>;
   hasPermission(): Promise<boolean>;
+  hasBackgroundPermission(): Promise<boolean>;
   requestPermission(): Promise<boolean>;
+  requestBackgroundPermission(): Promise<boolean>;
   addGeofence(geofence: Geofence): Promise<boolean>;
   removeGeofence(geofenceId: string): Promise<boolean>;
   getGeofences(): Promise<Geofence[]>;
@@ -53,9 +55,19 @@ export const locationModule = {
     return native.hasPermission();
   },
 
+  async hasBackgroundPermission(): Promise<boolean> {
+    if (!native) return false;
+    return native.hasBackgroundPermission();
+  },
+
   async requestPermission(): Promise<boolean> {
     if (!native) return false;
     return native.requestPermission();
+  },
+
+  async requestBackgroundPermission(): Promise<boolean> {
+    if (!native) return false;
+    return native.requestBackgroundPermission();
   },
 
   async getCurrentLocation(): Promise<LocationReading | null> {

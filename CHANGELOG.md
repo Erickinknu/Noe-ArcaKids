@@ -5,6 +5,39 @@ All notable changes to the `noe-arcakids` monorepo will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.2] - 2026-09-08
+
+### Added
+- **Declaraciones Destacadas (Prominent Disclosure) para cumplir las políticas de
+  Google Play Store / Apple App Store** en el onboarding de ARCA KIDS:
+  - Paso 1 "Localización familiar continua": explica el rastreo en tiempo real,
+    incluso con la app cerrada o el teléfono bloqueado, y que solo la familia lo ve.
+  - Paso 2 "Supervisión de apps y límites de tiempo": detalla para qué se usa el
+    acceso al uso de las aplicaciones y la promesa de privacidad (sin contraseñas,
+    mensajes ni datos bancarios; todo local).
+  - Paso 3 "Bloqueo y control de aplicaciones": explica el permiso de superposición.
+  - Paso 4 "Administración del dispositivo": avisa de la alerta nativa del sistema
+    y permite activar el Administrador (`ACTION_ADD_DEVICE_ADMIN`) en el modo
+    no-owner; en modo Device Owner es informativo.
+  - Cierre "¡Dispositivo Protegido!": transparencia de que seguirá funcionando en
+    segundo plano con la notificación persistente.
+  - Cada pantalla usa un botón afirmativo explícito ANTES de abrir el prompt del
+    sistema (cumple consentimiento afirmativo, sin engaños y pre-prompt).
+- **Ubicación en segundo plano real**: petición de `ACCESS_BACKGROUND_LOCATION`
+  (además de FINE/COARSE) mediante `ActivityCompat.requestPermissions` con
+  resultado reenviado desde `MainActivity.onRequestPermissionsResult`. El antiguo
+  método `requestPermission` era un no-op que solo comprobaba el permiso.
+- **`DeviceOwner.enableAdmin()`**: dispara `ACTION_ADD_DEVICE_ADMIN` para el caso
+  en que ARCA KIDS no sea Device Owner.
+
+### Changed
+- **Versión 1.3.2 (versionCode 7)** en NOE y ARCA KIDS: `package.json`,
+  `app.config.ts`, `android/app/build.gradle`, `APP_VERSION` del monorepo,
+  lockfile y este changelog.
+- Plugin `with-device-owner.js` sincronizado con los nuevos módulos nativos
+  (BackgroundLocation, `enableAdmin`, `onDisableRequested`, `onRequestPermissionsResult`
+  y permiso `ACCESS_BACKGROUND_LOCATION`) para que sobrevivan un futuro `prebuild`.
+
 ## [1.3.1] - 2026-09-08
 
 ### Added

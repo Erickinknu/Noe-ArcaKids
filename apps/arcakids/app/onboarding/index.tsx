@@ -7,22 +7,24 @@ import { Button } from '@/components/ui/button';
 import { ROUTES } from '@/constants';
 import { deviceOwnerBridge } from '@/features/device-control/native/device-owner-module';
 import { linkingService } from '@/features/linking/services/linking-service';
+import { locationModule } from '@/features/location/native/location-module';
 import { onboardingService } from '@/features/onboarding/services/onboarding-service';
 import { parentalBridge } from '@/features/parental/native/parental-bridge';
 import { Card, Input, errorMessage, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 const CODE_LENGTH = 8;
 
+type StepKind = 'welcome' | 'code' | 'location' | 'usage' | 'overlay' | 'admin' | 'done';
+
 export default function OnboardingScreen() {
   const { t: tr } = useTranslation();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState<StepKind>('welcome');
   const [code, setCode] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [linking, setLinking] = useState(false);
-  const [usageGranted, setUsageGranted] = useState(false);
-  const [overlayGranted, setOverlayGranted] = useState(false);
+  const [isOwner, setIsOwner] = useState<boolean | null>(null);
 
   // Auto-link from Device Owner provisioning extras (set during setup).
   useEffect(() => {
@@ -57,28 +59,19 @@ export default function OnboardingScreen() {
     };
   }, []);
 
-  // Live permission status while the permissions step is shown.
+  // Detect Device Owner status once (used by the admin screen).
   useEffect(() => {
     let mounted = true;
-    const check = async () => {
+    (async () => {
       try {
-        const [usage, overlay] = await Promise.all([
-          parentalBridge.hasUsageStatsPermission(),
-          deviceOwnerBridge.hasOverlayPermission(),
-        ]);
-        if (mounted) {
-          setUsageGranted(usage);
-          setOverlayGranted(overlay);
-        }
+        const state = await deviceOwnerBridge.getState();
+        if (mounted) setIsOwner(state.isDeviceOwner);
       } catch {
-        // ignore
+        if (mounted) setIsOwner(false);
       }
-    };
-    void check();
-    const timer = setInterval(check, 2000);
+    })();
     return () => {
       mounted = false;
-      clearInterval(timer);
     };
   }, []);
 
@@ -98,54 +91,135 @@ export default function OnboardingScreen() {
     }
   }
 
-  if (step === 0) {
+  function renderStepHeading(titleKey: string, stepKey: string) {
+    return (
+      <>
+        <Text style={styles.step}>{tr(stepKey)}</Text>
+        <Text style={styles.title}>{tr(titleKey)}</Text>
+      </>
+    );
+  }
+
+  if (step === 'welcome') {
     return (
       <View style={styles.screen}>
         <Text style={styles.mascot}>🧸</Text>
         <Text style={styles.title}>{tr('arcakids.onboarding.welcome')}</Text>
         <Text style={styles.description}>{tr('arcakids.onboarding.welcomeText')}</Text>
-        <Button onPress={() => setStep(1)}>{tr('arcakids.onboarding.start')}</Button>
+        <Button onPress={() => setStep('location')}>
+          {tr('arcakids.onboarding.start')}
+        </Button>
       </View>
     );
   }
 
-  if (step === 1) {
+  if (step === 'location') {
     return (
       <View style={styles.screen}>
-        <Text style={styles.title}>{tr('arcakids.onboarding.permissionsTitle')}</Text>
-        <Text style={styles.description}>{tr('arcakids.onboarding.permissionsText')}</Text>
+        {renderStepHeading('arcakids.onboarding.locationTitle', 'arcakids.onboarding.locationStep')}
+        <Text style={styles.description}>{tr('arcakids.onboarding.locationText')}</Text>
+        <Text style={styles.list}>{tr('arcakids.onboarding.locationUses')}</Text>
         <Card>
-          <View style={styles.permissionRow}>
-            <Text style={styles.permissionName}>{tr('arcakids.parental.usagePermission')}</Text>
-            <Text style={usageGranted ? styles.permissionOk : styles.permissionPending}>
-              {usageGranted
-                ? tr('arcakids.parental.usagePermissionGranted')
-                : tr('arcakids.parental.usagePermissionMissing')}
-            </Text>
-            {!usageGranted ? (
-              <Button variant="outline" onPress={() => void parentalBridge.openUsageAccessSettings()}>
-                {tr('arcakids.parental.grantUsage')}
-              </Button>
-            ) : null}
-          </View>
-          <View style={styles.permissionRow}>
-            <Text style={styles.permissionName}>{tr('arcakids.parental.overlayTitle')}</Text>
-            <Text style={overlayGranted ? styles.permissionOk : styles.permissionPending}>
-              {overlayGranted
-                ? tr('arcakids.parental.overlayPermissionGranted')
-                : tr('arcakids.parental.overlayPermissionMissing')}
-            </Text>
-            {!overlayGranted ? (
-              <Button variant="outline" onPress={() => void deviceOwnerBridge.openOverlaySettings()}>
-                {tr('arcakids.parental.grantOverlay')}
-              </Button>
-            ) : null}
-          </View>
+          <Text style={styles.privacy}>{tr('arcakids.onboarding.locationPrivacy')}</Text>
         </Card>
-        <Button onPress={() => setStep(2)}>{tr('arcakids.onboarding.next')}</Button>
-        <Pressable onPress={() => setStep(0)}>
-          <Text style={styles.back}>{tr('arcakids.onboarding.back')}</Text>
+        <Button
+          onPress={() => {
+            void (async () => {
+              await locationModule.requestPermission().catch(() => false);
+              if (await locationModule.hasPermission()) {
+                await locationModule.requestBackgroundPermission().catch(() => false);
+              }
+              setStep('usage');
+            })();
+          }}
+        >
+          {tr('arcakids.onboarding.locationGrant')}
+        </Button>
+        <Pressable onPress={() => setStep('usage')}>
+          <Text style={styles.back}>{tr('arcakids.onboarding.locationSkip')}</Text>
         </Pressable>
+      </View>
+    );
+  }
+
+  if (step === 'usage') {
+    return (
+      <View style={styles.screen}>
+        {renderStepHeading('arcakids.onboarding.usageTitle', 'arcakids.onboarding.usageStep')}
+        <Text style={styles.description}>{tr('arcakids.onboarding.usageText')}</Text>
+        <Text style={styles.list}>{tr('arcakids.onboarding.usageUses')}</Text>
+        <Card>
+          <Text style={styles.privacy}>{tr('arcakids.onboarding.usagePrivacy')}</Text>
+        </Card>
+        <Button onPress={() => void parentalBridge.openUsageAccessSettings()}>
+          {tr('arcakids.onboarding.usageGrant')}
+        </Button>
+        <Pressable onPress={() => setStep('overlay')}>
+          <Text style={styles.back}>{tr('arcakids.onboarding.usageSkip')}</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  if (step === 'overlay') {
+    return (
+      <View style={styles.screen}>
+        {renderStepHeading('arcakids.onboarding.overlayTitle', 'arcakids.onboarding.overlayStep')}
+        <Text style={styles.description}>{tr('arcakids.onboarding.overlayText')}</Text>
+        <Button onPress={() => void deviceOwnerBridge.openOverlaySettings()}>
+          {tr('arcakids.onboarding.overlayGrant')}
+        </Button>
+        <Pressable onPress={() => setStep('admin')}>
+          <Text style={styles.back}>{tr('arcakids.onboarding.overlaySkip')}</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  if (step === 'admin') {
+    return (
+      <View style={styles.screen}>
+        {renderStepHeading('arcakids.onboarding.adminTitle', 'arcakids.onboarding.adminStep')}
+        <Text style={styles.description}>{tr('arcakids.onboarding.adminText')}</Text>
+        <Text style={styles.list}>{tr('arcakids.onboarding.adminUses')}</Text>
+        <Text style={styles.description}>{tr('arcakids.onboarding.adminNote')}</Text>
+        <Button
+          onPress={async () => {
+            if (isOwner === false) {
+              try {
+                await deviceOwnerBridge.enableAdmin();
+              } catch {
+                // fall through: continue to done regardless
+              }
+            }
+            setStep('done');
+          }}
+        >
+          {isOwner === false
+            ? tr('arcakids.onboarding.adminGrant')
+            : tr('arcakids.onboarding.adminDone')}
+        </Button>
+        <Pressable onPress={() => setStep('done')}>
+          <Text style={styles.back}>{tr('arcakids.onboarding.adminDone')}</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
+  if (step === 'done') {
+    return (
+      <View style={styles.screen}>
+        <Text style={styles.mascot}>🛡️</Text>
+        <Text style={styles.title}>{tr('arcakids.onboarding.doneTitle')}</Text>
+        <Text style={styles.description}>{tr('arcakids.onboarding.doneText')}</Text>
+        <Button
+          onPress={() => {
+            void onboardingService.markCompleted().catch(() => undefined);
+            router.replace(ROUTES.app);
+          }}
+        >
+          {tr('arcakids.onboarding.doneFinish')}
+        </Button>
       </View>
     );
   }
@@ -169,7 +243,7 @@ export default function OnboardingScreen() {
       <Button onPress={handleLink} loading={linking} disabled={code.trim().length === 0}>
         {tr('arcakids.onboarding.linkButton')}
       </Button>
-      <Pressable onPress={() => setStep(1)}>
+      <Pressable onPress={() => setStep('location')}>
         <Text style={styles.back}>{tr('arcakids.onboarding.back')}</Text>
       </Pressable>
       {error ? <Text style={styles.error}>{error}</Text> : null}
@@ -190,6 +264,12 @@ const makeStyles = (colors: ThemeColors) =>
     fontSize: 64,
     textAlign: 'center',
   },
+  step: {
+    fontSize: typography.fontSizes.caption,
+    fontWeight: typography.fontWeights.semibold,
+    color: colors.primary,
+    textAlign: 'center',
+  },
   title: {
     fontSize: typography.fontSizes.heading,
     fontWeight: typography.fontWeights.bold,
@@ -202,27 +282,20 @@ const makeStyles = (colors: ThemeColors) =>
     textAlign: 'center',
     lineHeight: 24,
   },
+  list: {
+    fontSize: typography.fontSizes.body,
+    color: colors.text,
+    lineHeight: 24,
+  },
+  privacy: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    lineHeight: 20,
+  },
   provisioning: {
     fontSize: typography.fontSizes.caption,
     color: colors.primary,
     textAlign: 'center',
-  },
-  permissionRow: {
-    gap: spacing.sm,
-    paddingVertical: spacing.md,
-  },
-  permissionName: {
-    fontSize: typography.fontSizes.body,
-    fontWeight: typography.fontWeights.semibold,
-    color: colors.text,
-  },
-  permissionOk: {
-    fontSize: typography.fontSizes.caption,
-    color: colors.success,
-  },
-  permissionPending: {
-    fontSize: typography.fontSizes.caption,
-    color: colors.warning,
   },
   back: {
     color: colors.textMuted,

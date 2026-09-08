@@ -333,11 +333,48 @@ export const es = {
       codeTypeLabel: 'C\u00f3digo de familia',
       codeTypePlaceholder: 'EJ: ABC12345',
       linkButton: 'Vincular',
-      permissionsTitle: 'Permisos del dispositivo',
-      permissionsText:
-        'Conc\u00e9delos para que ARCA KIDS pueda proteger el dispositivo incluso si la app no est\u00e1 abierta.',
       provisioningDetected:
         'C\u00f3digo de configuraci\u00f3n detectado \u2014 vinculando tu dispositivo\u2026',
+      locationStep: 'Paso 1 de 4',
+      locationTitle: 'Localizaci\u00f3n familiar continua',
+      locationText:
+        'Esta aplicaci\u00f3n recopila datos de ubicaci\u00f3n para permitir que tus padres vean d\u00f3nde est\u00e1s en el mapa en tiempo real, incluso cuando la aplicaci\u00f3n est\u00e1 cerrada o el tel\u00e9fono bloqueado.',
+      locationUses:
+        '\u2022 Para que tus padres sepan que est\u00e1s a salvo.\n\u2022 Para alertarte cuando llegues a un lugar seguro (casa, escuela).',
+      locationPrivacy:
+        'Solo tu familia puede ver tu ubicaci\u00f3n. No se comparte con terceros.',
+      locationGrant: 'Permitir ubicaci\u00f3n',
+      locationSkip: 'Omitir por ahora',
+      usageStep: 'Paso 2 de 4',
+      usageTitle: 'Supervisi\u00f3n de apps y l\u00edmites de tiempo',
+      usageText:
+        'Para que tus padres puedan bloquear aplicaciones cuando se agote el tiempo permitido, necesitamos el acceso al uso de las aplicaciones.',
+      usageUses:
+        '\u2022 Para bloquear una app cuando se acaba tu tiempo diario.\n\u2022 Para evitar que una app sea cerrada o desinstalada sin autorizaci\u00f3n.',
+      usagePrivacy:
+        'Promesa de privacidad: no registramos tus contrase\u00f1as, mensajes de texto ni datos bancarios. Todo se procesa de forma local en tu tel\u00e9fono.',
+      usageGrant: 'Otorgar permiso de uso',
+      usageSkip: 'Omitir por ahora',
+      overlayStep: 'Paso 3 de 4',
+      overlayTitle: 'Bloqueo y control de aplicaciones',
+      overlayText:
+        'Para aplicar las restricciones y mostrar la pantalla de bloqueo, ARCA KIDS necesita el permiso de superposici\u00f3n. Esto solo muestra la pantalla de bloqueo; no accede a tus datos ni contrase\u00f1as.',
+      overlayGrant: 'Otorgar permiso de superposici\u00f3n',
+      overlaySkip: 'Omitir por ahora',
+      adminStep: 'Paso 4 de 4',
+      adminTitle: 'Administraci\u00f3n del dispositivo',
+      adminText:
+        'Para que las reglas de control parental funcionen, ARCA KIDS est\u00e1 registrada como Administrador del Dispositivo. Esto permite a tus padres:',
+      adminUses:
+        '\u2022 Establecer un horario de sue\u00f1o y bloquear el dispositivo de forma remota.\n\u2022 Evitar que la app sea desinstalada sin permiso.',
+      adminNote:
+        'Al activarlo aparece una alerta del sistema operativo que advierte sobre el control del dispositivo. Es un paso seguro y necesario para la supervisi\u00f3n.',
+      adminGrant: 'Activar Administrador',
+      adminDone: 'Entendido, continuar',
+      doneTitle: '\u00a1Dispositivo Protegido!',
+      doneText:
+        'La configuraci\u00f3n ha terminado. Este tel\u00e9fono ahora est\u00e1 conectado con el dispositivo de tus padres. Puedes cerrar esta aplicaci\u00f3n y seguir\u00e1 protegi\u00e9ndote en silencio.',
+      doneFinish: 'Finalizar y salir',
     },
     home: {
       hi: '\u00a1Hola, {{name}}!',
@@ -406,7 +443,7 @@ export const es = {
       launcherInactive: 'No es la pantalla de inicio',
       setLauncher: 'Elegir pantalla de inicio',
       ownerTitle: 'Modo del dispositivo',
-      ownerActive: 'Device Owner \u2014 control total',
+      ownerActive: 'Device Owner',
       ownerNone: 'Modo app est\u00e1ndar',
       overlayTitle: 'Permiso de superposici\u00f3n',
       overlayPermissionGranted: 'Concedido',

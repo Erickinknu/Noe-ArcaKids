@@ -7,6 +7,7 @@ interface NativeDeviceOwner {
   isDeviceOwnerProvisioned(): Promise<boolean>;
   isAdminActive(): Promise<boolean>;
   canSuspendPackages(): Promise<boolean>;
+  enableAdmin(): Promise<boolean>;
   lockNow(): Promise<boolean>;
   setPackagesSuspended(packageNamesJson: string, suspended: boolean): Promise<string[]>;
   setUserRestriction(restriction: string, enabled: boolean): Promise<boolean>;
@@ -63,6 +64,11 @@ export const deviceOwnerBridge = {
   async isDeviceOwnerProvisioned(): Promise<boolean> {
     if (!native) return false;
     return native.isDeviceOwnerProvisioned();
+  },
+
+  async enableAdmin(): Promise<boolean> {
+    if (!native) return false;
+    return native.enableAdmin();
   },
 
   async lockNow(): Promise<boolean> {
