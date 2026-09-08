@@ -5,6 +5,33 @@ All notable changes to the `noe-arcakids` monorepo will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-09-07
+
+### Added
+- **Provisionamiento real como Device Owner (DPC)**:
+  - Nueva actividad `DisposableProvisioningActivity` (`ACTION_PROVISION_MANAGED_DEVICE`)
+    que, durante la configuración de Android, lee `EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE`
+    y persiste `familyId`/`childId`/`pairingCode` en ARCA KIDS para autovincularse al primer arranque.
+  - Toggle "QR app / QR del asistente (Device Owner)" en NOE → Vincular: el QR DPC codifica
+    las claves `android.app.extra.*` (admin component + bundle). Sin el Device Owner, todos los
+    poderes DPM (suspensión, lock task, etc.) fallan silenciosamente con `ERR_NOT_OWNER`.
+- **Fix del bloqueo que "no se sostenía"**:
+  - El poller ya no pisa la bandera `device_state.is_blocked` con el enforcement de reglas
+    (antes escribía emergencia y la sobreescribía con `enforce=false` cada 15s).
+  - `EnforcementService` lee `is_blocked` como candado total autoritativo → suspende todas las
+    apps (incluido el launcher) si es Device Owner, o muestra un overlay de pantalla completa no
+    desmontable si no lo es.
+  - `LOCK`/`UNLOCK` desde NOE ahora ejecutan lock-task (kiosco) en modo Owner y además el
+    dashboard (Blocar/Desbloquear) encola el comando para que el dispositivo reaccione al instante.
+- **Overlay de fallback usable**: paso de permisos en el onboarding de ARCA KIDS (acceso a uso +
+  superposición), fila "Modo del dispositivo" y "Permiso de superposición" en Ajustes con acceso
+  directo a los ajustes del sistema.
+
+### Changed
+- **Versión 1.3.0 (versionCode 5)** en NOE y ARCA KIDS: `package.json`,
+  `app.config.ts`, `android/app/build.gradle`, `APP_VERSION` del monorepo,
+  lockfile y este changelog.
+
 ## [1.2.1] - 2026-09-07
 
 ### Changed

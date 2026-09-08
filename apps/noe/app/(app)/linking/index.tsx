@@ -13,7 +13,7 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
-import { linkingService, type LinkingMode, DEVICE_ADMIN_COMPONENT_SHORT } from '@/features/linking/services/linking-service';
+import { linkingService, buildAndroidProvisioningExtras, type LinkingMode, DEVICE_ADMIN_COMPONENT_SHORT } from '@/features/linking/services/linking-service';
 import type { ChildProfile, ProvisioningPayload } from '@noe-arcakids/types';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { Card, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
@@ -35,6 +35,7 @@ export default function LinkingScreen() {
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [qrType, setQrType] = useState<'app' | 'dpc'>('app');
 
   const fetchFamily = useCallback(async (): Promise<FamilyWithChildren> => {
     const { family } = await familyService.getMyFamily();
@@ -82,7 +83,11 @@ export default function LinkingScreen() {
     }
   }
 
-  const qrValue = payload ? JSON.stringify(payload) : '';
+  const qrValue = payload
+    ? qrType === 'dpc'
+      ? JSON.stringify(buildAndroidProvisioningExtras(payload))
+      : JSON.stringify(payload)
+    : '';
   const displayChildName =
     mode === 'family' ? tr('noe.linking.modeFamily') : (selectedChild?.displayName ?? '');
 
@@ -178,17 +183,37 @@ export default function LinkingScreen() {
               : tr('noe.linking.codeFor', { name: tr('noe.linking.modeFamily') })}
           </Text>
           <Text style={styles.code}>{payload.code}</Text>
+          <View style={styles.qrModeRow}>
+            <Pressable
+              onPress={() => setQrType('app')}
+              style={[styles.modeChip, qrType === 'app' && styles.modeChipActive]}
+            >
+              <Text style={[styles.modeText, qrType === 'app' && styles.modeTextActive]}>
+                {tr('noe.linking.qrModeApp')}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={() => setQrType('dpc')}
+              style={[styles.modeChip, qrType === 'dpc' && styles.modeChipActive]}
+            >
+              <Text style={[styles.modeText, qrType === 'dpc' && styles.modeTextActive]}>
+                {tr('noe.linking.qrModeDpc')}
+              </Text>
+            </Pressable>
+          </View>
           <View style={styles.qrBox}>
             <QRCode value={qrValue} size={190} />
           </View>
           <Text style={styles.muted}>
-            {tr('noe.linking.expiresAt', {
-              time: new Date(expiresAt).toLocaleTimeString(),
-            })}
+            {qrType === 'dpc'
+              ? tr('noe.linking.modeHintDpc')
+              : tr('noe.linking.expiresAt', {
+                  time: new Date(expiresAt).toLocaleTimeString(),
+                })}
           </Text>
-          <Text style={[styles.muted, styles.qrHint]}>
-            {tr('noe.linking.provisioningHelp')}
-          </Text>
+          {qrType === 'dpc' ? (
+            <Text style={styles.muted}>{tr('noe.linking.provisioningHelp')}</Text>
+          ) : null}
           <Text style={styles.payloadLabel}>{tr('noe.linking.qrPayloadLabel')}</Text>
           <Text style={styles.payloadJson} selectable>{qrValue}</Text>
           <Text style={styles.muted}>
@@ -285,6 +310,11 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     fontWeight: typography.fontWeights.bold,
     color: colors.text,
     letterSpacing: 6,
+  },
+  qrModeRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    width: '100%',
   },
   qrBox: {
     padding: spacing.md,

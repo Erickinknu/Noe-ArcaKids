@@ -145,23 +145,14 @@ class ParentalUsageModule(private val reactContext: ReactApplicationContext) :
             val json = JSONObject(deviceStateJson)
             val isBlocked = json.optBoolean("isBlocked", false)
             reactContext.getSharedPreferences("arcakids_device", Context.MODE_PRIVATE)
-                .edit().putBoolean("is_blocked", isBlocked).apply()
+                .edit()
+                .putBoolean("is_blocked", isBlocked)
+                .putBoolean("alert_active", json.optBoolean("alertActive", false))
+                .apply()
             if (isBlocked) {
+                // The EnforcementService reads the device-level flag as the authoritative
+                // total lock; no need to fabricate an emergency enforcement state here.
                 EnforcementService.start(reactContext)
-                val emergency = JSONObject()
-                    .put("enforce", true)
-                    .put("bedtimeEnabled", false)
-                    .put("bedtimeStart", JSONObject.NULL)
-                    .put("bedtimeEnd", JSONObject.NULL)
-                    .put("dailyLimitMinutes", 0)
-                    .put("bonusMinutes", 0)
-                    .put("pausedUntil", JSONObject.NULL)
-                    .put("blockedPackages", org.json.JSONArray())
-                EnforcementService.saveState(reactContext, emergency.toString())
-            } else {
-                EnforcementService.stop(reactContext)
-                reactContext.getSharedPreferences("arcakids_enforcement", Context.MODE_PRIVATE)
-                    .edit().putString("enforcement_state", null).apply()
             }
             promise.resolve(null)
         } catch (e: Exception) {

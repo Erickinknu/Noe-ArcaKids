@@ -210,6 +210,12 @@ export const en = {
       provisioningHelp: 'For Device Owner provisioning, scan the QR during setup. It contains the admin component and pairing code.',
       qrPayloadLabel: 'QR payload (JSON)',
       adminComponentLabel: 'Device admin: {{component}}',
+      qrModeApp: 'Standard QR',
+      qrModeDpc: 'Setup Wizard QR (Device Owner)',
+      modeHintDpc:
+        'During Android setup, scan this QR to make ARCA KIDS the Device Owner and link the device automatically.',
+      copyPayload: 'Copy',
+      copied: 'Copied',
     },
     deviceControl: {
       title: 'Remote control',
@@ -321,6 +327,10 @@ export const en = {
       codeTypeLabel: 'Family code',
       codeTypePlaceholder: 'E.G. ABC12345',
       linkButton: 'Link device',
+      permissionsTitle: 'Device permissions',
+      permissionsText:
+        'Grant these so ARCA KIDS can protect the device even when it is not open.',
+      provisioningDetected: 'Setup code found — linking your device…',
     },
     home: {
       hi: 'Hi, {{name}}!',
@@ -387,6 +397,13 @@ export const en = {
       launcherActive: 'ARCA KIDS is your home screen',
       launcherInactive: 'Not the home screen yet',
       setLauncher: 'Choose home screen',
+      ownerTitle: 'Device mode',
+      ownerActive: 'Device Owner — full control',
+      ownerNone: 'Standard app mode',
+      overlayTitle: 'Overlay permission',
+      overlayPermissionGranted: 'Granted',
+      overlayPermissionMissing: 'Not granted',
+      grantOverlay: 'Grant in Settings',
       todayUsage: "Today's usage",
       minutesValue: '{{minutes}} min',
       minutesOfLimit: '{{minutes}} of {{limit}} min',

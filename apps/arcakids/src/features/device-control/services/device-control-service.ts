@@ -35,6 +35,8 @@ export const deviceControlService = {
         case 'LOCK': {
           if (isOwner) {
             await deviceOwnerBridge.lockNow();
+            // Pin ARCA KIDS so leaving the app is not possible (kiosk).
+            try { await deviceOwnerBridge.startLockTask(); } catch { /* best-effort */ }
           } else {
             // Fallback: mark device as locked so EnforcementService blocks via overlay
             await parentalBridge.updateDeviceState({ isBlocked: true, alertActive: false });
@@ -43,11 +45,10 @@ export const deviceControlService = {
           break;
         }
         case 'UNLOCK': {
+          await parentalBridge.updateDeviceState({ isBlocked: false, alertActive: false });
           if (isOwner) {
-            // No direct unlock; clear restriction + report unlocked status
-            await parentalBridge.updateDeviceState({ isBlocked: false, alertActive: false });
+            try { await deviceOwnerBridge.stopLockTask(); } catch { /* best-effort */ }
           } else {
-            await parentalBridge.updateDeviceState({ isBlocked: false, alertActive: false });
             usedFallback = true;
           }
           break;

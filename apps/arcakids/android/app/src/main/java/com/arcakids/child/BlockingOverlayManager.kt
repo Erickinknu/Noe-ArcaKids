@@ -32,24 +32,42 @@ class BlockingOverlayManager(private val context: Context) {
     private val blockedSet = mutableSetOf<String>()
     private var currentOverlay: View? = null
     private var monitoring = false
+    private var lockAllMode = false
 
     private val monitor = object : Runnable {
         override fun run() {
             if (!monitoring) return
-            val topApp = currentTopApp()
-            if (topApp != null && topApp in blockedSet) showOverlay(topApp) else hideOverlay()
+            if (lockAllMode) {
+                // Persistent full-screen lock: keep the overlay up regardless of the top app.
+                if (currentOverlay == null) showOverlay("", dismissible = false)
+            } else {
+                val topApp = currentTopApp()
+                if (topApp != null && topApp in blockedSet) showOverlay(topApp) else hideOverlay()
+            }
             handler.postDelayed(this, 700)
         }
     }
 
     fun show(blocked: Set<String>) {
+        lockAllMode = false
         blockedSet.clear(); blockedSet.addAll(blocked)
         if (!canDrawOverlays()) { monitoring = false; return }
         if (blockedSet.isEmpty()) { stop(); return }
         if (!monitoring) { monitoring = true; handler.post(monitor) }
     }
 
+    /** Whole-device lock: immediate, persistent, non-dismissible overlay covering the launcher too. */
+    fun showLockAll() {
+        lockAllMode = true
+        blockedSet.clear()
+        if (!canDrawOverlays()) { monitoring = false; return }
+        hideOverlay()
+        showOverlay("", dismissible = false)
+        if (!monitoring) { monitoring = true; handler.post(monitor) }
+    }
+
     fun stop() {
+        lockAllMode = false
         monitoring = false
         handler.removeCallbacks(monitor)
         hideOverlay()
@@ -60,7 +78,7 @@ class BlockingOverlayManager(private val context: Context) {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) Settings.canDrawOverlays(context) else true
     }
 
-    private fun showOverlay(blockedPkg: String) {
+    private fun showOverlay(blockedPkg: String, dismissible: Boolean = true) {
         if (currentOverlay != null || !canDrawOverlays()) return
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -74,7 +92,7 @@ class BlockingOverlayManager(private val context: Context) {
         )
         params.gravity = Gravity.CENTER
 
-        val overlay = BlockingOverlayView(context, blockedPkg) {
+        val overlay = BlockingOverlayView(context, blockedPkg, dismissible) {
             emitEvent(blockedPkg)
             hideOverlay()
         }
@@ -135,6 +153,7 @@ class BlockingOverlayManager(private val context: Context) {
 private class BlockingOverlayView(
     context: Context,
     private val blockedPkg: String,
+    private val dismissible: Boolean,
     private val onRequestTime: () -> Unit
 ) : FrameLayout(context) {
 
@@ -158,7 +177,7 @@ private class BlockingOverlayView(
         }
 
         val title = TextView(context).apply {
-            text = "Tiempo de uso finalizado"
+            text = if (dismissible) "Tiempo de uso finalizado" else "Dispositivo bloqueado"
             setTextColor(Color.WHITE)
             textSize = 24f
             setTypeface(null, Typeface.BOLD)
@@ -167,7 +186,8 @@ private class BlockingOverlayView(
         }
 
         val subtitle = TextView(context).apply {
-            text = "Esta app no está disponible por ahora."
+            text = if (dismissible) "Esta app no está disponible por ahora."
+                else "Tu papá o mamá lo desbloqueará más tarde."
             setTextColor(Color.parseColor("#DDDDDD"))
             textSize = 15f
             gravity = Gravity.CENTER
@@ -195,10 +215,12 @@ private class BlockingOverlayView(
 
         wrapper.addView(title, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
         wrapper.addView(subtitle, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT))
-        wrapper.addView(requestBtn, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
-            gravity = Gravity.CENTER_HORIZONTAL
-            topMargin = 16
-        })
+        if (dismissible) {
+            wrapper.addView(requestBtn, LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT).apply {
+                gravity = Gravity.CENTER_HORIZONTAL
+                topMargin = 16
+            })
+        }
 
         addView(wrapper, FrameLayout.LayoutParams(
             FrameLayout.LayoutParams.MATCH_PARENT,

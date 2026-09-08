@@ -215,6 +215,12 @@ export const es = {
       provisioningHelp: 'Para provisionamiento como Device Owner, escanea el QR durante la configuración. Contiene el componente admin y el código.',
       qrPayloadLabel: 'Payload QR (JSON)',
       adminComponentLabel: 'Admin del dispositivo: {{component}}',
+      qrModeApp: 'QR estándar',
+      qrModeDpc: 'QR del asistente de configuración (Device Owner)',
+      modeHintDpc:
+        'Durante la configuración de Android, escanea este QR para hacer de ARCA KIDS el Device Owner y vincular el dispositivo automáticamente.',
+      copyPayload: 'Copiar',
+      copied: 'Copiado',
     },
     deviceControl: {
       title: 'Control remoto',
@@ -327,6 +333,11 @@ export const es = {
       codeTypeLabel: 'C\u00f3digo de familia',
       codeTypePlaceholder: 'EJ: ABC12345',
       linkButton: 'Vincular',
+      permissionsTitle: 'Permisos del dispositivo',
+      permissionsText:
+        'Conc\u00e9delos para que ARCA KIDS pueda proteger el dispositivo incluso si la app no est\u00e1 abierta.',
+      provisioningDetected:
+        'C\u00f3digo de configuraci\u00f3n detectado \u2014 vinculando tu dispositivo\u2026',
     },
     home: {
       hi: '\u00a1Hola, {{name}}!',
@@ -394,6 +405,13 @@ export const es = {
       launcherActive: 'ARCA KIDS es tu pantalla de inicio',
       launcherInactive: 'No es la pantalla de inicio',
       setLauncher: 'Elegir pantalla de inicio',
+      ownerTitle: 'Modo del dispositivo',
+      ownerActive: 'Device Owner \u2014 control total',
+      ownerNone: 'Modo app est\u00e1ndar',
+      overlayTitle: 'Permiso de superposici\u00f3n',
+      overlayPermissionGranted: 'Concedido',
+      overlayPermissionMissing: 'Sin conceder',
+      grantOverlay: 'Conceder en Ajustes',
       todayUsage: 'Uso de hoy',
       minutesValue: '{{minutes}} min',
       minutesOfLimit: '{{minutes}} de {{limit}} min',

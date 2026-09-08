@@ -24,8 +24,9 @@ export function useDevicePoller() {
 
       const result = await parentalService.checkDeviceState(childId);
       if (result) {
+        const isBlocked = Boolean(result.isBlocked);
         setState({
-          isBlocked: result.isBlocked,
+          isBlocked,
           alertActive: result.alertActive,
           alertStartedAt: result.alertStartedAt,
         });
@@ -33,34 +34,38 @@ export function useDevicePoller() {
         // Write device state to a separate SharedPreferences key so the
         // enforcement service can merge it without overwriting rule fields.
         parentalBridge.updateDeviceState({
-          isBlocked: result.isBlocked,
+          isBlocked,
           alertActive: result.alertActive,
         });
 
-        // Fetch app categories and build enforcement state with per-app limits.
-        const appCategories =
-          await parentalRepository.getAppCategories(childId);
-        const limitedApps =
-          parentalService.getLimitedApps(appCategories);
-        const appLimitsObj: Record<string, number> = {};
-        limitedApps.forEach((limit, pkg) => {
-          appLimitsObj[pkg] = limit;
-        });
-
+        // While blocked the device-level flag is the authoritative total lock;
+        // pushing rules-based enforcement state here would clobber it.
         const device = await identityService.getLocalDevice();
-        const rules = await parentalService.getRulesForDevice(
-          device.deviceUuid
-        );
-        const enforcementState =
-          parentalService.buildEnforcementState(
-            rules,
-            null,
-            appCategories
+        if (!isBlocked) {
+          // Fetch app categories and build enforcement state with per-app limits.
+          const appCategories =
+            await parentalRepository.getAppCategories(childId);
+          const limitedApps =
+            parentalService.getLimitedApps(appCategories);
+          const appLimitsObj: Record<string, number> = {};
+          limitedApps.forEach((limit, pkg) => {
+            appLimitsObj[pkg] = limit;
+          });
+
+          const rules = await parentalService.getRulesForDevice(
+            device.deviceUuid
           );
-        parentalBridge.updateEnforcementState({
-          ...enforcementState,
-          appLimits: appLimitsObj,
-        });
+          const enforcementState =
+            parentalService.buildEnforcementState(
+              rules,
+              null,
+              appCategories
+            );
+          parentalBridge.updateEnforcementState({
+            ...enforcementState,
+            appLimits: appLimitsObj,
+          });
+        }
 
         // Teach the native FGS the Supabase endpoint + linked device so it can
         // report usage in the background even when the JS app is backgrounded.

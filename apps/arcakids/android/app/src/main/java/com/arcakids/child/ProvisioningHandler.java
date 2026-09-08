@@ -1,9 +1,11 @@
 package com.arcakids.child;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
+import android.os.Bundle;
 import android.util.Log;
 import org.json.JSONObject;
 
@@ -49,14 +51,29 @@ public class ProvisioningHandler {
         }
     }
 
-    private static void persist(Activity activity, String familyId, String childId, String code, String payload) {
+    private static void persist(Context context, String familyId, String childId, String code, String payload) {
         if (familyId == null && childId == null && code == null && payload == null) return;
-        SharedPreferences prefs = activity.getSharedPreferences(PREFS, Activity.MODE_PRIVATE);
+        SharedPreferences prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         prefs.edit()
             .putString("family_id", familyId)
             .putString("child_id", childId)
             .putString("code", code)
             .putString("payload", payload)
             .apply();
+    }
+
+    /**
+     * Persists the admin extras delivered during the device-owner provisioning flow
+     * (DevicePolicyManager.EXTRA_PROVISIONING_ADMIN_EXTRAS_BUNDLE).
+     */
+    public static void persistExtras(Context context, Bundle extras) {
+        if (extras == null) return;
+        String familyId = extras.getString("familyId");
+        String childId = extras.getString("childId");
+        String code = extras.getString("pairingCode");
+        if (code == null) code = extras.getString("code");
+        String payload = extras.getString("provisioningPayload");
+        persist(context, familyId, childId, code, payload);
+        Log.d(TAG, "persistExtras: familyId=" + familyId + " childId=" + childId + " hasCode=" + (code != null));
     }
 }

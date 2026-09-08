@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 
@@ -6,6 +6,7 @@ import { setLanguage } from '@/i18n';
 import { useParentalStatus } from '@/hooks/use-parental-status';
 import { identityService } from '@/features/identity/services/identity-service';
 import { parentalBridge } from '@/features/parental/native/parental-bridge';
+import { deviceOwnerBridge } from '@/features/device-control/native/device-owner-module';
 import {
   LANGUAGE_NAMES,
   SUPPORTED_LANGUAGES,
@@ -32,6 +33,40 @@ export default function SettingsScreen() {
     hasUsagePermission,
     isLauncher,
   } = useParentalStatus(isLinked);
+  const [isOwner, setIsOwner] = useState<boolean | null>(null);
+  const [overlayGranted, setOverlayGranted] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      try {
+        const state = await deviceOwnerBridge.getState();
+        if (mounted) setIsOwner(state.isDeviceOwner);
+      } catch {
+        if (mounted) setIsOwner(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const check = async () => {
+      try {
+        if (mounted) setOverlayGranted(await deviceOwnerBridge.hasOverlayPermission());
+      } catch {
+        if (mounted) setOverlayGranted(false);
+      }
+    };
+    void check();
+    const timer = setInterval(check, 3000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, []);
 
   function handleSelect(lng: SupportedLanguage) {
     setLanguage(lng);
@@ -44,6 +79,10 @@ export default function SettingsScreen() {
 
   function handleOpenLauncherSettings() {
     void parentalBridge.openDefaultAppsSettings();
+  }
+
+  function handleOpenOverlaySettings() {
+    void deviceOwnerBridge.openOverlaySettings();
   }
 
   return (
@@ -107,6 +146,56 @@ export default function SettingsScreen() {
               >
                 <Text style={styles.actionButtonText}>
                   {tr('arcakids.parental.setLauncher')}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+
+          <View style={styles.statusRow}>
+            <View style={styles.statusLabels}>
+              <Text style={styles.statusText}>
+                {tr('arcakids.parental.ownerTitle')}
+              </Text>
+              <Text
+                style={[
+                  styles.statusDetail,
+                  isOwner ? styles.statusOk : styles.statusPending,
+                ]}
+              >
+                {isOwner === null
+                  ? tr('common.loading')
+                  : isOwner
+                    ? tr('arcakids.parental.ownerActive')
+                    : tr('arcakids.parental.ownerNone')}
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.statusRow}>
+            <View style={styles.statusLabels}>
+              <Text style={styles.statusText}>
+                {tr('arcakids.parental.overlayTitle')}
+              </Text>
+              <Text
+                style={[
+                  styles.statusDetail,
+                  overlayGranted ? styles.statusOk : styles.statusPending,
+                ]}
+              >
+                {overlayGranted === null
+                  ? tr('common.loading')
+                  : overlayGranted
+                    ? tr('arcakids.parental.overlayPermissionGranted')
+                    : tr('arcakids.parental.overlayPermissionMissing')}
+              </Text>
+            </View>
+            {overlayGranted === false ? (
+              <Pressable
+                onPress={handleOpenOverlaySettings}
+                style={[styles.actionButton, styles.actionButtonPrimary]}
+              >
+                <Text style={styles.actionButtonText}>
+                  {tr('arcakids.parental.grantOverlay')}
                 </Text>
               </Pressable>
             ) : null}

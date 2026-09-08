@@ -128,6 +128,12 @@ class EnforcementService : Service() {
     }
 
     private fun applyEnforcement() {
+        // Device-level block is the authoritative total lock (parent blocked the device).
+        // It must not be overridden by rules-based enforcement state.
+        if (getSharedPreferences("arcakids_device", Context.MODE_PRIVATE).getBoolean("is_blocked", false)) {
+            applyTotalLock()
+            return
+        }
         val state = EnforcementService.loadState(this) ?: run { enforcer?.releaseAll(); overlayManager?.stop(); return }
         val cal = Calendar.getInstance()
         val dayMinutes = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
@@ -153,12 +159,23 @@ class EnforcementService : Service() {
         else overlayManager?.stop()
     }
 
-    private fun getAllBlockingSet(): MutableSet<String> {
+    /** Total device lock: suspend everything (owner) or show a persistent full-screen overlay. */
+    private fun applyTotalLock() {
+        val isOwner = enforcer?.isDeviceOwner == true
+        val targets = getAllBlockingSet(includeLauncher = true)
+        if (isOwner) {
+            enforcer?.apply(targets.toList())
+        } else {
+            overlayManager?.showLockAll()
+        }
+    }
+
+    private fun getAllBlockingSet(includeLauncher: Boolean = false): MutableSet<String> {
         val set = mutableSetOf<String>()
-        val launcher = packageManager.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)?.activityInfo?.packageName
+        val launcher = if (includeLauncher) null else packageManager.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)?.activityInfo?.packageName
         for (info in packageManager.getInstalledApplications(0)) {
             if (info.packageName == packageName) continue
-            if (info.packageName == launcher) continue
+            if (launcher != null && info.packageName == launcher) continue
             if ((info.flags and ApplicationInfo.FLAG_SYSTEM) != 0) continue
             set.add(info.packageName)
         }

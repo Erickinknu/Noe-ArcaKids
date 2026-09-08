@@ -23,21 +23,44 @@ export interface ChildLocation {
 export const deviceControlService = {
   // ── Legacy device block (polling path, kept for backward compat) ──
   async blockChild(childId: string): Promise<void> {
+    await this.setDeviceBlocked(childId, true);
+    await this.enqueueToggleLock(childId, 'LOCK');
+  },
+
+  async unblockChild(childId: string): Promise<void> {
+    await this.setDeviceBlocked(childId, false);
+    await this.enqueueToggleLock(childId, 'UNLOCK');
+  },
+
+  async setDeviceBlocked(childId: string, blocked: boolean): Promise<void> {
     const client = requireSupabaseClient();
     const { error } = await client.rpc('set_device_blocked', {
       p_child_id: childId,
-      p_blocked: true,
+      p_blocked: blocked,
     });
     if (error) throw new DatabaseError(error.message);
   },
 
-  async unblockChild(childId: string): Promise<void> {
+  // Send the corresponding kiosk command so the device reacts immediately via
+  // Realtime, not only on the next device-state poll.
+  async enqueueToggleLock(
+    childId: string,
+    command: DeviceCommand['command']
+  ): Promise<void> {
     const client = requireSupabaseClient();
-    const { error } = await client.rpc('set_device_blocked', {
-      p_child_id: childId,
-      p_blocked: false,
-    });
-    if (error) throw new DatabaseError(error.message);
+    const { data, error } = await client
+      .from('device_status')
+      .select('device_uuid')
+      .eq('child_id', childId)
+      .maybeSingle();
+    if (error) return;
+    const deviceUuid = (data as { device_uuid?: string } | null)?.device_uuid;
+    if (!deviceUuid) return;
+    try {
+      await deviceControlService.sendCommand(deviceUuid, command);
+    } catch {
+      // RPC flag is already set; command failure is non-fatal.
+    }
   },
 
   async triggerAlert(childId: string): Promise<void> {
