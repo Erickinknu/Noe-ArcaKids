@@ -391,6 +391,20 @@ export const es = {
       settings: 'Ajustes',
       settingsSubtitle: 'Preferencias de la app',
     },
+    dashboard: {
+      screenTime: 'Tiempo de pantalla',
+      remaining: 'Te quedan {{time}}',
+      usedOf: 'Usado {{used}} de {{limit}}',
+      noLimit: 'Hoy sin l\u00edmite',
+      bedtimeSoon: 'Hora de dormir en {{time}}',
+      todayTitle: 'Hoy',
+      todayUsed: 'Usado {{time}}',
+      topApp: 'App m\u00e1s usada: {{app}}',
+      todayEmpty: 'Todav\u00eda sin uso hoy',
+      achievementsTitle: 'Logros',
+      achievementsProgress: '{{done}} de {{total}} desbloqueados',
+      viewAll: 'Ver todos',
+    },
     link: {
       title: 'Vincular este dispositivo',
       subtitle:
@@ -458,11 +472,20 @@ export const es = {
       blockedBedtimeTitle: '\u00a1Hora de dormir!',
       blockedBedtimeText:
         'Es hora de descansar. \u00a1Hasta ma\u00f1ana!',
+      unlockAt: 'Se desbloquea a las {{time}}',
+      renewsTomorrow: 'Tu tiempo se renueva ma\u00f1ana',
     },
     launcher: {
       title: 'Mis apps',
       subtitle: 'Tus apps favoritas',
       empty: 'No hay apps para mostrar.',
+    },
+    achievements: {
+      title: 'Logros',
+      loading: 'Cargando logros...',
+      empty: 'A\u00fan no hay logros.',
+      achieved: '\u00a1Desbloqueado!',
+      progress: '{{percent}}%',
     },
     theme: {
       light: 'Modo claro',

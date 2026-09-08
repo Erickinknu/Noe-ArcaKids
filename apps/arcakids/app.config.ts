@@ -14,7 +14,7 @@ const sentryPlugins: NonNullable<ExpoConfig['plugins']> = sentryOrg && sentryPro
 const config: ExpoConfig = {
   name: 'ARCA KIDS',
   slug: 'arcakids',
-  version: '1.3.2',
+  version: '1.3.3',
   orientation: 'portrait',
   icon: './assets/images/arca-kids.png',
   scheme: 'arcakids',
@@ -26,7 +26,7 @@ const config: ExpoConfig = {
   },
   android: {
     package: 'com.arcakids.child',
-    versionCode: 7,
+    versionCode: 8,
     allowBackup: false,
     adaptiveIcon: {
       backgroundColor: '#208AEF',

@@ -5,6 +5,31 @@ All notable changes to the `noe-arcakids` monorepo will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.3] - 2026-09-08
+
+### Added
+- **Dashboard informativo para el niño en ARCA KIDS** (estilo Family Link / Qustodio):
+  - Cabecera con avatar, saludo y estado de conexión.
+  - Tarjeta protagonista "Tiempo de pantalla": progreso usado vs límite diario y
+    cuenta atrás "te quedan X" (barra de progreso reutilizando el cálculo de Actividad).
+  - Tarjeta de horario: rango de sueño y cuenta atrás "hora de dormir en X".
+  - Tarjeta "Hoy": uso total + app más usada con acceso directo a Actividad.
+  - Tarjeta "Logros": progreso desbloqueado/desbloqueables con acceso a la nueva pantalla.
+  - Navegación inferior por iconos (Mis apps / Actividad / Perfil / Ajustes) en lugar
+    del menú de tarjetas; "Mis apps" solo aparece si el dispositivo está vinculado.
+  - Pantalla de bloqueo total ahora informa cuándo se desbloquea
+    ("se desbloquea a las HH:MM" en horario de sueño, o "tu tiempo se renueva mañana").
+- **Pantalla de Logros** (`/achievements`): muestra los logros con icono, título,
+  descripción, barra de progreso y estado desbloqueado (usa el backend de logros ya
+  existente en Supabase).
+- Claves i18n nuevas en es/en (`arcakids.dashboard.*`, `arcakids.achievements.*`,
+  `arcakids.parental.unlockAt`, `arcakids.parental.renewsTomorrow`).
+
+### Changed
+- **Versión 1.3.3 (versionCode 8)** en NOE y ARCA KIDS: `package.json`,
+  `app.config.ts`, `android/app/build.gradle`, `APP_VERSION` del monorepo,
+  lockfile y este changelog.
+
 ## [1.3.2] - 2026-09-08
 
 ### Added

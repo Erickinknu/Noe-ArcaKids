@@ -6,4 +6,5 @@ export const ROUTES = {
   activity: '/activity',
   settings: '/settings',
   launcher: '/launcher',
+  achievements: '/achievements',
 } as const;

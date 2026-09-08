@@ -384,6 +384,20 @@ export const en = {
       settings: 'Settings',
       settingsSubtitle: 'App preferences',
     },
+    dashboard: {
+      screenTime: 'Screen time',
+      remaining: '{{time}} left',
+      usedOf: '{{used}} of {{limit}} used',
+      noLimit: 'No limit today',
+      bedtimeSoon: 'Bedtime in {{time}}',
+      todayTitle: 'Today',
+      todayUsed: '{{time}} used',
+      topApp: 'Most used app: {{app}}',
+      todayEmpty: 'No usage yet today',
+      achievementsTitle: 'Achievements',
+      achievementsProgress: '{{done}} of {{total}} unlocked',
+      viewAll: 'View all',
+    },
     link: {
       title: 'Link this device',
       subtitle:
@@ -449,11 +463,20 @@ export const en = {
         "You've used all of today's screen time. Take a break and see you tomorrow!",
       blockedBedtimeTitle: 'Bedtime!',
       blockedBedtimeText: 'It is time to rest. See you tomorrow!',
+      unlockAt: 'Unlocks at {{time}}',
+      renewsTomorrow: 'Your time renews tomorrow',
     },
     launcher: {
       title: 'My apps',
       subtitle: 'Your favorite apps',
       empty: 'No apps to show.',
+    },
+    achievements: {
+      title: 'Achievements',
+      loading: 'Loading achievements...',
+      empty: 'No achievements yet.',
+      achieved: 'Unlocked!',
+      progress: '{{percent}}%',
     },
     theme: {
       light: 'Light mode',
