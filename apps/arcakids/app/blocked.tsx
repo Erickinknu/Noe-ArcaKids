@@ -1,23 +1,30 @@
 import { useMemo } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { MaterialIcons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 
-import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { useTheme, useRandomVerse, VerseBanner, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function BlockedScreen() {
   const { t: tr } = useTranslation();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const verse = useRandomVerse(['rest', 'hope'] as const);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <View style={styles.iconBox}>
         <MaterialIcons name="lock" size={64} color={colors.danger} />
       </View>
       <Text style={styles.title}>{tr('arcakids.blocked.title')}</Text>
       <Text style={styles.subtitle}>{tr('arcakids.blocked.body')}</Text>
-    </View>
+      {verse ? (
+        <View style={styles.banner}>
+          <VerseBanner verse={verse} />
+        </View>
+      ) : null}
+    </SafeAreaView>
   );
 }
 
@@ -50,5 +57,8 @@ const makeStyles = (colors: ThemeColors) =>
       color: colors.textMuted,
       textAlign: 'center',
       lineHeight: 24,
+    },
+    banner: {
+      alignSelf: 'stretch',
     },
   });

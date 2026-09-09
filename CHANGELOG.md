@@ -5,6 +5,31 @@ All notable changes to the `noe-arcakids` monorepo will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.4] - 2026-09-08
+
+### Fixed
+- **Contenido bajo la barra de notificación y la barra de navegación del sistema** en
+  ARCA KIDS (edge-to-edge): `SafeAreaProvider` en el layout raíz y `SafeAreaView`
+  (con `edges={['top','bottom']}` donde aplica) en Dashboard, Mis apps, Actividad,
+  Perfil, Ajustes, Logros, Vincular, onboarding, y pantalla de bloqueo; la barra
+  inferior del Dashboard ahora respeta el inset inferior (gestos del sistema).
+  Se eliminan los `paddingTop` fijos (60/80) que compensaban manualmente la barra
+  de estado.
+
+### Changed
+- **Versión 1.3.4 (versionCode 9)** en NOE y ARCA KIDS: `package.json`,
+  `app.config.ts`, `android/app/build.gradle`, `APP_VERSION` del monorepo,
+  lockfile y este changelog.
+- **Código de vinculación alfanumérico de 6 caracteres** (antes 8) en NOE:
+  más corto y fácil de transcribir. ARCA KIDS sigue aceptando códigos de 6
+  dígitos (legacy) y de 8 caracteres (builds NOE anteriores).
+- **QR estándar compacto `akv1:<familyId>:<code>`** con corrección ECC nivel H
+  en la pantalla de Vincular de NOE (el QR de Device Owner sigue siendo el JSON
+  con los extras de provisioning). La pantalla Vincular de ARCA KIDS reconoce el
+  formato `akv1:` y el código alfanumérico, y auto-vincula al escanear.
+- **`redeem_pairing_code`** ahora valida la forma del código (`^[A-Z0-9]{6,8}$`)
+  antes de tocar la tabla.
+
 ## [1.3.3] - 2026-09-08
 
 ### Added

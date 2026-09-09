@@ -2,7 +2,6 @@ package com.arcakids.child;
 
 import android.content.Context;
 import android.content.Intent;
-
 import androidx.annotation.NonNull;
 
 public class DeviceAdminReceiver extends android.app.admin.DeviceAdminReceiver {

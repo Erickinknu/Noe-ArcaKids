@@ -38,7 +38,6 @@ class BlockingOverlayManager(private val context: Context) {
         override fun run() {
             if (!monitoring) return
             if (lockAllMode) {
-                // Persistent full-screen lock: keep the overlay up regardless of the top app.
                 if (currentOverlay == null) showOverlay("", dismissible = false)
             } else {
                 val topApp = currentTopApp()
@@ -56,7 +55,6 @@ class BlockingOverlayManager(private val context: Context) {
         if (!monitoring) { monitoring = true; handler.post(monitor) }
     }
 
-    /** Whole-device lock: immediate, persistent, non-dismissible overlay covering the launcher too. */
     fun showLockAll() {
         lockAllMode = true
         blockedSet.clear()
@@ -186,8 +184,7 @@ private class BlockingOverlayView(
         }
 
         val subtitle = TextView(context).apply {
-            text = if (dismissible) "Esta app no está disponible por ahora."
-                else "Tu papá o mamá lo desbloqueará más tarde."
+            text = if (dismissible) "Esta app no está disponible por ahora." else "El control parental ha bloqueado el dispositivo."
             setTextColor(Color.parseColor("#DDDDDD"))
             textSize = 15f
             gravity = Gravity.CENTER

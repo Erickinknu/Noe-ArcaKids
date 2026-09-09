@@ -15,6 +15,7 @@ const NOTIFICATION_KEYS = {
   bedtimeAlert: 'noe/notifications/bedtimeAlert',
   screenTimeAlert: 'noe/notifications/screenTimeAlert',
   offlineAlert: 'noe/notifications/offlineAlert',
+  weeklyVerse: 'noe/notifications/weeklyVerse',
 } as const;
 
 export default function NotificationsScreen() {
@@ -32,18 +33,20 @@ export default function NotificationsScreen() {
     bedtimeAlert: true,
     screenTimeAlert: true,
     offlineAlert: false,
+    weeklyVerse: false,
   });
 
   useEffect(() => {
     let cancelled = false;
     async function loadPrefs() {
       try {
-        const [push, daily, bedtime, screen, offline] = await Promise.all([
+        const [push, daily, bedtime, screen, offline, weekly] = await Promise.all([
           storage.get(NOTIFICATION_KEYS.pushEnabled),
           storage.get(NOTIFICATION_KEYS.dailyReport),
           storage.get(NOTIFICATION_KEYS.bedtimeAlert),
           storage.get(NOTIFICATION_KEYS.screenTimeAlert),
           storage.get(NOTIFICATION_KEYS.offlineAlert),
+          storage.get(NOTIFICATION_KEYS.weeklyVerse),
         ]);
         if (!cancelled) {
           setPrefs({
@@ -52,6 +55,7 @@ export default function NotificationsScreen() {
             bedtimeAlert: bedtime !== 'false',
             screenTimeAlert: screen !== 'false',
             offlineAlert: offline === 'true',
+            weeklyVerse: weekly === 'true',
           });
         }
       } catch {
@@ -74,6 +78,7 @@ export default function NotificationsScreen() {
         storage.save(NOTIFICATION_KEYS.bedtimeAlert, String(prefs.bedtimeAlert)),
         storage.save(NOTIFICATION_KEYS.screenTimeAlert, String(prefs.screenTimeAlert)),
         storage.save(NOTIFICATION_KEYS.offlineAlert, String(prefs.offlineAlert)),
+        storage.save(NOTIFICATION_KEYS.weeklyVerse, String(prefs.weeklyVerse)),
       ]);
       setSavedFlash(true);
     } catch {
@@ -126,6 +131,14 @@ export default function NotificationsScreen() {
               colors={colors}
               styles={styles}
             />
+            <SwitchRow
+              value={prefs.weeklyVerse}
+              onToggle={() => setPrefs((p) => ({ ...p, weeklyVerse: !p.weeklyVerse }))}
+              label={tr('noe.notifications.weeklyVerse')}
+              description={tr('noe.notifications.weeklyVerseDesc')}
+              colors={colors}
+              styles={styles}
+            />
           </View>
         )}
 
@@ -152,18 +165,23 @@ function SwitchRow({
   value,
   onToggle,
   label,
+  description,
   colors,
   styles,
 }: {
   value: boolean;
   onToggle: () => void;
   label: string;
+  description?: string;
   colors: ThemeColors;
   styles: ReturnType<typeof makeStyles>;
 }) {
   return (
     <View style={styles.switchRow}>
-      <Text style={styles.switchLabel}>{label}</Text>
+      <View style={styles.switchTextGroup}>
+        <Text style={styles.switchLabel}>{label}</Text>
+        {description ? <Text style={styles.switchDescription}>{description}</Text> : null}
+      </View>
       <Switch
         value={value}
         onValueChange={onToggle}
@@ -194,12 +212,20 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingVertical: spacing.sm,
+    gap: spacing.md,
+  },
+  switchTextGroup: {
+    flex: 1,
+    gap: 2,
   },
   switchLabel: {
     fontSize: typography.fontSizes.body,
     color: colors.text,
-    flex: 1,
-    marginRight: spacing.md,
+  },
+  switchDescription: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    lineHeight: 18,
   },
   errorText: {
     color: colors.danger,

@@ -11,11 +11,14 @@
  *    type: "provision",
  *    familyId: string,
  *    childId?: string | null,
- *    code: string,            // 8-char alphanumeric
+ *    code: string,            // 6-char alphanumeric
  *    timestamp: string,        // ISO
  *    devicePolicy?: {...},     // optional snapshot
  *    androidAdminComponent: "com.arcakids.child/.DeviceAdminReceiver"
  *  }
+ * The standard ("app") QR renders the compact form `akv1:<familyId>:<code>`
+ * (see QR_PREFIX / buildCompactQrValue); only the Device Owner wizard QR keeps
+ * the full JSON extras (buildAndroidProvisioningExtras).
  * Plus Android managed provisioning extras when provisioned as Device Owner:
  *  android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME = "com.arcakids.child/com.arcakids.child.DeviceAdminReceiver"
  *  android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_NAME   = "com.arcakids.child"
@@ -68,6 +71,17 @@ export function buildAndroidProvisioningExtras(payload: ProvisioningPayload): Re
     code: payload.code,
     provisioningPayload: JSON.stringify(payload),
   };
+}
+
+/**
+ * Compact QR payload for the standard ("app") QR: akv1:<familyId>:<code>.
+ * Tiny (uuid + 6-char code) so the QR stays clean even at ECC level H.
+ * ARCA KIDS parses it back into the code on scan.
+ */
+export const QR_PREFIX = 'akv1:';
+
+export function buildCompactQrValue(payload: ProvisioningPayload): string {
+  return `${QR_PREFIX}${payload.familyId}:${payload.code}`;
 }
 
 export const linkingService = {

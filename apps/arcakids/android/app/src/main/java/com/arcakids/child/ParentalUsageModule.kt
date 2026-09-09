@@ -13,6 +13,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
+import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Calendar
 
@@ -139,20 +140,77 @@ class ParentalUsageModule(private val reactContext: ReactApplicationContext) :
         }
     }
 
+    /** Merge-only update of the blocked package set; preserves bedtime/limits/appLimits. */
+    @ReactMethod
+    fun updateBlockedPackages(packageNamesJson: String, blocked: Boolean, promise: Promise) {
+        try {
+            val target = mutableSetOf<String>()
+            JSONArray(packageNamesJson).let { arr -> for (i in 0 until arr.length()) target.add(arr.getString(i)) }
+            target.remove(reactContext.packageName)
+            if (target.isEmpty()) { promise.resolve(null); return }
+
+            val existing = EnforcementService.loadState(reactContext)
+            val state = if (existing != null) {
+                existing.copy(
+                    blockedPackages = if (blocked) (existing.blockedPackages.toSet() + target).toList()
+                                     else existing.blockedPackages.filterNot { it in target }
+                )
+            } else {
+                EnforcementState(
+                    enforce = true,
+                    bedtimeEnabled = false,
+                    bedtimeStart = null,
+                    bedtimeEnd = null,
+                    dailyLimitMinutes = null,
+                    bonusMinutes = 0,
+                    pausedUntil = null,
+                    blockedPackages = target.toList(),
+                    appLimits = null
+                )
+            }
+            val json = JSONObject()
+                .put("enforce", state.enforce)
+                .put("bedtimeEnabled", state.bedtimeEnabled)
+                .put("bedtimeStart", state.bedtimeStart ?: JSONObject.NULL)
+                .put("bedtimeEnd", state.bedtimeEnd ?: JSONObject.NULL)
+                .put("dailyLimitMinutes", state.dailyLimitMinutes ?: JSONObject.NULL)
+                .put("bonusMinutes", state.bonusMinutes)
+                .put("pausedUntil", state.pausedUntil ?: JSONObject.NULL)
+                .put("blockedPackages", JSONArray(state.blockedPackages))
+            val limits = JSONObject()
+            state.appLimits?.forEach { (k, v) -> limits.put(k, v) }
+            json.put("appLimits", limits)
+            EnforcementService.saveState(reactContext, json.toString())
+            EnforcementService.start(reactContext)
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("ERR_BLOCKED_PACKAGES", e.message, e)
+        }
+    }
+
     @ReactMethod
     fun updateDeviceState(deviceStateJson: String, promise: Promise) {
         try {
             val json = JSONObject(deviceStateJson)
             val isBlocked = json.optBoolean("isBlocked", false)
             reactContext.getSharedPreferences("arcakids_device", Context.MODE_PRIVATE)
-                .edit()
-                .putBoolean("is_blocked", isBlocked)
-                .putBoolean("alert_active", json.optBoolean("alertActive", false))
-                .apply()
+                .edit().putBoolean("is_blocked", isBlocked).apply()
             if (isBlocked) {
-                // The EnforcementService reads the device-level flag as the authoritative
-                // total lock; no need to fabricate an emergency enforcement state here.
                 EnforcementService.start(reactContext)
+                val emergency = JSONObject()
+                    .put("enforce", true)
+                    .put("bedtimeEnabled", false)
+                    .put("bedtimeStart", JSONObject.NULL)
+                    .put("bedtimeEnd", JSONObject.NULL)
+                    .put("dailyLimitMinutes", 0)
+                    .put("bonusMinutes", 0)
+                    .put("pausedUntil", JSONObject.NULL)
+                    .put("blockedPackages", org.json.JSONArray())
+                EnforcementService.saveState(reactContext, emergency.toString())
+            } else {
+                EnforcementService.stop(reactContext)
+                reactContext.getSharedPreferences("arcakids_enforcement", Context.MODE_PRIVATE)
+                    .edit().putString("enforcement_state", null).apply()
             }
             promise.resolve(null)
         } catch (e: Exception) {

@@ -235,22 +235,18 @@ function extractPackageList(payload: Record<string, unknown> | null): string[] {
 }
 
 async function applyToEnforcement(packages: string[], block: boolean): Promise<void> {
-  // Read current enforcement state by fetching via parentalBridge.updateEnforcementState is write-only.
-  // Use a lightweight approach: update device state is not enough, so we update enforcement via a placeholder.
-  // The native EnforcementService reads blockedPackages from enforcement prefs; we need to merge.
-  // Since JS doesn't have a read API, we store the blocked list in the device_state extension handled by parental service.
-  // For now, push a minimal enforcement update that includes the packages (caller should provide full rules; this is best-effort fallback).
-  // We use parentalBridge.updateEnforcementState with a synthetic state — the native side merges blocked packages additively elsewhere if needed.
-  // To keep it safe, we just ensure EnforcementService is started.
+  // Per-package blocking only: merge the packages into the persisted enforcement
+  // state (native side keeps bedtime/limits/appLimits intact). No total device lock.
   try {
-    await parentalBridge.startEnforcement();
+    await parentalBridge.updateBlockedPackages(packages, block);
   } catch {
-    // ignore
-  }
-  // Also persist as blockedPackages via enforcement state extension if ParentalService is available,
-  // otherwise rely on overlay blocking via deviceState isBlocked.
-  if (block) {
-    await parentalBridge.updateDeviceState({ isBlocked: true, alertActive: false });
+    // Last resort: make sure the overlay enforcer is running; the native merge
+    // is the source of truth, so this is best-effort for offline edge cases.
+    try {
+      await parentalBridge.startEnforcement();
+    } catch {
+      // ignore
+    }
   }
 }
 

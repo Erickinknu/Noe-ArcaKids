@@ -16,6 +16,7 @@ export const es = {
     goHome: 'Ir al inicio',
     errorOccurred: 'Algo sali\u00f3 mal',
     errorRetry: 'Reintentar',
+    verseOfDay: 'Vers\u00edculo del d\u00eda',
   },
   validation: {
     emailRequired: 'Se requiere un correo v\u00e1lido.',
@@ -36,7 +37,7 @@ export const es = {
     familyNameMax: 'El nombre de la familia debe tener como m\u00e1ximo {{max}} caracteres.',
     childNameRequired: 'Se requiere el nombre del ni\u00f1o.',
     childNameMax: 'El nombre del ni\u00f1o debe tener como m\u00e1ximo {{max}} caracteres.',
-    linkCodeInvalid: 'Ingresa el c\u00f3digo de 6 d\u00edgitos que muestra la app NOE.',
+    linkCodeInvalid: 'Ingresa el c\u00f3digo de 6 caracteres que muestra la app NOE.',
     rules: {
       dailyLimitInvalid: 'El l\u00edmite diario debe ser un n\u00famero entre 0 y 1440 minutos.',
       timeInvalid: 'Usa el formato HH:mm (por ejemplo 21:00).',
@@ -151,6 +152,9 @@ export const es = {
       overLimit: 'Sobre el l\u00edmite',
       details: 'Detalles',
       selectChild: 'Seleccionar hijo',
+      reflect: 'Para reflexionar',
+      reflectDescription:
+        'Un mensaje breve para compartir con tu familia hoy.',
     },
     tabs: {
       home: 'Inicio',
@@ -175,6 +179,9 @@ export const es = {
     },
     settings: {
       title: 'Configuraci\u00f3n',
+      showVerses: 'Mostrar vers\u00edculos',
+      showVersesDescription:
+        'Muestra un vers\u00edculo breve en el panel para compartir con tu familia.',
     },
     children: {
       title: 'Hijos',
@@ -214,6 +221,7 @@ export const es = {
       modeHintChild: 'Código vinculado al hijo seleccionado.',
       provisioningHelp: 'Para provisionamiento como Device Owner, escanea el QR durante la configuración. Contiene el componente admin y el código.',
       qrPayloadLabel: 'Payload QR (JSON)',
+      qrPayloadCompactLabel: 'Contenido del QR (código compacto)',
       adminComponentLabel: 'Admin del dispositivo: {{component}}',
       qrModeApp: 'QR estándar',
       qrModeDpc: 'QR del asistente de configuración (Device Owner)',
@@ -280,6 +288,9 @@ export const es = {
       screenTimeAlertDesc: 'Aviso cuando se acerca al l\u00edmite diario',
       offlineAlert: 'Alerta de desconexi\u00f3n',
       offlineAlertDesc: 'Aviso cuando un dispositivo se desconecta',
+      weeklyVerse: 'Vers\u00edculo semanal',
+      weeklyVerseDesc:
+        'Recibe cada semana un vers\u00edculo para compartir en familia',
       save: 'Guardar preferencias',
       savedFlash: 'Preferencias guardadas',
       loadError: 'No se pudieron cargar las preferencias',
@@ -331,7 +342,7 @@ export const es = {
       codeText:
         'Tu mam\u00e1 o pap\u00e1 gener\u00f3 un c\u00f3digo en NOE. Escr\u00edbelo aqu\u00ed para activar este dispositivo.',
       codeTypeLabel: 'C\u00f3digo de familia',
-      codeTypePlaceholder: 'EJ: ABC12345',
+      codeTypePlaceholder: 'EJ: ABC123',
       linkButton: 'Vincular',
       provisioningDetected:
         'C\u00f3digo de configuraci\u00f3n detectado \u2014 vinculando tu dispositivo\u2026',
@@ -412,7 +423,7 @@ export const es = {
       cancelScan: 'Cancelar escaneo',
       enterCode: 'Ingresa el c\u00f3digo',
       codeLabel: 'C\u00f3digo',
-      codePlaceholder: '000000',
+      codePlaceholder: 'ABC123',
       linkDevice: 'Vincular dispositivo',
       scanInstead: 'Mejor escanear el QR',
       cameraPermission:
@@ -490,6 +501,13 @@ export const es = {
     theme: {
       light: 'Modo claro',
       dark: 'Modo oscuro',
+    },
+    verses: {
+      title: 'Vers\u00edculos',
+      showTitle: 'Mostrar vers\u00edculos',
+      showDescription:
+        'Muestra un vers\u00edculo breve para motivar y acompa\u00f1ar cada d\u00eda.',
+      morningTitle: '\u00a1Buenos d\u00edas!',
     },
     blocked: {
       title: 'Dispositivo bloqueado',

@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { useRouter } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { identityService } from '@/features/identity/services/identity-service';
 import {
@@ -11,7 +12,7 @@ import {
   parentalBridge,
   type LaunchableApp,
 } from '@/features/parental/native/parental-bridge';
-import { useAsyncData, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { useAsyncData, useTheme, useVerseOfDay, VerseBanner, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 const TILE_COLORS = [
   '#F59E0B',
@@ -50,13 +51,14 @@ export default function LauncherScreen() {
   const visibleApps = (data?.apps ?? []).filter(
     (app) => !blocked.has(app.packageName)
   );
+  const purposeVerse = useVerseOfDay(['purpose'] as const);
 
   function handlePress(app: LaunchableApp) {
     void parentalBridge.launchApp(app.packageName);
   }
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Pressable
           onPress={() => router.back()}
@@ -82,6 +84,13 @@ export default function LauncherScreen() {
           numColumns={4}
           columnWrapperStyle={styles.row}
           contentContainerStyle={styles.grid}
+          ListFooterComponent={
+            purposeVerse ? (
+              <View style={styles.footer}>
+                <VerseBanner verse={purposeVerse} />
+              </View>
+            ) : null
+          }
           renderItem={({ item }) => (
             <Pressable
               style={styles.tile}
@@ -102,7 +111,7 @@ export default function LauncherScreen() {
           )}
         />
       )}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -111,7 +120,6 @@ const makeStyles = (colors: ThemeColors) =>
   screen: {
     flex: 1,
     padding: spacing.lg,
-    paddingTop: 60,
     backgroundColor: colors.background,
     gap: spacing.md,
   },
@@ -173,5 +181,8 @@ const makeStyles = (colors: ThemeColors) =>
     fontSize: typography.fontSizes.caption,
     color: colors.text,
     maxWidth: '100%',
+  },
+  footer: {
+    marginTop: spacing.md,
   },
 });

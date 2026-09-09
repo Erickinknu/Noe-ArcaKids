@@ -16,7 +16,7 @@ import { familyService } from '@/features/family/services/family-service';
 import { unlockRequestService } from '@/features/unlock-request/services/unlock-request-service';
 import { type UnlockRequest } from '@noe-arcakids/types';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { Card, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
+import { Card, errorMessage, useAsyncData, useRandomVerse, useTheme, VerseBanner, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 interface DailyBar {
   date: string;
@@ -74,6 +74,7 @@ export default function ActivityScreen() {
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const approveVerse = useRandomVerse(['family', 'love']);
 
   const fetchChildren = useCallback(async () => {
     const { family } = await familyService.getMyFamily();
@@ -306,6 +307,9 @@ export default function ActivityScreen() {
               {selectedUnlockRequests.length > 0 && (
                 <>
                   <SectionHeader title="Solicitudes de desbloqueo" />
+                  {approveVerse ? (
+                    <VerseBanner verse={approveVerse} title={tr('common.verseOfDay')} />
+                  ) : null}
                   {selectedUnlockRequests.map((req) => (
                     <Card key={req.id} style={styles.card}>
                       <View style={styles.unlockRow}>

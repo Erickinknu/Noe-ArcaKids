@@ -13,10 +13,16 @@ import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
-import { linkingService, buildAndroidProvisioningExtras, type LinkingMode, DEVICE_ADMIN_COMPONENT_SHORT } from '@/features/linking/services/linking-service';
+import {
+  buildAndroidProvisioningExtras,
+  buildCompactQrValue,
+  linkingService,
+  type LinkingMode,
+  DEVICE_ADMIN_COMPONENT_SHORT,
+} from '@/features/linking/services/linking-service';
 import type { ChildProfile, ProvisioningPayload } from '@noe-arcakids/types';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { Card, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
+import { Card, errorMessage, useAsyncData, useTheme, useVerseOfDay, VerseBanner, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 interface FamilyWithChildren {
   familyId: string;
@@ -36,6 +42,7 @@ export default function LinkingScreen() {
   const [generating, setGenerating] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [qrType, setQrType] = useState<'app' | 'dpc'>('app');
+  const covenantVerse = useVerseOfDay(['covenant']);
 
   const fetchFamily = useCallback(async (): Promise<FamilyWithChildren> => {
     const { family } = await familyService.getMyFamily();
@@ -86,7 +93,7 @@ export default function LinkingScreen() {
   const qrValue = payload
     ? qrType === 'dpc'
       ? JSON.stringify(buildAndroidProvisioningExtras(payload))
-      : JSON.stringify(payload)
+      : buildCompactQrValue(payload)
     : '';
   const displayChildName =
     mode === 'family' ? tr('noe.linking.modeFamily') : (selectedChild?.displayName ?? '');
@@ -114,6 +121,10 @@ export default function LinkingScreen() {
     <ScrollView contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]}>
       <Text style={styles.title}>{tr('noe.linking.title')}</Text>
       <Text style={styles.subtitle}>{tr('noe.linking.subtitle')}</Text>
+
+      {covenantVerse ? (
+        <VerseBanner verse={covenantVerse} title={tr('common.verseOfDay')} />
+      ) : null}
 
       {/* Mode toggle */}
       <View style={styles.modeRow}>
@@ -202,7 +213,7 @@ export default function LinkingScreen() {
             </Pressable>
           </View>
           <View style={styles.qrBox}>
-            <QRCode value={qrValue} size={190} />
+            <QRCode value={qrValue} size={190} ecl="H" />
           </View>
           <Text style={styles.muted}>
             {qrType === 'dpc'
@@ -214,7 +225,11 @@ export default function LinkingScreen() {
           {qrType === 'dpc' ? (
             <Text style={styles.muted}>{tr('noe.linking.provisioningHelp')}</Text>
           ) : null}
-          <Text style={styles.payloadLabel}>{tr('noe.linking.qrPayloadLabel')}</Text>
+          <Text style={styles.payloadLabel}>
+            {qrType === 'dpc'
+              ? tr('noe.linking.qrPayloadLabel')
+              : tr('noe.linking.qrPayloadCompactLabel')}
+          </Text>
           <Text style={styles.payloadJson} selectable>{qrValue}</Text>
           <Text style={styles.muted}>
             {tr('noe.linking.adminComponentLabel', { component: DEVICE_ADMIN_COMPONENT_SHORT })}

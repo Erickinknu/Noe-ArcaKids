@@ -1,6 +1,7 @@
 import { useMemo, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { setLanguage } from '@/i18n';
 import { useParentalStatus } from '@/hooks/use-parental-status';
@@ -14,6 +15,7 @@ import {
   spacing,
   typography,
   useAsyncData,
+  useShowVerses,
   useTheme,
   type SupportedLanguage,
   type ThemeColors,
@@ -35,6 +37,7 @@ export default function SettingsScreen() {
   } = useParentalStatus(isLinked);
   const [isOwner, setIsOwner] = useState<boolean | null>(null);
   const [overlayGranted, setOverlayGranted] = useState<boolean | null>(null);
+  const [showVerses, setShowVerses] = useShowVerses();
 
   useEffect(() => {
     let mounted = true;
@@ -86,7 +89,7 @@ export default function SettingsScreen() {
   }
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <Text style={styles.title}>{tr('arcakids.home.settings')}</Text>
       {isLinked ? (
         <Card>
@@ -243,7 +246,23 @@ export default function SettingsScreen() {
           })}
         </View>
       </Card>
-    </View>
+      <Card>
+        <View style={styles.statusRow}>
+          <View style={styles.statusLabels}>
+            <Text style={styles.statusText}>{tr('arcakids.verses.showTitle')}</Text>
+            <Text style={styles.statusDetail}>
+              {tr('arcakids.verses.showDescription')}
+            </Text>
+          </View>
+          <Switch
+            value={showVerses === true}
+            onValueChange={setShowVerses}
+            disabled={showVerses === null}
+            trackColor={{ true: colors.primary, false: colors.border }}
+          />
+        </View>
+      </Card>
+    </SafeAreaView>
   );
 }
 
@@ -252,7 +271,6 @@ const makeStyles = (colors: ThemeColors) =>
   screen: {
     flex: 1,
     padding: spacing.lg,
-    paddingTop: 80,
     backgroundColor: colors.background,
     gap: spacing.md,
   },

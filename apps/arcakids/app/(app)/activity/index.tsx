@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useParentalStatus } from '@/hooks/use-parental-status';
 import { identityService } from '@/features/identity/services/identity-service';
@@ -65,8 +66,9 @@ export default function ActivityScreen() {
   const isOverLimit = limit != null && totalMinutes >= limit;
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>{tr('arcakids.activity.title')}</Text>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
+        <Text style={styles.title}>{tr('arcakids.activity.title')}</Text>
       <Text style={styles.date}>{today}</Text>
 
       <Card>
@@ -168,7 +170,8 @@ export default function ActivityScreen() {
           <Text style={styles.emptyText}>{tr('arcakids.activity.emptyText')}</Text>
         </Card>
       )}
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -180,7 +183,7 @@ const makeStyles = (colors: ThemeColors) =>
   },
   content: {
     padding: spacing.lg,
-    paddingTop: 80,
+    paddingTop: spacing.lg,
     gap: spacing.md,
     paddingBottom: spacing.xxl,
   },

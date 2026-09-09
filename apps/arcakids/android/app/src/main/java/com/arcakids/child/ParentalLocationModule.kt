@@ -87,8 +87,8 @@ class ParentalLocationModule(private val reactContext: ReactApplicationContext) 
             promise.resolve(true)
             return
         }
-        pendingPromises.add(promise)
-        ActivityCompat.requestPermissions(activity, missing.toTypedArray(), REQUEST_CODE_LOCATION)
+        ParentalLocationModule.pendingPromises.add(promise)
+        ActivityCompat.requestPermissions(activity, missing.toTypedArray(), 4201)
     }
 
     @ReactMethod
@@ -107,8 +107,8 @@ class ParentalLocationModule(private val reactContext: ReactApplicationContext) 
             promise.resolve(true)
             return
         }
-        pendingPromises.add(promise)
-        ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION), REQUEST_CODE_LOCATION)
+        ParentalLocationModule.pendingPromises.add(promise)
+        ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.ACCESS_BACKGROUND_LOCATION), 4201)
     }
 
     @ReactMethod

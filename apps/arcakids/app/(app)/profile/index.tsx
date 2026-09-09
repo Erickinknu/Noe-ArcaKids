@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
@@ -52,25 +53,26 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <View style={styles.screen}>
+      <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         <Text style={styles.muted}>{tr('arcakids.profile.loading')}</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (error) {
     return (
-      <View style={styles.screen}>
+      <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         <Text style={styles.error}>{error}</Text>
         <Button variant="outline" onPress={reload}>
           {tr('common.retry')}
         </Button>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+      <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
       <View style={styles.headerBar}>
         <Text style={styles.title}>{tr('arcakids.profile.title')}</Text>
         <ThemeToggle />
@@ -129,7 +131,8 @@ export default function ProfileScreen() {
       <Text style={styles.muted}>
         {linked ? tr('arcakids.profile.linked') : tr('arcakids.profile.notLinked')}
       </Text>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -137,7 +140,6 @@ const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
   screen: {
     padding: spacing.lg,
-    paddingTop: 80,
     backgroundColor: colors.background,
     gap: spacing.md,
   },

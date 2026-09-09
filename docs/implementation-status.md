@@ -44,7 +44,7 @@ Leyenda de estados:
 | Feature | Estado | Notas |
 |---|---|---|
 | Onboarding (nombre + buddy) | `DONE` | Identidad local `features/identity`. |
-| Vinculación por código/QR | `DONE` | `redeem_pairing_code` RPC; extras de provisioning persistidos. |
+| Vinculación por código/QR | `DONE` | Código 6 char alfanum + QR compacto `akv1:<familyId>:<code>` (ECC H); `redeem_pairing_code` RPC con validación de forma; extras de provisioning persistidos. |
 | Theme + i18n | `DONE` | Claves `arcakids.*`, dark mode. |
 | Pantalla bloqueada | `DONE` | Rutas `/blocked` + redirect por estado. |
 

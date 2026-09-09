@@ -2,9 +2,10 @@ import { useMemo } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useAchievements } from '@/features/achievements/use-achievements';
-import { Card, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, useVerseOfDay, VerseBanner, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function AchievementsScreen() {
   const { t: tr } = useTranslation();
@@ -12,18 +13,19 @@ export default function AchievementsScreen() {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const { achievements, loading, error } = useAchievements();
+  const wisdomVerse = useVerseOfDay(['wisdom'] as const);
 
   if (loading) {
     return (
-      <View style={styles.screen}>
+      <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         <Text style={styles.message}>{tr('arcakids.achievements.loading')}</Text>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (error || achievements.length === 0) {
     return (
-      <View style={styles.screen}>
+      <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         <View style={styles.header}>
           <Pressable
             onPress={() => router.back()}
@@ -39,12 +41,12 @@ export default function AchievementsScreen() {
           <Text style={styles.emptyEmoji}>🏅</Text>
           <Text style={styles.message}>{tr('arcakids.achievements.empty')}</Text>
         </View>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Pressable
           onPress={() => router.back()}
@@ -93,8 +95,14 @@ export default function AchievementsScreen() {
             </Text>
           </Card>
         ))}
+        {wisdomVerse ? (
+          <View style={styles.verse}>
+            <Text style={styles.verseLabel}>{tr('common.verseOfDay')}</Text>
+            <VerseBanner verse={wisdomVerse} />
+          </View>
+        ) : null}
       </ScrollView>
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -108,7 +116,7 @@ const makeStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       paddingHorizontal: spacing.md,
-      paddingTop: spacing.xl,
+      paddingTop: spacing.md,
       paddingBottom: spacing.sm,
       gap: spacing.md,
     },
@@ -176,6 +184,15 @@ const makeStyles = (colors: ThemeColors) =>
       fontSize: typography.fontSizes.caption,
       color: colors.textMuted,
       textAlign: 'right',
+    },
+    verse: {
+      gap: spacing.xs,
+    },
+    verseLabel: {
+      fontSize: typography.fontSizes.caption,
+      fontWeight: typography.fontWeights.semibold,
+      color: colors.textMuted,
+      textTransform: 'uppercase',
     },
     empty: {
       flex: 1,

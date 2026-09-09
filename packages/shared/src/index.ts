@@ -13,3 +13,5 @@ export { networkService } from './services/network-service';
 export { Card } from './components/card';
 export { Input } from './components/input';
 export { ErrorBoundary } from './components/ErrorBoundary';
+export { VerseText, VerseBanner } from './components/verse-text';
+export * from './verses';

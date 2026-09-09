@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Image } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack, useRouter, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -80,10 +81,12 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
-      <ErrorBoundary>
-        <RootNavigator />
-      </ErrorBoundary>
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider>
+        <ErrorBoundary>
+          <RootNavigator />
+        </ErrorBoundary>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }

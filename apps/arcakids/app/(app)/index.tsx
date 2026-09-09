@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { Link } from 'expo-router';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import type { DeviceRules } from '@noe-arcakids/types';
 
@@ -9,7 +10,19 @@ import { useParentalStatus } from '@/hooks/use-parental-status';
 import { useAchievements } from '@/features/achievements/use-achievements';
 import { identityService } from '@/features/identity/services/identity-service';
 import { ROUTES } from '@/constants';
-import { Card, useAsyncData, useNetworkStatus, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import {
+  Card,
+  VerseBanner,
+  useAsyncData,
+  useNetworkStatus,
+  useRandomVerse,
+  useTheme,
+  useVerseOfDay,
+  radius,
+  spacing,
+  typography,
+  type ThemeColors,
+} from '@noe-arcakids/shared';
 
 function formatMinutes(mins: number): string {
   if (mins < 60) return `${mins} min`;
@@ -76,12 +89,20 @@ function NavItem({ href, icon, label, styles }: NavItemProps) {
 export default function HomeScreen() {
   const { t: tr } = useTranslation();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const { isOnline } = useNetworkStatus();
   const { data: childInfo } = useAsyncData(() => identityService.getChildInfo());
   const isLinked = Boolean(childInfo?.childId && childInfo?.familyId);
   const { rules, snapshot, reason } = useParentalStatus(isLinked);
   const { totalAchieved, totalAvailable, loading: achievementsLoading } = useAchievements();
+
+  const isMorning = new Date().getHours() < 12;
+  const verseOfDay = useVerseOfDay(isMorning ? (['morning'] as const) : undefined);
+  const restVerse = useRandomVerse(['rest'] as const);
+  const eggTaps = useRef(0);
+  const [eggShown, setEggShown] = useState(false);
+  const eggVerse = useRandomVerse(['love', 'courage'] as const);
 
   const name = childInfo?.name?.split(' ')[0] ?? 'kid';
   const avatar = childInfo?.avatar ?? '🧸';
@@ -106,7 +127,7 @@ export default function HomeScreen() {
       ? tr('arcakids.parental.unlockAt', { time: rules.bedtimeEnd })
       : tr('arcakids.parental.renewsTomorrow');
     return (
-      <View style={[styles.container, styles.blockedScreen]}>
+      <SafeAreaView style={[styles.container, styles.blockedScreen]} edges={['top', 'bottom']}>
         <Text style={styles.blockedEmoji}>{isBedtime ? '🌙' : '⏰'}</Text>
         <Text style={styles.blockedTitle}>
           {tr(
@@ -123,16 +144,29 @@ export default function HomeScreen() {
           )}
         </Text>
         <Text style={styles.blockedUnlock}>{unlockText}</Text>
-      </View>
+        {restVerse ? <VerseBanner verse={restVerse} /> : null}
+      </SafeAreaView>
     );
   }
 
   const bedtimeMinutes = minutesUntilBedtime(rules);
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['top']}>
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Text style={styles.avatar}>{avatar}</Text>
+        <Pressable
+          onPress={() => {
+            eggTaps.current += 1;
+            if (eggTaps.current >= 3) {
+              eggTaps.current = 0;
+              setEggShown((value) => !value);
+            }
+          }}
+          accessibilityRole="button"
+          accessibilityLabel={tr('arcakids.home.profile')}
+        >
+          <Text style={styles.avatar}>{avatar}</Text>
+        </Pressable>
         <Text style={styles.title}>{tr('arcakids.home.hi', { name })}</Text>
         <View style={styles.statusRow}>
           <Text style={styles.statusLabel}>{tr('arcakids.home.connection')}</Text>
@@ -140,6 +174,18 @@ export default function HomeScreen() {
             {isOnline ? tr('arcakids.home.online') : tr('arcakids.home.offline')}
           </Text>
         </View>
+
+        {verseOfDay ? (
+          <VerseBanner
+            verse={verseOfDay}
+            title={
+              isMorning
+                ? tr('arcakids.verses.morningTitle')
+                : tr('common.verseOfDay')
+            }
+          />
+        ) : null}
+        {eggShown && eggVerse ? <VerseBanner verse={eggVerse} /> : null}
 
         {!isLinked ? (
           <Link href={ROUTES.link} asChild>
@@ -248,7 +294,7 @@ export default function HomeScreen() {
         ) : null}
       </ScrollView>
 
-      <View style={styles.nav}>
+      <View style={[styles.nav, { paddingBottom: Math.max(insets.bottom, spacing.sm) }]}>
         {isLinked ? (
           <NavItem href={ROUTES.launcher} icon="🎮" label={tr('arcakids.launcher.title')} styles={styles} />
         ) : null}
@@ -256,7 +302,7 @@ export default function HomeScreen() {
         <NavItem href={ROUTES.profile} icon="🧒" label={tr('arcakids.home.profile')} styles={styles} />
         <NavItem href={ROUTES.settings} icon="⚙️" label={tr('arcakids.home.settings')} styles={styles} />
       </View>
-    </View>
+    </SafeAreaView>
   );
 }
 

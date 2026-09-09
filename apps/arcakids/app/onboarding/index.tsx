@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { AppState, Pressable, StyleSheet, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
@@ -12,9 +13,55 @@ import { onboardingService } from '@/features/onboarding/services/onboarding-ser
 import { parentalBridge } from '@/features/parental/native/parental-bridge';
 import { Card, Input, errorMessage, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
-const CODE_LENGTH = 8;
+const CODE_LENGTH = 6;
 
 type StepKind = 'welcome' | 'code' | 'location' | 'usage' | 'overlay' | 'admin' | 'done';
+
+const PERMISSION_POLL_MS = 1500;
+
+function usePermissionGate(
+  check: (() => Promise<boolean>) | null,
+  onGranted: () => void,
+): boolean | null {
+  const [granted, setGranted] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    if (!check) {
+      return;
+    }
+    let stop = false;
+    let timer: ReturnType<typeof setInterval> | null = null;
+
+    const run = async () => {
+      let ok = false;
+      try {
+        ok = await check();
+      } catch {
+        ok = false;
+      }
+      if (stop) return;
+      setGranted(ok);
+      if (ok) {
+        if (timer) clearInterval(timer);
+        onGranted();
+      }
+    };
+
+    void run();
+    timer = setInterval(run, PERMISSION_POLL_MS);
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') void run();
+    });
+
+    return () => {
+      stop = true;
+      if (timer) clearInterval(timer);
+      subscription.remove();
+    };
+  }, [check, onGranted]);
+
+  return granted;
+}
 
 export default function OnboardingScreen() {
   const { t: tr } = useTranslation();
@@ -75,6 +122,45 @@ export default function OnboardingScreen() {
     };
   }, []);
 
+  const checkLocation = useCallback(
+    async () => locationModule.hasPermission(),
+    [],
+  );
+  const checkUsage = useCallback(
+    async () => parentalBridge.hasUsageStatsPermission(),
+    [],
+  );
+  const checkOverlay = useCallback(
+    async () => deviceOwnerBridge.hasOverlayPermission(),
+    [],
+  );
+  const checkAdmin = useCallback(async () => {
+    const state = await deviceOwnerBridge.getState();
+    return state.isDeviceOwner || state.isAdminActive;
+  }, []);
+
+  const goUsage = useCallback(() => setStep('usage'), []);
+  const goOverlay = useCallback(() => setStep('overlay'), []);
+  const goAdmin = useCallback(() => setStep('admin'), []);
+  const goDone = useCallback(() => setStep('done'), []);
+
+  const locationGranted = usePermissionGate(
+    step === 'location' ? checkLocation : null,
+    goUsage,
+  );
+  const usageGranted = usePermissionGate(
+    step === 'usage' ? checkUsage : null,
+    goOverlay,
+  );
+  const overlayGranted = usePermissionGate(
+    step === 'overlay' ? checkOverlay : null,
+    goAdmin,
+  );
+  const adminGranted = usePermissionGate(
+    step === 'admin' ? checkAdmin : null,
+    goDone,
+  );
+
   async function handleLink() {
     if (code.trim().length === 0) return;
     setLinking(true);
@@ -102,20 +188,20 @@ export default function OnboardingScreen() {
 
   if (step === 'welcome') {
     return (
-      <View style={styles.screen}>
+      <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         <Text style={styles.mascot}>🧸</Text>
         <Text style={styles.title}>{tr('arcakids.onboarding.welcome')}</Text>
         <Text style={styles.description}>{tr('arcakids.onboarding.welcomeText')}</Text>
         <Button onPress={() => setStep('location')}>
           {tr('arcakids.onboarding.start')}
         </Button>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (step === 'location') {
     return (
-      <View style={styles.screen}>
+      <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         {renderStepHeading('arcakids.onboarding.locationTitle', 'arcakids.onboarding.locationStep')}
         <Text style={styles.description}>{tr('arcakids.onboarding.locationText')}</Text>
         <Text style={styles.list}>{tr('arcakids.onboarding.locationUses')}</Text>
@@ -124,91 +210,113 @@ export default function OnboardingScreen() {
         </Card>
         <Button
           onPress={() => {
+            if (locationGranted === true) {
+              setStep('usage');
+              return;
+            }
             void (async () => {
               await locationModule.requestPermission().catch(() => false);
               if (await locationModule.hasPermission()) {
                 await locationModule.requestBackgroundPermission().catch(() => false);
               }
-              setStep('usage');
             })();
           }}
         >
-          {tr('arcakids.onboarding.locationGrant')}
+          {locationGranted === true
+            ? tr('arcakids.onboarding.adminDone')
+            : tr('arcakids.onboarding.locationGrant')}
         </Button>
         <Pressable onPress={() => setStep('usage')}>
           <Text style={styles.back}>{tr('arcakids.onboarding.locationSkip')}</Text>
         </Pressable>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (step === 'usage') {
     return (
-      <View style={styles.screen}>
+      <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         {renderStepHeading('arcakids.onboarding.usageTitle', 'arcakids.onboarding.usageStep')}
         <Text style={styles.description}>{tr('arcakids.onboarding.usageText')}</Text>
         <Text style={styles.list}>{tr('arcakids.onboarding.usageUses')}</Text>
         <Card>
           <Text style={styles.privacy}>{tr('arcakids.onboarding.usagePrivacy')}</Text>
         </Card>
-        <Button onPress={() => void parentalBridge.openUsageAccessSettings()}>
-          {tr('arcakids.onboarding.usageGrant')}
+        <Button
+          onPress={() => {
+            if (usageGranted === true) {
+              setStep('overlay');
+              return;
+            }
+            void parentalBridge.openUsageAccessSettings();
+          }}
+        >
+          {usageGranted === true
+            ? tr('arcakids.onboarding.adminDone')
+            : tr('arcakids.onboarding.usageGrant')}
         </Button>
         <Pressable onPress={() => setStep('overlay')}>
           <Text style={styles.back}>{tr('arcakids.onboarding.usageSkip')}</Text>
         </Pressable>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (step === 'overlay') {
     return (
-      <View style={styles.screen}>
+      <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         {renderStepHeading('arcakids.onboarding.overlayTitle', 'arcakids.onboarding.overlayStep')}
         <Text style={styles.description}>{tr('arcakids.onboarding.overlayText')}</Text>
-        <Button onPress={() => void deviceOwnerBridge.openOverlaySettings()}>
-          {tr('arcakids.onboarding.overlayGrant')}
+        <Button
+          onPress={() => {
+            if (overlayGranted === true) {
+              setStep('admin');
+              return;
+            }
+            void deviceOwnerBridge.openOverlaySettings();
+          }}
+        >
+          {overlayGranted === true
+            ? tr('arcakids.onboarding.adminDone')
+            : tr('arcakids.onboarding.overlayGrant')}
         </Button>
         <Pressable onPress={() => setStep('admin')}>
           <Text style={styles.back}>{tr('arcakids.onboarding.overlaySkip')}</Text>
         </Pressable>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (step === 'admin') {
     return (
-      <View style={styles.screen}>
+      <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         {renderStepHeading('arcakids.onboarding.adminTitle', 'arcakids.onboarding.adminStep')}
         <Text style={styles.description}>{tr('arcakids.onboarding.adminText')}</Text>
         <Text style={styles.list}>{tr('arcakids.onboarding.adminUses')}</Text>
         <Text style={styles.description}>{tr('arcakids.onboarding.adminNote')}</Text>
         <Button
-          onPress={async () => {
-            if (isOwner === false) {
-              try {
-                await deviceOwnerBridge.enableAdmin();
-              } catch {
-                // fall through: continue to done regardless
-              }
+          onPress={() => {
+            if (adminGranted === true || isOwner === true) {
+              setStep('done');
+              return;
             }
-            setStep('done');
+            void deviceOwnerBridge.enableAdmin().catch(() => undefined);
           }}
         >
-          {isOwner === false
-            ? tr('arcakids.onboarding.adminGrant')
-            : tr('arcakids.onboarding.adminDone')}
+          {adminGranted === true || isOwner === true
+            ? tr('arcakids.onboarding.adminDone')
+            : tr('arcakids.onboarding.adminGrant')}
         </Button>
         <Pressable onPress={() => setStep('done')}>
           <Text style={styles.back}>{tr('arcakids.onboarding.adminDone')}</Text>
         </Pressable>
-      </View>
+      </SafeAreaView>
     );
   }
 
   if (step === 'done') {
     return (
-      <View style={styles.screen}>
+      <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
         <Text style={styles.mascot}>🛡️</Text>
         <Text style={styles.title}>{tr('arcakids.onboarding.doneTitle')}</Text>
         <Text style={styles.description}>{tr('arcakids.onboarding.doneText')}</Text>
@@ -220,12 +328,12 @@ export default function OnboardingScreen() {
         >
           {tr('arcakids.onboarding.doneFinish')}
         </Button>
-      </View>
+      </SafeAreaView>
     );
   }
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <Text style={styles.title}>{tr('arcakids.onboarding.codeTitle')}</Text>
       <Text style={styles.description}>{tr('arcakids.onboarding.codeText')}</Text>
       {linking ? (
@@ -247,7 +355,7 @@ export default function OnboardingScreen() {
         <Text style={styles.back}>{tr('arcakids.onboarding.back')}</Text>
       </Pressable>
       {error ? <Text style={styles.error}>{error}</Text> : null}
-    </View>
+    </SafeAreaView>
   );
 }
 

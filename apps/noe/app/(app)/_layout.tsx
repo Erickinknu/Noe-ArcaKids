@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, Text, TextInput, View, type ColorValue } from 'r
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
-import { useTheme, typography, spacing, radius, type ThemeColors } from '@noe-arcakids/shared';
+import { useTheme, typography, spacing, radius, useRandomVerse, VerseBanner, type ThemeColors } from '@noe-arcakids/shared';
 
 import { useAuthStore } from '@/stores/auth-store';
 import { ROUTES } from '@/constants';
@@ -26,6 +26,7 @@ export default function AppLayout() {
   const [pinError, setPinError] = useState<string | null>(null);
   const [bioEnabled, setBioEnabled] = useState(false);
   const [bioSupported, setBioSupported] = useState(false);
+  const pinVerse = useRandomVerse(['hope']);
 
   useEffect(() => {
     let mounted = true;
@@ -122,6 +123,11 @@ export default function AppLayout() {
           placeholderTextColor={colors.textMuted}
         />
         {pinError ? <Text style={styles.pinGateError}>{pinError}</Text> : null}
+        {pinVerse ? (
+          <View style={styles.pinGateVerse}>
+            <VerseBanner verse={pinVerse} title={tr('common.verseOfDay')} />
+          </View>
+        ) : null}
       </View>
     );
   }
@@ -326,5 +332,9 @@ const makeStyles = (colors: ThemeColors) =>
     color: colors.onPrimary,
     fontSize: typography.fontSizes.body,
     fontWeight: typography.fontWeights.semibold,
+  },
+  pinGateVerse: {
+    alignSelf: 'stretch',
+    marginTop: spacing.md,
   },
 });

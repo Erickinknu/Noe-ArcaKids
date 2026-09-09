@@ -27,6 +27,8 @@ import {
   typography,
   useNetworkStatus,
   useTheme,
+  useVerseOfDay,
+  VerseBanner,
   type ThemeColors,
   type ThemeShadows,
   Card,
@@ -52,6 +54,7 @@ export default function DashboardScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
   const { isOnline } = useNetworkStatus();
+  const reflectVerse = useVerseOfDay();
 
   const [data, setData] = useState<FamilySummary | null>(null);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
@@ -358,6 +361,11 @@ export default function DashboardScreen() {
             </View>
           </View>
         </Card>
+
+        {/* ── Para reflexionar ── */}
+        {reflectVerse ? (
+          <VerseBanner verse={reflectVerse} title={tr('noe.dashboard.reflect')} />
+        ) : null}
 
         {/* ── Summary cards ── */}
         <View style={styles.summaryRow}>

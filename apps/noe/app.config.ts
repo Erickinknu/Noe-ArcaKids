@@ -14,7 +14,7 @@ const sentryPlugins: NonNullable<ExpoConfig['plugins']> = sentryOrg && sentryPro
 const config: ExpoConfig = {
   name: 'NOE',
   slug: 'noe',
-  version: '1.3.3',
+  version: '1.3.5',
   orientation: 'portrait',
   icon: './assets/images/noe-icon.png',
   scheme: 'noe',
@@ -26,7 +26,7 @@ const config: ExpoConfig = {
   },
   android: {
     package: 'com.noe.parent',
-    versionCode: 8,
+    versionCode: 10,
     allowBackup: false,
     adaptiveIcon: {
       backgroundColor: '#E6F4FE',

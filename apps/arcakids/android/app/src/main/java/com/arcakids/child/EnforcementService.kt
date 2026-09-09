@@ -128,8 +128,6 @@ class EnforcementService : Service() {
     }
 
     private fun applyEnforcement() {
-        // Device-level block is the authoritative total lock (parent blocked the device).
-        // It must not be overridden by rules-based enforcement state.
         if (getSharedPreferences("arcakids_device", Context.MODE_PRIVATE).getBoolean("is_blocked", false)) {
             applyTotalLock()
             return
@@ -159,17 +157,6 @@ class EnforcementService : Service() {
         else overlayManager?.stop()
     }
 
-    /** Total device lock: suspend everything (owner) or show a persistent full-screen overlay. */
-    private fun applyTotalLock() {
-        val isOwner = enforcer?.isDeviceOwner == true
-        val targets = getAllBlockingSet(includeLauncher = true)
-        if (isOwner) {
-            enforcer?.apply(targets.toList())
-        } else {
-            overlayManager?.showLockAll()
-        }
-    }
-
     private fun getAllBlockingSet(includeLauncher: Boolean = false): MutableSet<String> {
         val set = mutableSetOf<String>()
         val launcher = if (includeLauncher) null else packageManager.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)?.activityInfo?.packageName
@@ -180,6 +167,16 @@ class EnforcementService : Service() {
             set.add(info.packageName)
         }
         return set
+    }
+
+    private fun applyTotalLock() {
+        val isOwner = enforcer?.isDeviceOwner == true
+        val targets = getAllBlockingSet(includeLauncher = true)
+        if (isOwner) {
+            enforcer?.apply(targets.toList())
+        } else {
+            overlayManager?.showLockAll()
+        }
     }
 
     private fun usageToday(): Long {

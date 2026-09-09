@@ -16,6 +16,7 @@ export const en = {
     goHome: 'Go home',
     errorOccurred: 'Something went wrong',
     errorRetry: 'Try again',
+    verseOfDay: 'Verse of the day',
   },
   validation: {
     emailRequired: 'A valid email is required.',
@@ -36,7 +37,7 @@ export const en = {
     familyNameMax: 'Family name must be at most {{max}} characters.',
     childNameRequired: 'Child name is required.',
     childNameMax: 'Child name must be at most {{max}} characters.',
-    linkCodeInvalid: 'Enter the 6-digit code shown on the NOE app.',
+    linkCodeInvalid: 'Enter the 6-character code shown on the NOE app.',
     rules: {
       dailyLimitInvalid: 'The daily limit must be a number between 0 and 1440 minutes.',
       timeInvalid: 'Use HH:mm format (for example 21:00).',
@@ -148,6 +149,8 @@ export const en = {
       overLimit: 'Over limit',
       details: 'Details',
       selectChild: 'Select child',
+      reflect: 'Something to reflect on',
+      reflectDescription: 'A short message to share with your family today.',
     },
     tabs: {
       home: 'Home',
@@ -172,6 +175,9 @@ export const en = {
     },
     settings: {
       title: 'Settings',
+      showVerses: 'Show Bible verses',
+      showVersesDescription:
+        'Show a short verse on the dashboard to share with your family.',
     },
     children: {
       title: 'Children',
@@ -209,6 +215,7 @@ export const en = {
       modeHintChild: 'Code bound to the selected child.',
       provisioningHelp: 'For Device Owner provisioning, scan the QR during setup. It contains the admin component and pairing code.',
       qrPayloadLabel: 'QR payload (JSON)',
+      qrPayloadCompactLabel: 'QR content (compact code)',
       adminComponentLabel: 'Device admin: {{component}}',
       qrModeApp: 'Standard QR',
       qrModeDpc: 'Setup Wizard QR (Device Owner)',
@@ -275,6 +282,8 @@ export const en = {
       screenTimeAlertDesc: 'Alert when approaching the daily limit',
       offlineAlert: 'Offline alert',
       offlineAlertDesc: 'Alert when a device goes offline',
+      weeklyVerse: 'Weekly verse',
+      weeklyVerseDesc: 'Receive a verse each week to share as a family',
       save: 'Save preferences',
       savedFlash: 'Preferences saved',
       loadError: 'Failed to load preferences',
@@ -325,7 +334,7 @@ export const en = {
       codeText:
         'Your mom or dad generated a code in NOE. Type it here to activate this device.',
       codeTypeLabel: 'Family code',
-      codeTypePlaceholder: 'E.G. ABC12345',
+      codeTypePlaceholder: 'E.G. ABC123',
       linkButton: 'Link device',
       provisioningDetected: 'Setup code found — linking your device…',
       locationStep: 'Step 1 of 4',
@@ -405,7 +414,7 @@ export const en = {
       cancelScan: 'Cancel scan',
       enterCode: 'Enter the code',
       codeLabel: 'Code',
-      codePlaceholder: '000000',
+      codePlaceholder: 'ABC123',
       linkDevice: 'Link device',
       scanInstead: 'Scan QR instead',
       cameraPermission: 'Camera permission is needed to scan the QR code.',
@@ -481,6 +490,13 @@ export const en = {
     theme: {
       light: 'Light mode',
       dark: 'Dark mode',
+    },
+    verses: {
+      title: 'Bible verses',
+      showTitle: 'Show Bible verses',
+      showDescription:
+        'Show a short Bible verse to inspire and guide you each day.',
+      morningTitle: 'Good morning!',
     },
     blocked: {
       title: 'Device blocked',

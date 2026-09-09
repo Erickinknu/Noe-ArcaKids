@@ -26,6 +26,7 @@ interface NativeParentalUsage {
   getLaunchableApps(): Promise<LaunchableApp[]>;
   launchApp(packageName: string): Promise<boolean>;
   updateEnforcementState(stateJson: string): Promise<null>;
+  updateBlockedPackages(packageNamesJson: string, blocked: boolean): Promise<null>;
   updateDeviceState(deviceStateJson: string): Promise<null>;
   startEnforcement(): Promise<null>;
   stopEnforcement(): Promise<null>;
@@ -91,6 +92,11 @@ export const parentalBridge = {
   async updateEnforcementState(state: EnforcementState): Promise<void> {
     assertNative('updateEnforcementState');
     await native!.updateEnforcementState(JSON.stringify(state));
+  },
+
+  async updateBlockedPackages(packageNames: string[], blocked: boolean): Promise<void> {
+    assertNative('updateBlockedPackages');
+    await native!.updateBlockedPackages(JSON.stringify(packageNames), blocked);
   },
 
   async updateDeviceState(deviceState: {

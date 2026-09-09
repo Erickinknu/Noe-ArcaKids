@@ -1,17 +1,19 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
 import { linkingService } from '@/features/linking/services/linking-service';
-import { Card, Input, errorMessage, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, Input, errorMessage, useTheme, useVerseOfDay, VerseBanner, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function LinkScreen() {
   const { t: tr } = useTranslation();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const covenantVerse = useVerseOfDay(['covenant'] as const);
   const [code, setCode] = useState('');
   const [scanning, setScanning] = useState(false);
   const [linking, setLinking] = useState(false);
@@ -23,17 +25,7 @@ export default function LinkScreen() {
   }, []);
 
   async function handleRedeem() {
-    setLinking(true);
-    setError(null);
-    try {
-      await linkingService.redeem(code);
-      setCode('');
-      router.replace('/');
-    } catch (cause) {
-      setError(errorMessage(cause));
-    } finally {
-      setLinking(false);
-    }
+    await handleRedeemWith(code);
   }
 
   async function handleScanPress() {
@@ -49,16 +41,33 @@ export default function LinkScreen() {
   }
 
   function handleBarcodeScanned(data: string) {
-    if (data.length === 6 && /^\d{6}$/.test(data)) {
-      setScanning(false);
-      handleCode(data);
+    const cleaned = linkingService.sanitizeCode(data);
+    if (!linkingService.isValidCode(cleaned)) return;
+    setScanning(false);
+    setCode(cleaned);
+    void handleRedeemWith(cleaned);
+  }
+
+  async function handleRedeemWith(value: string) {
+    setLinking(true);
+    setError(null);
+    try {
+      await linkingService.redeem(value);
+      setCode('');
+      router.replace('/');
+    } catch (cause) {
+      setError(errorMessage(cause));
+    } finally {
+      setLinking(false);
     }
   }
 
   return (
-    <View style={styles.screen}>
+    <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <Text style={styles.title}>{tr('arcakids.link.title')}</Text>
       <Text style={styles.subtitle}>{tr('arcakids.link.subtitle')}</Text>
+
+      {covenantVerse ? <VerseBanner verse={covenantVerse} /> : null}
 
       {scanning ? (
         <Card style={styles.scannerCard}>
@@ -80,10 +89,15 @@ export default function LinkScreen() {
           label={tr('arcakids.link.codeLabel')}
           value={code}
           onChangeText={handleCode}
-          keyboardType="number-pad"
+          autoCapitalize="characters"
+          autoCorrect={false}
           placeholder={tr('arcakids.link.codePlaceholder')}
         />
-        <Button onPress={handleRedeem} loading={linking} disabled={code.length !== 6}>
+        <Button
+          onPress={handleRedeem}
+          loading={linking}
+          disabled={!linkingService.isValidCode(code)}
+        >
           {tr('arcakids.link.linkDevice')}
         </Button>
         <Pressable onPress={handleScanPress}>
@@ -92,7 +106,7 @@ export default function LinkScreen() {
       </Card>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
-    </View>
+    </SafeAreaView>
   );
 }
 
@@ -101,7 +115,6 @@ const makeStyles = (colors: ThemeColors) =>
   screen: {
     flex: 1,
     padding: spacing.lg,
-    paddingTop: 80,
     backgroundColor: colors.background,
     gap: spacing.md,
   },

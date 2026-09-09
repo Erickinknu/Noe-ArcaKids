@@ -6,7 +6,7 @@ import { requireSupabaseClient } from '@noe-arcakids/supabase';
 
 const CODE_LIFESPAN_MS = 10 * 60 * 1000;
 const MAX_CODE_ATTEMPTS = 5;
-const CODE_LENGTH = 8;
+const CODE_LENGTH = 6;
 const CODE_CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I
 
 export interface PairingCode {
@@ -15,7 +15,7 @@ export interface PairingCode {
 }
 
 /**
- * Cryptographically secure 8-char alphanumeric pairing code.
+ * Cryptographically secure 6-char alphanumeric pairing code.
  * Uses expo-crypto (Hermes does not implement globalThis.crypto).
  */
 export function generatePairingCode(): string {
