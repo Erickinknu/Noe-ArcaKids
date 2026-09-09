@@ -24,8 +24,8 @@
   },
   "devDependencies": {
     "@eslint-community/eslint-utils": "^4.10.1",
-    "@react-native/assets-registry": "0.86.3",
-    "@react-native/jest-preset": "^0.86.3",
+    "@react-native/assets-registry": "0.87.1",
+    "@react-native/jest-preset": "^0.87.1",
     "@types/jest": "^30.0.0",
     "@types/node": "^26.2.0",
     "expo-doctor": "^1.18.0",
@@ -42,7 +42,7 @@
   "dependencies": {
     "expo": "~57.0.20",
     "react": "19.2.3",
-    "react-native": "0.86.3"
+    "react-native": "0.87.1"
   },
   "allowScripts": {
     "@react-native/jest-preset@0.86.3": true
