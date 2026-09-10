@@ -12,6 +12,7 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
 import { deviceControlService } from '@/features/device-control/services/device-control-service';
+import { appCategoryService } from '@/features/app-categories/services/app-category-service';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { Card, Input, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
@@ -126,7 +127,9 @@ export default function ChildDetailScreen() {
         }
       }
     } catch {
-      setDeviceStatus({ deviceUuid: null, lastSeen: null, battery: null, latitude: null, longitude: null, isLocked: false, apps: null });
+      // Transient network/RLS errors must NOT clear the last known device
+      // status; only the successful "definitively no device" path resets it.
+      console.warn('fetchDevice failed; keeping previous status');
     }
   }, [childId]);
 
@@ -280,7 +283,23 @@ export default function ChildDetailScreen() {
           break;
       }
       setCommandFeedback(tr('noe.deviceControl.commandSent'));
-      setTimeout(() => { void reloadDevice(); }, kind === 'apps' || kind === 'status' ? 2500 : 1500);
+      setTimeout(() => {
+        void (async () => {
+          // After a LIST_APPS round-trip, seed app_categories so the child
+          // device can enforce per-app limits and the parent sees categories.
+          if (kind === 'apps' && childId) {
+            try {
+              const installed = await deviceControlService.getDeviceApps(uuid);
+              if (installed.length > 0) {
+                await appCategoryService.syncApps(childId, installed);
+              }
+            } catch {
+              // Seeding is best-effort; the list is still shown below.
+            }
+          }
+          void reloadDevice();
+        })();
+      }, kind === 'apps' || kind === 'status' ? 2500 : 1500);
     } catch (cause) {
       setCommandFeedback(`${tr('noe.deviceControl.commandFailed')}: ${errorMessage(cause)}`);
     } finally {

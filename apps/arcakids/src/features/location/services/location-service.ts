@@ -126,13 +126,13 @@ export class LocationService {
   }
 
   private async checkGeofencesViaSupabase(update: LocationUpdate) {
-    const childId = update.childId;
-    if (!childId) return;
+    const deviceUuid = update.deviceUuid;
+    if (!deviceUuid) return;
 
     try {
       const client = requireSupabaseClient();
-      const { data: events, error } = await client.rpc('check_geofences', {
-        p_child_id: childId,
+      const { data: events, error } = await client.rpc('check_geofences_for_device', {
+        p_device_uuid: deviceUuid,
         p_latitude: update.latitude,
         p_longitude: update.longitude,
       });
@@ -217,7 +217,7 @@ export class LocationService {
   private async syncLocationUpdate(update: LocationUpdate) {
     try {
       await parentalService.reportLocation(
-        update.childId,
+        update.deviceUuid,
         update.latitude,
         update.longitude
       );

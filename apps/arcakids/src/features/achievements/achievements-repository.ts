@@ -46,10 +46,10 @@ function mapAchievement(row: AchievementRow): AchievementProgress {
 }
 
 export const achievementRepository = {
-  async getChildAchievements(childId: string): Promise<AchievementProgress[]> {
+  async getChildAchievements(deviceUuid: string): Promise<AchievementProgress[]> {
     const client = requireSupabaseClient();
-    const { data, error } = await client.rpc('get_child_achievements', {
-      p_child_id: childId,
+    const { data, error } = await client.rpc('get_child_achievements_for_device', {
+      p_device_uuid: deviceUuid,
     });
 
     if (error) {
@@ -60,13 +60,13 @@ export const achievementRepository = {
   },
 
   async incrementAchievement(
-    childId: string,
+    deviceUuid: string,
     achievementKey: string,
     increment: number = 1
   ): Promise<void> {
     const client = requireSupabaseClient();
-    const { error } = await client.rpc('increment_achievement', {
-      p_child_id: childId,
+    const { error } = await client.rpc('increment_achievement_for_device', {
+      p_device_uuid: deviceUuid,
       p_achievement_key: achievementKey,
       p_increment: increment,
     });

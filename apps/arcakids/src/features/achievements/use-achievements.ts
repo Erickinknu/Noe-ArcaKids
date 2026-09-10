@@ -16,27 +16,27 @@ export interface UseAchievementsReturn {
 }
 
 export function useAchievements(): UseAchievementsReturn {
-  const { data: childInfo } = useAsyncData(() => identityService.getChildInfo());
+  const { data: device } = useAsyncData(() => identityService.getLocalDevice());
   const [achievements, setAchievements] = useState<AchievementProgress[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const fetchAchievements = useCallback(async () => {
-    if (!childInfo?.childId) {
+    if (!device?.deviceUuid) {
       setAchievements([]);
       return;
     }
     setLoading(true);
     setError(null);
     try {
-      const data = await achievementRepository.getChildAchievements(childInfo.childId);
+      const data = await achievementRepository.getChildAchievements(device.deviceUuid);
       setAchievements(data);
     } catch (e: any) {
       setError(e?.message ?? 'Error al cargar logros');
     } finally {
       setLoading(false);
     }
-  }, [childInfo]);
+  }, [device]);
 
   useEffect(() => {
     void Promise.resolve().then(() => fetchAchievements());

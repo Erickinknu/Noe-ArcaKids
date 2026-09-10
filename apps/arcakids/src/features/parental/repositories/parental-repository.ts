@@ -63,15 +63,15 @@ export const parentalRepository = {
   },
 
   async getDeviceState(
-    childId: string
+    deviceUuid: string
   ): Promise<{
     isBlocked: boolean;
     alertActive: boolean;
     alertStartedAt: string | null;
   } | null> {
     const client = requireSupabaseClient();
-    const { data, error } = await client.rpc('get_device_state', {
-      p_child_id: childId,
+    const { data, error } = await client.rpc('get_device_state_for_device', {
+      p_device_uuid: deviceUuid,
     });
     if (error) throw new DatabaseError(error.message);
     const row = (data as any[])?.[0];
@@ -83,22 +83,22 @@ export const parentalRepository = {
     };
   },
 
-  async dismissAlert(childId: string): Promise<void> {
+  async dismissAlert(deviceUuid: string): Promise<void> {
     const client = requireSupabaseClient();
-    const { error } = await client.rpc('dismiss_device_alert', {
-      p_child_id: childId,
+    const { error } = await client.rpc('dismiss_device_alert_for_device', {
+      p_device_uuid: deviceUuid,
     });
     if (error) throw new DatabaseError(error.message);
   },
 
   async getAppCategories(
-    childId: string
+    deviceUuid: string
   ): Promise<
     { packageName: string; category: string; timeLimitMinutes: number | null }[]
   > {
     const client = requireSupabaseClient();
-    const { data, error } = await client.rpc('get_app_categories', {
-      p_child_id: childId,
+    const { data, error } = await client.rpc('get_app_categories_for_device', {
+      p_device_uuid: deviceUuid,
     });
     if (error) throw new DatabaseError(error.message);
     return (data ?? []).map((r: any) => ({
@@ -109,13 +109,13 @@ export const parentalRepository = {
   },
 
   async reportLocation(
-    childId: string,
+    deviceUuid: string,
     latitude: number,
     longitude: number
   ): Promise<void> {
     const client = requireSupabaseClient();
-    const { error } = await client.rpc('update_device_location', {
-      p_child_id: childId,
+    const { error } = await client.rpc('update_device_location_for_device', {
+      p_device_uuid: deviceUuid,
       p_latitude: latitude,
       p_longitude: longitude,
     });

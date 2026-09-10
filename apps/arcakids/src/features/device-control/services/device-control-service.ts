@@ -33,15 +33,12 @@ export const deviceControlService = {
     try {
       switch (cmd.command) {
         case 'LOCK': {
-          if (isOwner) {
-            await deviceOwnerBridge.lockNow();
-            // Pin ARCA KIDS so leaving the app is not possible (kiosk).
-            try { await deviceOwnerBridge.startLockTask(); } catch { /* best-effort */ }
-          } else {
-            // Fallback: mark device as locked so EnforcementService blocks via overlay
-            await parentalBridge.updateDeviceState({ isBlocked: true, alertActive: false });
-            usedFallback = true;
-          }
+          // Total lock is IN-APP by design: mark the device as blocked so the
+          // ARCA KIDS lock screen (overlay route) restricts usage. NO native
+          // lockNow()/startLockTask() so the child can never strand the device
+          // behind a native lock the parent cannot clear remotely.
+          await parentalBridge.updateDeviceState({ isBlocked: true, alertActive: false });
+          usedFallback = true;
           break;
         }
         case 'UNLOCK': {

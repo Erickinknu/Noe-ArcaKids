@@ -144,24 +144,24 @@ export const parentalService = {
   },
 
   async checkDeviceState(
-    childId: string
+    deviceUuid: string
   ): Promise<{
     isBlocked: boolean;
     alertActive: boolean;
     alertStartedAt: string | null;
   } | null> {
-    return parentalRepository.getDeviceState(childId);
+    return parentalRepository.getDeviceState(deviceUuid);
   },
 
-  async dismissAlert(childId: string): Promise<void> {
-    return parentalRepository.dismissAlert(childId);
+  async dismissAlert(deviceUuid: string): Promise<void> {
+    return parentalRepository.dismissAlert(deviceUuid);
   },
 
   async reportLocation(
-    childId: string,
+    deviceUuid: string,
     latitude: number,
     longitude: number
   ): Promise<void> {
-    return parentalRepository.reportLocation(childId, latitude, longitude);
+    return parentalRepository.reportLocation(deviceUuid, latitude, longitude);
   },
 };

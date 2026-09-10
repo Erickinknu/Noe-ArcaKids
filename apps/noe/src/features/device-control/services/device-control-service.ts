@@ -48,13 +48,26 @@ export const deviceControlService = {
     command: DeviceCommand['command']
   ): Promise<void> {
     const client = requireSupabaseClient();
-    const { data, error } = await client
-      .from('device_status')
+    // Resolve the device from `devices` first: linked devices always carry the
+    // child_id there. Legacy/pre-pairing rows only exist in `device_status`.
+    let deviceUuid: string | null = null;
+    const { data: dev } = await client
+      .from('devices')
       .select('device_uuid')
       .eq('child_id', childId)
+      .order('last_seen_at', { ascending: false })
+      .limit(1)
       .maybeSingle();
-    if (error) return;
-    const deviceUuid = (data as { device_uuid?: string } | null)?.device_uuid;
+    deviceUuid = (dev as { device_uuid?: string } | null)?.device_uuid ?? null;
+    if (!deviceUuid) {
+      const { data: ds } = await client
+        .from('device_status')
+        .select('device_uuid')
+        .eq('child_id', childId)
+        .limit(1)
+        .maybeSingle();
+      deviceUuid = (ds as { device_uuid?: string } | null)?.device_uuid ?? null;
+    }
     if (!deviceUuid) return;
     try {
       await deviceControlService.sendCommand(deviceUuid, command);
