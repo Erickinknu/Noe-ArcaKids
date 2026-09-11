@@ -16,8 +16,10 @@ Build del release ARCA KIDS (solo `arm64-v8a` por longitud de rutas):
 
 ```powershell
 cd apps/arcakids/android
-.\gradlew.bat assembleRelease
+.\gradlew.bat assembleRelease -PreactNativeArchitectures=arm64-v8a
 # APK en apps/arcakids/android/app/build/outputs/apk/release/
+# Ojo: sin -PreactNativeArchitectures=arm64-v8a falla en armeabi-v7a
+# (CMAKE_OBJECT_PATH_MAX se excede con la longitud de ruta del workspace).
 ```
 
 > Nunca usar `npm run build:*`. Git fuera de PATH en PowerShell: `& "C:\Program Files\Git\bin\git.exe"`.
