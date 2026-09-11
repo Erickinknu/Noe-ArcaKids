@@ -15,7 +15,7 @@ import { familyService } from '@/features/family/services/family-service';
 import { parentalService } from '@/features/parental/services/parental-service';
 import { deviceControlService } from '@/features/device-control/services/device-control-service';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { Card, Input, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
+import { Card, Input, PlanLimitError, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 const AVATARS = ['🐻', '🐰', '🐱', '🐶', '🦊', '🐼', '🦁', '🐸', '🐵', '🦋', '🌟', '🚀'];
 
@@ -29,6 +29,7 @@ export default function ChildrenScreen() {
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
   const [adding, setAdding] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [showUpgrade, setShowUpgrade] = useState(false);
   const [rewardingChildId, setRewardingChildId] = useState<string | null>(null);
 
   async function handleReward(child: { id: string; displayName: string }) {
@@ -112,6 +113,7 @@ export default function ChildrenScreen() {
   async function handleAdd() {
     setAdding(true);
     setActionError(null);
+    setShowUpgrade(false);
     try {
       const { family } = await familyService.getMyFamily();
       await childService.addChild(family.id, displayName, selectedAvatar);
@@ -120,6 +122,9 @@ export default function ChildrenScreen() {
       await reload();
     } catch (cause) {
       setActionError(errorMessage(cause));
+      if (cause instanceof PlanLimitError) {
+        setShowUpgrade(true);
+      }
     } finally {
       setAdding(false);
     }
@@ -248,6 +253,11 @@ export default function ChildrenScreen() {
             </Button>
           </Card>
           {actionError ? <ErrorState message={actionError} /> : null}
+          {showUpgrade ? (
+            <Button variant="secondary" onPress={() => router.push('/(app)/profile/suscripcion')}>
+              Mejorar plan
+            </Button>
+          ) : null}
         </>
       ) : null}
     </ScrollView>

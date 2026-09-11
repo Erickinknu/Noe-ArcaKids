@@ -1,41 +1,43 @@
-import { useMemo } from 'react';
-import { ScrollView, StyleSheet, Text, Pressable, View, Alert } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, Pressable, View, Alert, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Button } from '@/components/ui/button';
+import { billingService } from '@/features/billing/services/billing-service';
+import { PLAN_CATALOG, type PlanId } from '@/features/billing/plans';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { Card, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
-
-const PLANS = [
-  {
-    name: 'Gratuito',
-    price: '$0',
-    period: 'para siempre',
-    features: ['1 hijo', 'Control básico de tiempo', '5 apps bloqueadas', 'Reportes semanales'],
-    current: true,
-  },
-  {
-    name: 'Familia',
-    price: '$4.99',
-    period: '/mes',
-    features: ['Hijos ilimitados', 'Control avanzado', 'Apps ilimitadas', 'Reportes diarios', 'Zonas seguras', 'Modo estudio'],
-    current: false,
-  },
-  {
-    name: 'Familia Anual',
-    price: '$39.99',
-    period: '/año',
-    features: ['Todo de Familia', 'Ahorra 33%', 'Soporte prioritario', 'Nuevas funciones primero'],
-    current: false,
-  },
-];
+import { Card, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function SuscripcionScreen() {
+  const { t: tr } = useTranslation();
   const router = useRouter();
   const screenPadding = useScreenPadding();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const [claiming, setClaiming] = useState<PlanId | null>(null);
+
+  const fetchSubscription = useCallback(() => billingService.getSubscription(), []);
+  const { data: subscription, loading, reload } = useAsyncData(fetchSubscription);
+
+  const currentPlan: PlanId = subscription?.plan ?? 'free';
+
+  async function handleClaim(plan: PlanId) {
+    setClaiming(plan);
+    try {
+      const updated = await billingService.claimPlan(plan);
+      await reload();
+      Alert.alert(
+        tr('noe.plans.upgraded', { plan: updated.plan }),
+        tr('noe.plans.billingNote') + '\n\n' + tr('noe.plans.providerNote')
+      );
+    } catch (cause) {
+      Alert.alert('Error', errorMessage(cause));
+    } finally {
+      setClaiming(null);
+    }
+  }
 
   return (
     <ScrollView
@@ -43,52 +45,53 @@ export default function SuscripcionScreen() {
     >
       <Pressable style={styles.headerRow} onPress={() => router.replace('/(app)/profile')}>
         <MaterialIcons name="arrow-back" size={24} color={colors.text} />
-        <Text style={styles.headerTitle}>Suscripción</Text>
+        <Text style={styles.headerTitle}>{tr('noe.plans.title')}</Text>
       </Pressable>
 
-      <Text style={styles.subtitle}>
-        Elige el plan que mejor se adapte a tu familia.
-      </Text>
+      <Text style={styles.subtitle}>{tr('noe.plans.subtitle')}</Text>
 
-      {PLANS.map((plan) => (
-        <Card
-          key={plan.name}
-          style={[styles.planCard, plan.current && styles.planCurrent]}
-        >
-          <View style={styles.planHeader}>
-            <Text style={styles.planName}>{plan.name}</Text>
-            <View style={styles.priceRow}>
-              <Text style={styles.planPrice}>{plan.price}</Text>
-              <Text style={styles.planPeriod}>{plan.period}</Text>
-            </View>
-          </View>
-          {plan.features.map((f) => (
-            <View key={f} style={styles.featureRow}>
-              <MaterialIcons name="check" size={18} color={colors.success} />
-              <Text style={styles.featureText}>{f}</Text>
-            </View>
-          ))}
-          {plan.current ? (
-            <View style={styles.currentBadge}>
-              <Text style={styles.currentBadgeText}>Plan actual</Text>
-            </View>
-          ) : (
-            <Button
-              variant="primary"
-              size="sm"
-              style={{ marginTop: spacing.sm }}
-              onPress={() =>
-                Alert.alert(
-                  'Próximamente',
-                  'El cobro de planes se habilitará en una próxima versión. Por ahora todas las funciones de NOE están disponibles en el plan gratuito.'
-                )
-              }
-            >
-              Elegir plan
-            </Button>
-          )}
-        </Card>
-      ))}
+      {loading ? (
+        <View style={styles.loadingRow}>
+          <ActivityIndicator color={colors.primary} />
+          <Text style={styles.loadingText}>{tr('noe.plans.loading')}</Text>
+        </View>
+      ) : (
+        PLAN_CATALOG.map((plan) => {
+          const isCurrent = plan.id === currentPlan;
+          return (
+            <Card key={plan.id} style={[styles.planCard, isCurrent && styles.planCurrent]}>
+              <View style={styles.planHeader}>
+                <Text style={styles.planName}>{plan.name}</Text>
+                <View style={styles.priceRow}>
+                  <Text style={styles.planPrice}>{plan.price}</Text>
+                  <Text style={styles.planPeriod}>{plan.period}</Text>
+                </View>
+              </View>
+              {plan.features.map((f) => (
+                <View key={f} style={styles.featureRow}>
+                  <MaterialIcons name="check" size={18} color={colors.success} />
+                  <Text style={styles.featureText}>{f}</Text>
+                </View>
+              ))}
+              {isCurrent ? (
+                <View style={styles.currentBadge}>
+                  <Text style={styles.currentBadgeText}>{tr('noe.plans.currentBadge')}</Text>
+                </View>
+              ) : (
+                <Button
+                  variant={plan.id === 'family' ? 'primary' : 'secondary'}
+                  size="sm"
+                  style={{ marginTop: spacing.sm }}
+                  loading={claiming === plan.id}
+                  onPress={() => handleClaim(plan.id)}
+                >
+                  {tr('noe.plans.choose')}
+                </Button>
+              )}
+            </Card>
+          );
+        })
+      )}
     </ScrollView>
   );
 }
@@ -114,6 +117,17 @@ const makeStyles = (colors: ThemeColors) =>
     fontSize: typography.fontSizes.body,
     color: colors.textMuted,
     lineHeight: 22,
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.lg,
+    justifyContent: 'center',
+  },
+  loadingText: {
+    fontSize: typography.fontSizes.body,
+    color: colors.textMuted,
   },
   planCard: {
     gap: spacing.sm,

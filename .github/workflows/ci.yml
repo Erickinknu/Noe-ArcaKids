@@ -2,18 +2,18 @@ name: CI
 
 on:
   push:
-    branches: [master, main]
+    branches: [main]
   pull_request:
-    branches: [master, main]
 
-env:
-  NODE_VERSION: '20'
-  EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  typecheck-and-lint:
-    name: Typecheck & Lint
+  check:
+    name: typecheck + lint + test
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -21,101 +21,17 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
+          node-version: 24
+          cache: npm
 
       - name: Install dependencies
         run: npm ci
 
-      - name: Typecheck shared
-        run: npx tsc --noEmit
-        working-directory: ./packages/shared
+      - name: Typecheck
+        run: npm run typecheck
 
-      - name: Typecheck config
-        run: npx tsc --noEmit
-        working-directory: ./packages/config
+      - name: Lint
+        run: npm run lint
 
-      - name: Typecheck storage
-        run: npx tsc --noEmit
-        working-directory: ./packages/storage
-
-      - name: Typecheck supabase
-        run: npx tsc --noEmit
-        working-directory: ./packages/supabase
-
-      - name: Typecheck types
-        run: npx tsc --noEmit
-        working-directory: ./packages/types
-
-      - name: Typecheck NOE
-        run: npx tsc --noEmit
-        working-directory: ./apps/noe
-
-      - name: Typecheck ARCA KIDS
-        run: npx tsc --noEmit
-        working-directory: ./apps/arcakids
-
-      - name: Lint NOE
-        run: npx expo lint
-        working-directory: ./apps/noe
-
-      - name: Lint ARCA KIDS
-        run: npx expo lint
-        working-directory: ./apps/arcakids
-
-  android-build:
-    name: Android Build
-    runs-on: ubuntu-latest
-    needs: typecheck-and-lint
-    if: github.event_name == 'push'
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'npm'
-
-      - name: Setup Java
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
-
-      - name: Setup Android SDK
-        uses: android-actions/setup-android@v3
-        with:
-          api-level: 34
-          ndk-version: r26d
-          cmake-version: 3.22.1
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Build NOE Android
-        run: npm run build:android
-        working-directory: ./apps/noe
-        env:
-          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
-
-      - name: Build ARCA KIDS Android
-        run: npm run build:android
-        working-directory: ./apps/arcakids
-        env:
-          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx4g -Dorg.gradle.daemon=false"
-
-      - name: Upload NOE APK
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: noe-debug-apk
-          path: apps/noe/android/app/build/outputs/apk/debug/app-debug.apk
-
-      - name: Upload ARCA KIDS APK
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: arcakids-debug-apk
-          path: apps/arcakids/android/app/build/outputs/apk/debug/app-debug.apk
+      - name: Test
+        run: npm test

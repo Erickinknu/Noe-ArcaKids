@@ -8,8 +8,12 @@ Both apps read the same two variables. Values are inlined by Expo at build time 
 |---|---|---|
 | `EXPO_PUBLIC_SUPABASE_URL` | `apps/<app>/.env` | Project URL (e.g. `https://xxxx.supabase.co`) |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | `apps/<app>/.env` | Public anon/publishable key only |
+| `EXPO_PUBLIC_APP_ENV` | `apps/<app>/.env` | `development` \| `staging` \| `production`. Off/release builds behave as `production`. Used by `packages/config` `appEnv`. |
+| `EXPO_PUBLIC_SENTRY_DSN` | `apps/<app>/.env` | Optional. Enables runtime `sentryService` when set. |
+| `SENTRY_ORG` / `SENTRY_PROJECT` | EAS secrets | Only used to activate the Sentry Expo config plugin during EAS `prebuild`/build. |
+| `SENTRY_AUTH_TOKEN` | EAS secrets | Sentry upload token (never in the repo). |
 
-Templates: `.env.example` (root), `apps/noe/.env.example`, `apps/arcakids/.env.example`.
+Templates: `apps/noe/.env.example`, `apps/arcakids/.env.example`, and `scripts/.env.e2e.example` for the server-side E2E harness (`E2E_EMAIL`, `E2E_PASSWORD`, optional `E2E_RUN_BURST=1`).
 
 Real `.env` files are gitignored and never committed. A missing `.env` is safe: apps start
 unconfigured and log a warning instead of crashing.

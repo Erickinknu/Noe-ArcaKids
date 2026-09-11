@@ -2,6 +2,7 @@ import React, { Component, type ErrorInfo, type ReactNode } from 'react';
 import { View, Text, StyleSheet, Button, Pressable } from 'react-native';
 
 import { t } from '../i18n';
+import { sentryService } from '../services/sentry-service';
 
 interface Props {
   children: ReactNode;
@@ -22,6 +23,7 @@ export class ErrorBoundary extends Component<Props, State> {
 
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error('ErrorBoundary caught:', error, errorInfo.componentStack);
+    sentryService.captureException(error, { componentStack: errorInfo.componentStack });
   }
 
   public render() {

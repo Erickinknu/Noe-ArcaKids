@@ -1,6 +1,6 @@
 # Estado de Implementación — NOE + ARCA KIDS
 
-**Actualizado:** 2026-09-02 (P0 estabilización + auditoría capa nativa P1.1)
+**Actualizado:** 2026-09-10 (hardening de producción checklist P1–P4)
 
 Leyenda de estados:
 - `DONE` — implementado, compila y verificado por código.
@@ -86,6 +86,21 @@ Leyenda de estados:
 | `offline_actions` | `MISSING` | Sync engine se implementará desde cero (P8) con migración real. |
 | `web_filtering` enforcement real | `MISSING` | Solo CRUD de reglas; sin filtrado real (requiere decisión VPN/Accessibility — P9). |
 | `achievements` / gamificación | `MISSING` | P13. |
+
+## Hardening de producción (checklist 10 puntos — plan P1–P4)
+
+| Ítem | Estado | Notas |
+|---|---|---|
+| 1. Keystore release firmado | `DONE` | `release.keystore` (RSA 2048, 10950 días) para ambas apps, `keystore.properties` gitignored, `build.gradle` con fallback a debug. Backup en `APKs_para_instalar\keystores-release\`. |
+| 2. Rate limit server-side | `DONE` | Migración `security_rate_limits`: `api_throttle`+`throttle()`, lock de códigos (10 fallos→10 min), throttles por device/achievement. Redeem va por Edge Function `redeem-pair` (durable por IP+device; el RPC desnudo revierte el ledger en errores). Mirar `docs/runbook.md` §3. |
+| 3. Error tracking (Sentry) | `PARTIAL` | `sentryService` creado, initializado en ambos `_layout`, `ErrorBoundary` reporta. **Pendiente:** DSN real + secrets EAS (externo). |
+| 4. CI | `DONE` | `.github/workflows/ci.yml`: typecheck+lint+test en push/PR. |
+| 5. `EXPO_PUBLIC_APP_ENV` | `DONE` | `dev/staging/prod` en `config/env.ts`; `.env.example` y `.env` actualizados. |
+| 6. ErrorBoundary→Sentry | `DONE` | `componentDidCatch` → `sentryService.captureException`. |
+| 7. Suscripciones/gating | `DONE` (manual) | Tabla `subscriptions` + RPCs; `billingService` con límites free (1 hijo, 5 apps); pantalla `suscripcion.tsx` activa el plan. Cobro real pendiente (Play/RevenueCat, externo). |
+| 8. E2E servidor simulado | `DONE` | `scripts/e2e-server-simulation.mjs` (fases anónima + autenticada + Edge Function durable 429). Guía en `docs/runbook.md`. |
+| 9. Load smoke + paginación | `PARTIAL` | Límites añadidos en consultas (`limit(500)`/`limit(50)`); throttle de logros/redeems. **Pendiente:** load test real del cluster y evaluar caudal del poller 15 s. |
+| 10. Docs | `DONE` | `docs/runbook.md` nuevo; `environment.md` e `implementation-status.md` actualizados. |
 
 ## Notas P0/P1 — verificación
 

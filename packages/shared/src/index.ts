@@ -10,6 +10,7 @@ export * from './rate-limiter';
 export { useAsyncData, errorMessage } from './hooks/use-async-data';
 export { useNetworkStatus } from './hooks/use-network-status';
 export { networkService } from './services/network-service';
+export { sentryService } from './services/sentry-service';
 export { Card } from './components/card';
 export { Input } from './components/input';
 export { ErrorBoundary } from './components/ErrorBoundary';

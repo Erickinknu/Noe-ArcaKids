@@ -295,6 +295,24 @@ export const es = {
       savedFlash: 'Preferencias guardadas',
       loadError: 'No se pudieron cargar las preferencias',
     },
+    plans: {
+      title: 'Suscripci\u00f3n',
+      subtitle:
+        'Elige el plan que mejor se adapte a tu familia.',
+      loading: 'Cargando tu plan...',
+      currentBadge: 'Plan actual',
+      choose: 'Elegir plan',
+      upgraded: 'Cambiaste al plan {{plan}}.',
+      billingNote:
+        'El cobro autom\u00e1tico se activar\u00e1 pronto; por ahora el plan queda activado al instante en esta app.',
+      providerNote:
+        'Cuando se conecte Play Store o RevenueCat, los pagos reales reemplazar\u00e1n esta activaci\u00f3n manual.',
+    },
+    planErrors: {
+      childLimit: 'El plan gratuito incluye {{max}} hijo. Mejora tu plan para agregar m\u00e1s hijos.',
+      appLimit:
+        'El plan gratuito permite {{max}} apps bloqueadas. Mejora tu plan para agregar m\u00e1s.',
+    },
     rules: {
       title: 'Reglas parentales',
       subtitle:

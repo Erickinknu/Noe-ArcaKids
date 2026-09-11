@@ -17,7 +17,7 @@
  *     is treated as informational and verified after redeem.
  */
 
-import { ValidationError, t } from '@noe-arcakids/shared';
+import { ValidationError, checkRateLimit, t } from '@noe-arcakids/shared';
 import type { ProvisioningPayload } from '@noe-arcakids/types';
 
 import { identityRepository } from '../../identity/repositories/identity-repository';
@@ -119,6 +119,7 @@ export const linkingService = {
    * the server-side pairing_codes row determines the final childId.
    */
   async redeem(input: string): Promise<RedeemResult> {
+    checkRateLimit('redeemPairingCode');
     const provision = tryParseProvisioningPayload(input);
     const compact = provision ? null : tryParseCompactQr(input);
     const rawCode = compact?.code ?? provision?.code ?? sanitizeCode(input);

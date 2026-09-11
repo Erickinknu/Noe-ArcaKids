@@ -5,6 +5,24 @@ All notable changes to the `noe-arcakids` monorepo will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [1.3.5] - 2026-09-10
+
+### Added
+- **Hardening de producción (checklist 10 puntos)**: keystores release firmados
+  (RSA 2048, `keystore.properties` gitignored, fallback a debug), rate limiting
+  servidor-side (`api_throttle` + lock de códigos 10 fallos→10 min + throttles
+  por device/logro), CI GitHub Actions (typecheck+lint+test), `EXPO_PUBLIC_APP_ENV`,
+  subscriptions/plan gating (free = 1 hijo, 5 apps), pantalla de suscripción
+  funcional (activación manual hasta Play/RevenueCat), E2E servidor simulado
+  (`scripts/e2e-server-simulation.mjs`), límites de consulta en actividad y
+  unlock requests, `docs/runbook.md` + docs actualizadas.
+- **Sentry**: `sentryService` (`packages/shared`), init en ambos `_layout`,
+  `ErrorBoundary` reporta `componentDidCatch`. Requiere DSN/secrets para activarse.
+- **Tasa límite durable para redemptions**: Edge Function `redeem-pair`
+  (throttle por IP + dispositivo en transacciones propias que commitean; un RPC
+  PostgREST que lanza error revierte el ledger). ARCA KIDS redime vía la función
+  (`supabase.functions.invoke`); migración `grant_anon_throttle_for_redeem_edge_function`.
+
 ## [1.3.4] - 2026-09-08
 
 ### Fixed

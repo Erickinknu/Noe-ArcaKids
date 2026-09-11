@@ -288,6 +288,24 @@ export const en = {
       savedFlash: 'Preferences saved',
       loadError: 'Failed to load preferences',
     },
+    plans: {
+      title: 'Subscription',
+      subtitle:
+        'Choose the plan that best fits your family.',
+      loading: 'Loading your plan...',
+      currentBadge: 'Current plan',
+      choose: 'Choose plan',
+      upgraded: 'You switched to the {{plan}} plan.',
+      billingNote:
+        'Automatic billing is coming soon; for now the plan is activated instantly in this app.',
+      providerNote:
+        'Once Play Store or RevenueCat is connected, real payments will replace this manual activation.',
+    },
+    planErrors: {
+      childLimit: 'The free plan includes {{max}} child. Upgrade to add more children.',
+      appLimit:
+        'The free plan allows {{max}} blocked apps. Upgrade to add more.',
+    },
     rules: {
       title: 'Parental rules',
       subtitle:

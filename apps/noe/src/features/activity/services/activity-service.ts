@@ -106,7 +106,8 @@ export const activityService = {
       .select('child_id, minutes, report_date')
       .in('child_id', childIds)
       .gte('report_date', startDateStr)
-      .order('report_date', { ascending: false });
+      .order('report_date', { ascending: false })
+      .limit(500);
 
     if (error) throw error;
 
@@ -129,7 +130,8 @@ export const activityService = {
       .from('usage_reports')
       .select('package_name, minutes, app_label')
       .eq('child_id', childId)
-      .gte('report_date', startDateStr);
+      .gte('report_date', startDateStr)
+      .limit(500);
 
     if (error) throw error;
 

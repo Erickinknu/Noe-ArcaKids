@@ -6,9 +6,10 @@ import * as SplashScreen from 'expo-splash-screen';
 
 import { initI18n } from '@/i18n';
 import { useAuthStore } from '@/stores/auth-store';
-import { ThemeProvider, useTheme, networkService, ErrorBoundary } from '@noe-arcakids/shared';
+import { ThemeProvider, useTheme, networkService, ErrorBoundary, sentryService } from '@noe-arcakids/shared';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
+sentryService.init();
 
 function LoadingScreen() {
   const { colors } = useTheme();

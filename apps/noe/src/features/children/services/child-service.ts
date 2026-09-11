@@ -1,6 +1,7 @@
 import type { ChildProfile } from '@noe-arcakids/types';
 import { ValidationError, checkRateLimit, t } from '@noe-arcakids/shared';
 
+import { billingService } from '../../billing/services/billing-service';
 import { childRepository } from '../repositories/child-repository';
 
 const MAX_DISPLAY_NAME_LENGTH = 60;
@@ -20,6 +21,11 @@ export const childService = {
       throw new ValidationError(
         t('validation.childNameMax', { max: MAX_DISPLAY_NAME_LENGTH })
       );
+    }
+    const plan = await billingService.getCurrentPlan();
+    if (plan === 'free') {
+      const existing = await childRepository.listChildren(familyId);
+      billingService.assertUnderChildLimit(existing.length);
     }
     return childRepository.addChild(familyId, trimmed, avatarUrl ?? null);
   },

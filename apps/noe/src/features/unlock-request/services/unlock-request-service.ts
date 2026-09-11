@@ -20,7 +20,8 @@ export const unlockRequestService = {
       .select('id, child_id, family_id, reason, status, created_at, resolved_at')
       .eq('family_id', family.id)
       .eq('status', 'pending')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(50);
     if (error) throw new DatabaseError(error.message);
     if (!data || data.length === 0) return [];
 

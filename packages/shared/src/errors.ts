@@ -1,4 +1,4 @@
-export type AppErrorKind = 'network' | 'auth' | 'database' | 'validation' | 'unknown';
+export type AppErrorKind = 'network' | 'auth' | 'database' | 'validation' | 'plan' | 'unknown';
 
 export class AppError extends Error {
   readonly kind: AppErrorKind;
@@ -39,6 +39,13 @@ export class ValidationError extends AppError {
   constructor(message: string, options: { code?: string; cause?: unknown } = {}) {
     super('validation', message, options);
     this.name = 'ValidationError';
+  }
+}
+
+export class PlanLimitError extends AppError {
+  constructor(message: string, options: { code?: string; cause?: unknown } = {}) {
+    super('plan', message, options);
+    this.name = 'PlanLimitError';
   }
 }
 

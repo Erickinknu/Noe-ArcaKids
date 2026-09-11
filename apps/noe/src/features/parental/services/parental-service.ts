@@ -1,6 +1,7 @@
 import type { BlockedApp, ParentalRules } from '@noe-arcakids/types';
 import { ValidationError, checkRateLimit, t } from '@noe-arcakids/shared';
 
+import { billingService } from '../../billing/services/billing-service';
 import {
   parentalRepository,
   type ParentalRulesPatch,
@@ -94,6 +95,12 @@ export const parentalService = {
     }
     if (label.length > MAX_APP_LABEL_LENGTH) {
       throw new ValidationError(t('validation.rules.appLabelMax', { max: MAX_APP_LABEL_LENGTH }));
+    }
+
+    const plan = await billingService.getCurrentPlan();
+    if (plan === 'free') {
+      const blocked = await parentalRepository.listBlockedApps(childId);
+      billingService.assertUnderAppLimit(blocked.length);
     }
 
     return parentalRepository.addBlockedApp(familyId, childId, pkg, label);
