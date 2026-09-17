@@ -1,0 +1,22 @@
+// Workspace raíz de Android Studio para NOE + ARCA KIDS.
+//
+// Este NO es un build de aplicación: no tiene módulos propios. Su único fin es
+// agrupar los proyectos nativos de cada app (que siguen viviendo en
+// apps/<app>/android, donde el autolinking de Expo/React Native los necesita)
+// como "included builds" de un composite build, para poder abrirlos y
+// compilarlos desde una sola ventana de Android Studio.
+//
+// Compilar (ejemplos desde esta carpeta):
+//   .\gradlew.bat :noe:app:assembleDebug
+//   .\gradlew.bat :arcakids:app:assembleRelease
+// o usar los módulos/run configurations en el panel Gradle de Android Studio.
+
+rootProject.name = 'noe-arcakids-android'
+
+includeBuild('../apps/noe/android') {
+    name = 'noe'
+}
+
+includeBuild('../apps/arcakids/android') {
+    name = 'arcakids'
+}

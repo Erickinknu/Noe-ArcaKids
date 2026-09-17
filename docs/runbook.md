@@ -24,6 +24,16 @@ cd apps/arcakids/android
 
 > Nunca usar `npm run build:*`. Git fuera de PATH en PowerShell: `& "C:\Program Files\Git\bin\git.exe"`.
 
+**Workspace de Android Studio:** la carpeta `android/` en la raíz es un **composite build** que agrupa los proyectos nativos de ambas apps (que siguen en `apps/<app>/android`, requeridos por el autolinking de Expo/RN). Abrir `android/` en Android Studio para tener los dos proyectos en una sola ventana:
+
+```powershell
+cd android
+.\gradlew.bat :noe:app:assembleDebug
+.\gradlew.bat :arcakids:app:assembleRelease
+```
+
+No borrar `apps/<app>/android`: sin esa carpeta se rompen `expo prebuild`, `expo run:android` y EAS.
+
 ## 2. Sentry
 
 Habilitar en producción:

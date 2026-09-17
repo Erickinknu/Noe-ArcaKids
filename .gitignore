@@ -19,6 +19,7 @@ expo-env.d.ts
 
 # Android / Gradle
 android/.gradle/
+android/.kotlin/
 android/app/build/
 android/build/
 android/local.properties
@@ -50,8 +51,8 @@ build/
 dist/
 APK/
 
-# Stray prebuild output at repo root (should only live under apps/)
-android/
+# Root android/ = workspace composite de Android Studio (agrupa apps/*/android).
+# Se versiona a propósito; sus salidas se ignoran arriba. app.json suelto de prebuild sí se ignora.
 app.json
 # Penpot MCP secrets
 secrets/
