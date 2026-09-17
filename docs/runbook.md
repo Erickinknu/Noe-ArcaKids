@@ -1,6 +1,6 @@
 # Runbook de operaciones — NOE + ARCA KIDS
 
-Última actualización: 2026-09-10.
+Última actualización: 2026-09-17.
 
 ## 1. Builds de release (firmados)
 
@@ -94,3 +94,49 @@ La auditoría **no** ejecutó load test contra el cluster. Estados actuales:
 
 - Play Console requiere upload de clave nueva o reutilizar firma de app signing por app. Los keystores `arcakids-release` y `noe-release` respaldan la firma actual.
 - E2E en dispositivo físico: instalar APK release (firma nueva) y seguir `docs/implementation-status.md` para flujo kitten.
+
+## 10. Emulador Android (smoke test local)
+
+**Entorno disponible:**
+- SDK: `C:\Users\Usuario\Android\Sdk` (platform-tools, build-tools 36, emulator, system-images).
+- AVD: `arca_test` (device: pixel_7, image: `system-images;android-35;google_apis;x86_64`).
+- Android Studio GUI: `C:\Program Files\Android\Android Studio\bin\studio64.exe`.
+- Aceleración: AEHD activo (reinstalar con `Sdk\extras\google\Android_Emulator_Hypervisor_Driver\silent_install.bat` si falta).
+
+Arrancar emulador **headless** (pruebas automatizadas):
+```powershell
+Start-Process "$env:USERPROFILE\Android\Sdk\emulator\emulator.exe" -ArgumentList @('-avd','arca_test','-no-window','-no-audio','-no-boot-anim','-gpu','swiftshader_indirect')
+$adb = "$env:USERPROFILE\Android\Sdk\platform-tools\adb.exe"
+& $adb wait-for-device
+do { Start-Sleep 5 } until ((& $adb shell getprop sys.boot_completed) -eq '1')
+```
+
+Arrancar emulador **con ventana** (interacción manual desde Android Studio):
+```powershell
+Start-Process "$env:USERPROFILE\Android\Sdk\emulator\emulator.exe" -ArgumentList @('-avd','arca_test')
+```
+
+Instalar APKs de release:
+```powershell
+$adb = "$env:USERPROFILE\Android\Sdk\platform-tools\adb.exe"
+& $adb install -r 'C:\Users\Usuario\Documents\APKs_para_instalar\NOE-1.3.5-hardening.apk'
+# ARCA KIDS release es arm64-v8a solo — NO carga en emulador x86_64. Buildar variante x86_64 primero:
+cd apps/arcakids/android; .\gradlew.bat assembleRelease -PreactNativeArchitectures=x86_64
+& $adb install -r apps/arcakids/android/app/build/outputs/apk/release/app-release.apk
+```
+
+Lanzar apps y verificar UI:
+```powershell
+& $adb shell am start -n com.noe.parent/.MainActivity
+Start-Sleep 20
+& $adb shell uiautomator dump /sdcard/ui.xml; & $adb shell cat /sdcard/ui.xml
+& $adb exec-out screencap -p > noe-login.png
+```
+
+Verificar ausencia de crashes:
+```powershell
+& $adb logcat -d | Select-String 'FATAL EXCEPTION'          # no debe haber entries de com.noe.parent / com.arcakids.child
+& $adb shell ls /data/tombstones 2>$null | Measure-Object -Line
+```
+
+> La APK de ARCA KIDS con `x86_64` solo sirve para emular — **no instalar en dispositivo real** (lose arm64 native libs).
