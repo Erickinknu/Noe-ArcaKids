@@ -10,12 +10,14 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { pinService } from '@/features/pin/services/pin-service';
 import { biometricService } from '@/features/security/services/biometric-service';
+import { setLanguage } from '@/i18n';
 import { APP_VERSION } from '@noe-arcakids/config';
-import { Card, spacing, typography, useTheme, type AppColorTheme, type ThemeColors } from '@noe-arcakids/shared';
+import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, Card, spacing, typography, useTheme, type AppColorTheme, type SupportedLanguage, type ThemeColors } from '@noe-arcakids/shared';
 
 const THEME_OPTIONS: { key: AppColorTheme; label: string; icon: keyof typeof MaterialIcons.glyphMap }[] = [
   { key: 'light', label: 'Claro', icon: 'light-mode' },
@@ -28,6 +30,10 @@ export default function ConfigScreen() {
   const screenPadding = useScreenPadding();
   const { colors, theme, setTheme } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { i18n } = useTranslation();
+  const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(
+    (i18n.language as SupportedLanguage) ?? 'es'
+  );
   const [lockOnOpen, setLockOnOpen] = useState(false);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const [biometricAvailable, setBiometricAvailable] = useState(false);
@@ -128,11 +134,36 @@ export default function ConfigScreen() {
       {/* ── Language ── */}
       <Text style={styles.sectionLabel}>Idioma</Text>
       <Card>
-        <Pressable style={styles.optionRow} onPress={() => router.push('/settings')}>
-          <MaterialIcons name="language" size={22} color={colors.primary} />
-          <Text style={styles.optionText}>Español</Text>
-          <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
-        </Pressable>
+        {SUPPORTED_LANGUAGES.map((lng, i) => (
+          <Pressable
+            key={lng}
+            style={[
+              styles.optionRow,
+              i < SUPPORTED_LANGUAGES.length - 1 && styles.optionBorder,
+            ]}
+            onPress={() => {
+              setCurrentLanguage(lng);
+              void setLanguage(lng);
+            }}
+          >
+            <MaterialIcons
+              name="language"
+              size={22}
+              color={currentLanguage === lng ? colors.primary : colors.textMuted}
+            />
+            <Text
+              style={[
+                styles.optionText,
+                currentLanguage === lng && { color: colors.primary, fontWeight: typography.fontWeights.bold },
+              ]}
+            >
+              {LANGUAGE_NAMES[lng]}
+            </Text>
+            {currentLanguage === lng && (
+              <MaterialIcons name="check" size={20} color={colors.primary} />
+            )}
+          </Pressable>
+        ))}
       </Card>
 
       {/* ── Security ── */}

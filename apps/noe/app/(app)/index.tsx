@@ -273,7 +273,7 @@ export default function DashboardScreen() {
           </View>
           <Pressable
             style={styles.notificationBell}
-            onPress={() => router.push({ pathname: ROUTES.notifications } as any)}
+            onPress={() => router.push({ pathname: ROUTES.profileNotifications } as any)}
           >
             <MaterialIcons name="notifications" size={22} color={colors.text} />
             {data.alertsCount > 0 && (

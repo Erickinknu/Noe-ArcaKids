@@ -106,7 +106,7 @@ export default function OtrosScreen() {
       icon: 'notifications',
       title: 'Notificaciones',
       subtitle: 'Ajustes de alertas y notificaciones',
-      onPress: navigate('/profile/notificaciones-ajustes'),
+      onPress: navigate('/profile/notifications'),
     },
     {
       icon: 'lock',

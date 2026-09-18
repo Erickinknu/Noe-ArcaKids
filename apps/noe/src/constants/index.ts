@@ -10,7 +10,6 @@ export const ROUTES = {
   linking: '/linking',
   rules: '/rules',
   activity: '/activity',
-  settings: '/settings',
   profile: '/profile',
-  notifications: '/notifications',
+  profileNotifications: '/profile/notifications',
 } as const;

@@ -204,8 +204,6 @@ export default function AppLayout() {
       />
 
       <Tabs.Screen name="linking" options={{ href: null }} />
-      <Tabs.Screen name="settings" options={{ href: null }} />
-      <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="children/[childId]" options={{ href: null }} />
       <Tabs.Screen name="children/[childId]/devices" options={{ href: null }} />
       {/* Control sub-screens */}
@@ -217,7 +215,7 @@ export default function AppLayout() {
       {/* Profile sub-screens */}
       <Tabs.Screen name="profile/familia" options={{ href: null }} />
       <Tabs.Screen name="profile/cuenta" options={{ href: null }} />
-      <Tabs.Screen name="profile/notificaciones-ajustes" options={{ href: null }} />
+      <Tabs.Screen name="profile/notifications" options={{ href: null }} />
       <Tabs.Screen name="profile/pin" options={{ href: null }} />
       <Tabs.Screen name="profile/config" options={{ href: null }} />
       <Tabs.Screen name="profile/ayuda" options={{ href: null }} />
