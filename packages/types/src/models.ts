@@ -30,6 +30,7 @@ export interface ChildProfile {
   familyId: string;
   displayName: string;
   avatarUrl: string | null;
+  birthDate?: string | null;
   createdAt: string;
   updatedAt: string;
   role: 'child';

@@ -7,6 +7,7 @@ interface ChildRow {
   family_id: string;
   display_name: string;
   avatar_url: string | null;
+  birth_date: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -17,6 +18,7 @@ function mapRow(row: ChildRow): ChildProfile {
     familyId: row.family_id,
     displayName: row.display_name,
     avatarUrl: row.avatar_url,
+    birthDate: row.birth_date,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     role: 'child',
@@ -37,12 +39,22 @@ export const childRepository = {
     return (data ?? []).map((row) => mapRow(row as ChildRow));
   },
 
-  async addChild(familyId: string, displayName: string, avatarUrl: string | null = null): Promise<ChildProfile> {
+  async addChild(
+    familyId: string,
+    displayName: string,
+    avatarUrl: string | null = null,
+    birthDate: string | null = null
+  ): Promise<ChildProfile> {
     await authHelpers.ensureAuthenticated();
     const client = requireSupabaseClient();
     const { data, error } = await client
       .from('children')
-      .insert({ family_id: familyId, display_name: displayName, avatar_url: avatarUrl })
+      .insert({
+        family_id: familyId,
+        display_name: displayName,
+        avatar_url: avatarUrl,
+        birth_date: birthDate,
+      })
       .select('*')
       .single();
 
@@ -52,12 +64,22 @@ export const childRepository = {
     return mapRow(data as ChildRow);
   },
 
-  async updateChild(childId: string, displayName: string, avatarUrl: string | null): Promise<ChildProfile> {
+  async updateChild(
+    childId: string,
+    displayName: string,
+    avatarUrl: string | null,
+    birthDate: string | null = null
+  ): Promise<ChildProfile> {
     await authHelpers.ensureAuthenticated();
     const client = requireSupabaseClient();
     const { data, error } = await client
       .from('children')
-      .update({ display_name: displayName, avatar_url: avatarUrl, updated_at: new Date().toISOString() })
+      .update({
+        display_name: displayName,
+        avatar_url: avatarUrl,
+        birth_date: birthDate,
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', childId)
       .select('*')
       .single();

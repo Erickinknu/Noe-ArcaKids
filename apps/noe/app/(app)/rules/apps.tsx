@@ -32,6 +32,7 @@ import {
 } from '@/features/app-categories/constants/app-presets';
 import { familyService } from '@/features/family/services/family-service';
 import { childService } from '@/features/children/services/child-service';
+import { ageFromBirthDate, AGE_GROUPS, birthDateToAgeGroup } from '@/features/children/utils/child-age';
 
 type Tab = 'limited' | 'blocked' | 'free';
 
@@ -64,6 +65,7 @@ export default function AppsControlScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('limited');
   const [searchQuery, setSearchQuery] = useState('');
   const [childName, setChildName] = useState('');
+  const [childBirthDate, setChildBirthDate] = useState<string | null>(null);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [limitModalApp, setLimitModalApp] = useState<ChildApp | null>(null);
   const [appliedPresets, setAppliedPresets] = useState<Set<string>>(() => new Set());
@@ -83,7 +85,10 @@ export default function AppsControlScreen() {
             const { family } = await familyService.getMyFamily();
             const children = await childService.listChildren(family.id);
             const found = children.find((c) => c.id === childId);
-            if (found) setChildName(found.displayName);
+            if (found) {
+              setChildName(found.displayName);
+              setChildBirthDate(found.birthDate ?? null);
+            }
           } catch {
             // child name is cosmetic — don't block on failure
           }
@@ -117,7 +122,11 @@ export default function AppsControlScreen() {
     return matchesTab && matchesSearch;
   });
 
-  const suggestions = useMemo(() => suggestForPresets(apps), [apps]);
+  const childAge = childBirthDate ? ageFromBirthDate(childBirthDate) : null;
+  const ageGroupKey = childAge !== null ? birthDateToAgeGroup(childBirthDate) : null;
+  const ageGroupLabel = AGE_GROUPS.find((g) => g.key === ageGroupKey)?.labelEs ?? null;
+
+  const suggestions = useMemo(() => suggestForPresets(apps, childAge), [apps, childAge]);
   const pendingSuggestions = suggestions.filter(
     (group) => !appliedPresets.has(group.preset.key) && !dismissedPresets.has(group.preset.key)
   );
@@ -295,6 +304,11 @@ export default function AppsControlScreen() {
           <Text style={styles.sugSubtitle}>
             Basadas en la categoría de las apps instaladas. Toca ✓ para aplicar.
           </Text>
+          {childAge !== null && ageGroupLabel ? (
+            <Text style={styles.sugAgeNote}>
+              Contenido filtrado para {ageGroupLabel} · {childAge} años
+            </Text>
+          ) : null}
           {pendingSuggestions.map((group) => (
             <View key={group.preset.key} style={styles.sugRow}>
               <View
@@ -595,6 +609,7 @@ const makeStyles = (colors: ThemeColors) =>
   sugHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   sugTitle: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.text },
   sugSubtitle: { fontSize: typography.fontSizes.caption, color: colors.textMuted, marginBottom: spacing.xs },
+  sugAgeNote: { fontSize: typography.fontSizes.caption, color: colors.primary, marginBottom: spacing.xs, fontWeight: typography.fontWeights.medium },
   sugRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs },
   sugIcon: { width: 34, height: 34, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
   sugInfo: { flex: 1, gap: 1 },

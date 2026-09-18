@@ -25,6 +25,7 @@ interface ChildDetail {
   id: string;
   displayName: string;
   avatarUrl: string | null;
+  birthDate: string | null;
   createdAt: string;
 }
 
@@ -37,6 +38,7 @@ export default function ChildDetailScreen() {
   const { childId } = useLocalSearchParams<{ childId: string }>();
 
   const [displayName, setDisplayName] = useState('');
+  const [birthDate, setBirthDate] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -71,6 +73,7 @@ export default function ChildDetailScreen() {
       id: child.id,
       displayName: child.displayName,
       avatarUrl: child.avatarUrl,
+      birthDate: child.birthDate ?? null,
       createdAt: child.createdAt,
     };
   };
@@ -79,6 +82,7 @@ export default function ChildDetailScreen() {
     if (!loaded) {
       setDisplayName(data.displayName);
       setSelectedAvatar(data.avatarUrl ?? AVATARS[0]);
+      setBirthDate(data.birthDate ?? '');
       setLoaded(true);
     }
   };
@@ -142,7 +146,12 @@ export default function ChildDetailScreen() {
     setSaving(true);
     setActionError(null);
     try {
-      await childService.updateChild(child.id, displayName, selectedAvatar);
+      await childService.updateChild(
+        child.id,
+        displayName,
+        selectedAvatar,
+        birthDate.trim() ? birthDate.trim() : null
+      );
       router.back();
     } catch (cause) {
       setActionError(errorMessage(cause));
@@ -359,6 +368,15 @@ export default function ChildDetailScreen() {
           value={displayName}
           onChangeText={setDisplayName}
           placeholder={tr('noe.children.namePlaceholder')}
+        />
+
+        <Input
+          label="Fecha de nacimiento (AAAA-MM-DD)"
+          value={birthDate}
+          onChangeText={setBirthDate}
+          placeholder="ej: 2018-04-12"
+          autoCapitalize="none"
+          autoCorrect={false}
         />
 
         <Text style={styles.memberSince}>

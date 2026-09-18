@@ -8,6 +8,7 @@ export interface AppPreset {
   description: string;
   category: AppCategory;
   timeLimitMinutes?: number;
+  minAge?: number;
   packages: string[];
 }
 
@@ -20,6 +21,7 @@ export const APP_PRESETS: AppPreset[] = [
     description: 'Recomendado: límite moderado',
     category: 'limited',
     timeLimitMinutes: 60,
+    minAge: 6,
     packages: [
       'com.android.chrome',
       'com.brave.browser',
@@ -38,6 +40,7 @@ export const APP_PRESETS: AppPreset[] = [
     description: 'Recomendado: límite corto',
     category: 'limited',
     timeLimitMinutes: 30,
+    minAge: 13,
     packages: [
       'com.instagram.android',
       'com.facebook.katana',
@@ -60,6 +63,7 @@ export const APP_PRESETS: AppPreset[] = [
     description: 'Recomendado: límite moderado',
     category: 'limited',
     timeLimitMinutes: 45,
+    minAge: 6,
     packages: [
       'com.mojang.minecraftpe',
       'com.mojang.minecraftedu',
@@ -99,6 +103,7 @@ export const APP_PRESETS: AppPreset[] = [
     description: 'Recomendado: límite moderado',
     category: 'limited',
     timeLimitMinutes: 60,
+    minAge: 6,
     packages: [
       'com.netflix.mediaclient',
       'com.google.android.youtube',
@@ -141,6 +146,7 @@ export const APP_PRESETS: AppPreset[] = [
     description: 'Recomendado: límite moderado',
     category: 'limited',
     timeLimitMinutes: 60,
+    minAge: 9,
     packages: [
       'com.whatsapp',
       'com.google.android.apps.messaging',
@@ -158,6 +164,7 @@ export const APP_PRESETS: AppPreset[] = [
     color: '#D97706',
     description: 'Recomendado: permitir',
     category: 'free',
+    minAge: 0,
     packages: [
       'com.google.android.apps.classroom',
       'org.khanacademy.android',
@@ -182,6 +189,7 @@ export const APP_PRESETS: AppPreset[] = [
     color: '#0D9488',
     description: 'Recomendado: permitir',
     category: 'free',
+    minAge: 0,
     packages: [
       'com.google.android.apps.docs',
       'com.google.android.apps.docs.editors.docs',
@@ -208,6 +216,7 @@ export const APP_PRESETS: AppPreset[] = [
     color: '#DB2777',
     description: 'Recomendado: bloquear',
     category: 'blocked',
+    minAge: 13,
     packages: [
       'com.amazon.mShop.android.shopping',
       'com.mercadolibre',
@@ -224,8 +233,13 @@ export interface PresetGroup {
   apps: ChildApp[];
 }
 
-export function suggestForPresets(apps: ChildApp[]): PresetGroup[] {
-  const grouped = APP_PRESETS.map((preset) => ({
+export function suggestForPresets(
+  apps: ChildApp[],
+  age: number | null = null
+): PresetGroup[] {
+  const grouped = APP_PRESETS.filter(
+    (preset) => age === null || (preset.minAge ?? 0) <= age
+  ).map((preset) => ({
     preset,
     apps: apps.filter((app) => preset.packages.includes(app.packageName)),
   })).filter((group) => group.apps.length > 0);

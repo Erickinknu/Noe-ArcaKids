@@ -37,6 +37,7 @@ export const en = {
     familyNameMax: 'Family name must be at most {{max}} characters.',
     childNameRequired: 'Child name is required.',
     childNameMax: 'Child name must be at most {{max}} characters.',
+    birthDateInvalid: 'The birth date is not valid (YYYY-MM-DD).',
     linkCodeInvalid: 'Enter the 6-character code shown on the NOE app.',
     rules: {
       dailyLimitInvalid: 'The daily limit must be a number between 0 and 1440 minutes.',

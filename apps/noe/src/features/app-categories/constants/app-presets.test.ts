@@ -57,6 +57,24 @@ describe('suggestForPresets', () => {
     const groups = suggestForPresets([app({ packageName: 'com.desconocida.app' })]);
     expect(groups).toHaveLength(0);
   });
+
+  it('filtra presets por la edad del niño', () => {
+    const apps: ChildApp[] = [
+      app({ packageName: 'com.instagram.android', appLabel: 'Instagram' }),
+      app({ packageName: 'com.duolingo', appLabel: 'Duolingo' }),
+      app({ packageName: 'com.roblox.client', appLabel: 'Roblox' }),
+    ];
+    const forPreschool = suggestForPresets(apps, 4);
+    expect(forPreschool.some((g) => g.preset.key === 'social')).toBe(false);
+    expect(forPreschool.some((g) => g.preset.key === 'games')).toBe(false);
+    expect(forPreschool.some((g) => g.preset.key === 'education')).toBe(true);
+
+    const forTeen = suggestForPresets(apps, 14);
+    expect(forTeen.some((g) => g.preset.key === 'social')).toBe(true);
+
+    const withoutAge = suggestForPresets(apps, null);
+    expect(withoutAge.some((g) => g.preset.key === 'social')).toBe(true);
+  });
 });
 
 describe('presetActionLabel', () => {

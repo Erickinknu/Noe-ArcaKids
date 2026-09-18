@@ -11,6 +11,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { childService } from '@/features/children/services/child-service';
+import { ageFromBirthDate, birthDateForAge } from '@/features/children/utils/child-age';
 import { familyService } from '@/features/family/services/family-service';
 import { parentalService } from '@/features/parental/services/parental-service';
 import { deviceControlService } from '@/features/device-control/services/device-control-service';
@@ -26,6 +27,7 @@ export default function ChildrenScreen() {
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [displayName, setDisplayName] = useState('');
+  const [birthDate, setBirthDate] = useState('');
   const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
   const [adding, setAdding] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
@@ -116,8 +118,10 @@ export default function ChildrenScreen() {
     setShowUpgrade(false);
     try {
       const { family } = await familyService.getMyFamily();
-      await childService.addChild(family.id, displayName, selectedAvatar);
+      const validated = birthDate.trim() ? birthDate.trim() : null;
+      await childService.addChild(family.id, displayName, selectedAvatar, validated);
       setDisplayName('');
+      setBirthDate('');
       setSelectedAvatar(AVATARS[0]);
       await reload();
     } catch (cause) {
@@ -166,6 +170,9 @@ export default function ChildrenScreen() {
                           {tr('noe.children.memberSince', {
                             date: new Date(child.createdAt).toLocaleDateString(),
                           })}
+                          {child.birthDate
+                            ? ` · ${ageFromBirthDate(child.birthDate) ?? '—'} años`
+                            : ''}
                         </Text>
                       </View>
                       <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
@@ -228,6 +235,35 @@ export default function ChildrenScreen() {
               onChangeText={setDisplayName}
               placeholder={tr('noe.children.namePlaceholder')}
             />
+            <Input
+              label="Fecha de nacimiento (AAAA-MM-DD)"
+              value={birthDate}
+              onChangeText={setBirthDate}
+              placeholder="ej: 2018-04-12"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <View style={styles.ageChips}>
+              {[4, 8, 12, 15].map((age) => (
+                <Pressable
+                  key={age}
+                  style={[
+                    styles.ageChip,
+                    birthDate === birthDateForAge(age) && styles.ageChipSelected,
+                  ]}
+                  onPress={() => setBirthDate(birthDateForAge(age))}
+                >
+                  <Text
+                    style={[
+                      styles.ageChipText,
+                      birthDate === birthDateForAge(age) && styles.ageChipTextSelected,
+                    ]}
+                  >
+                    {age} años
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
             <Text style={styles.avatarLabel}>{tr('noe.children.pickAvatar')}</Text>
             <View style={styles.avatarGrid}>
               {AVATARS.map((emoji) => (
@@ -301,6 +337,11 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     color: colors.textMuted,
     marginBottom: spacing.sm,
   },
+  ageChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs, marginBottom: spacing.md },
+  ageChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.full, borderWidth: 1, borderColor: colors.border },
+  ageChipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  ageChipText: { fontSize: typography.fontSizes.caption, color: colors.text },
+  ageChipTextSelected: { color: colors.onPrimary },
   avatarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
