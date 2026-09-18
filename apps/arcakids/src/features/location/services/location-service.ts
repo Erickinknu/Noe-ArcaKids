@@ -34,6 +34,7 @@ export class LocationService {
   public geofences: Geofence[] = [];
   public _watchId: number | undefined = undefined;
   public geofenceTriggeredAt: Record<string, number> = {};
+  private geofenceStatus: Record<string, 'enter' | 'exit'> = {};
 
   constructor() {
     this.loadGeofences().catch(() => {});
@@ -153,6 +154,17 @@ export class LocationService {
   }
 
   private async handleGeofenceEvent(event: GeofenceEvent, location: LocationUpdate) {
+    // Fire only on real transitions: first observation is the baseline,
+    // repeated events of the same state (the RPC recomputes enter/exit on
+    // every poll) are ignored.
+    const lastType = this.geofenceStatus[event.geofenceId];
+    if (lastType === undefined) {
+      this.geofenceStatus[event.geofenceId] = event.type;
+      return;
+    }
+    if (lastType === event.type) return;
+    this.geofenceStatus[event.geofenceId] = event.type;
+
     const lastTriggered = this.geofenceTriggeredAt[event.geofenceId] || 0;
     const now = Date.now();
 
@@ -180,6 +192,11 @@ export class LocationService {
           geofenceName,
           location.childId ? 'Niño' : 'Usuario'
         );
+      } else {
+        await notificationService.scheduleGeofenceExitNotification(
+          geofenceName,
+          location.childId ? 'Niño' : 'Usuario'
+        );
       }
     } catch (e) {
       console.error('Failed to schedule geofence notification:', e);
@@ -192,6 +209,18 @@ export class LocationService {
         await geofenceRepository.update(geofence.id, { triggered: true, triggeredAt: now });
       } catch (e) {
         console.error('Failed to update geofence trigger:', e);
+      }
+
+      try {
+        await geofenceRepository.recordEvent(
+          location.deviceUuid,
+          geofence.id,
+          type,
+          location.latitude,
+          location.longitude
+        );
+      } catch (e) {
+        console.error('Failed to record geofence event:', e);
       }
     }
   }

@@ -186,6 +186,19 @@ export interface GeofenceEvent {
   longitude: number;
 }
 
+export interface GeofenceEventRecord {
+  id: string;
+  familyId: string;
+  childId: string;
+  geofenceId: string | null;
+  geofenceName: string | null;
+  deviceUuid: string | null;
+  type: 'enter' | 'exit';
+  latitude: number | null;
+  longitude: number | null;
+  createdAt: string;
+}
+
 // ── Push & Unlock (FASE 6) ──
 
 export interface PushToken {

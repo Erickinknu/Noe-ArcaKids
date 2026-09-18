@@ -18,12 +18,16 @@ import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { geofencingService } from '@/features/geofencing/services/geofencing-service';
-import { type Geofence } from '@noe-arcakids/types';
+import { type Geofence, type GeofenceEventRecord } from '@noe-arcakids/types';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
-import { Card, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, radius, spacing, typography, useAsyncData, type ThemeColors } from '@noe-arcakids/shared';
 
 type ChildOption = { id: string; displayName: string };
+
+function formatEventTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+}
 
 export default function GeofencingScreen() {
   const router = useRouter();
@@ -34,6 +38,7 @@ export default function GeofencingScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [children, setChildren] = useState<ChildOption[]>([]);
+  const [liveEvents, setLiveEvents] = useState<GeofenceEventRecord[]>([]);
 
   // Add form state
   const [showForm, setShowForm] = useState(false);
@@ -75,6 +80,37 @@ export default function GeofencingScreen() {
     runFetch();
     return () => { cancelled = true; };
   }, [fetchData]);
+
+  const loadEvents = useCallback(async () => {
+    if (!formChildId) return [];
+    return geofencingService.listGeofenceEvents(formChildId, 50);
+  }, [formChildId]);
+  const { data: fetchedEvents, loading: eventsLoading } = useAsyncData<GeofenceEventRecord[]>(loadEvents);
+
+  useEffect(() => {
+    if (!formChildId) return;
+    const unsubscribe = geofencingService.subscribeToGeofenceEvents((event) => {
+      if (event.childId !== formChildId) return;
+      setLiveEvents((prev) => {
+        if (prev.some((e) => e.id === event.id)) return prev;
+        return [event, ...prev].slice(0, 50);
+      });
+    });
+    return () => {
+      unsubscribe();
+    };
+  }, [formChildId]);
+
+  const events = useMemo(() => {
+    const seen = new Set<string>();
+    const merged: GeofenceEventRecord[] = [];
+    for (const e of [...liveEvents, ...(fetchedEvents ?? [])]) {
+      if (seen.has(e.id)) continue;
+      seen.add(e.id);
+      merged.push(e);
+    }
+    return merged.slice(0, 50);
+  }, [liveEvents, fetchedEvents]);
 
   const toggleZone = async (id: string, currentEnabled: boolean) => {
     try {
@@ -193,6 +229,36 @@ export default function GeofencingScreen() {
         ))
       )}
 
+      {children.length > 0 && (
+        <>
+          <Text style={styles.sectionLabel}>Entradas y salidas recientes</Text>
+          <Card>
+            {eventsLoading && events.length === 0 ? (
+              <Text style={styles.eventsEmpty}>Cargando movimientos...</Text>
+            ) : events.length === 0 ? (
+              <Text style={styles.eventsEmpty}>
+                Aún no hay movimientos registrados. El dispositivo del niño los reportará al entrar o salir de una zona.
+              </Text>
+            ) : (
+              events.map((event, i) => (
+                <View key={event.id} style={[styles.eventRow, i < events.length - 1 && styles.eventBorder]}>
+                  <View
+                    style={[
+                      styles.eventDot,
+                      { backgroundColor: event.type === 'enter' ? colors.success : colors.danger },
+                    ]}
+                  />
+                  <Text style={styles.eventName} numberOfLines={1}>
+                    {event.type === 'enter' ? 'Entró' : 'Salió'} de {event.geofenceName ?? 'zona'}
+                  </Text>
+                  <Text style={styles.eventTime}>{formatEventTime(event.createdAt)}</Text>
+                </View>
+              ))
+            )}
+          </Card>
+        </>
+      )}
+
       {showForm ? (
         <Card style={styles.formCard}>
           <Text style={styles.formTitle}>Nueva zona segura</Text>
@@ -291,6 +357,13 @@ const makeStyles = (colors: ThemeColors) =>
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   headerTitle: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
   description: { fontSize: typography.fontSizes.body, color: colors.textMuted, lineHeight: 22 },
+  sectionLabel: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginTop: spacing.xs },
+  eventsEmpty: { fontSize: typography.fontSizes.body, color: colors.textMuted, textAlign: 'center', paddingVertical: spacing.md, lineHeight: 20 },
+  eventRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm },
+  eventBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
+  eventDot: { width: 10, height: 10, borderRadius: 5 },
+  eventName: { flex: 1, fontSize: typography.fontSizes.body, color: colors.text },
+  eventTime: { fontSize: typography.fontSizes.caption, color: colors.textMuted },
   zoneHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   zoneIcon: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primaryLight, alignItems: 'center', justifyContent: 'center' },
   zoneInfo: { flex: 1 },

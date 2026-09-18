@@ -108,4 +108,25 @@ export const geofenceRepository = {
       throw new DatabaseError(error.message);
     }
   },
+
+  async recordEvent(
+    deviceUuid: string,
+    geofenceId: string,
+    type: 'enter' | 'exit',
+    latitude: number,
+    longitude: number
+  ): Promise<void> {
+    const client = requireSupabaseClient();
+    const { error } = await client.rpc('record_geofence_event_for_device', {
+      p_device_uuid: deviceUuid,
+      p_geofence_id: geofenceId,
+      p_event_type: type,
+      p_latitude: latitude,
+      p_longitude: longitude,
+    });
+
+    if (error) {
+      throw new DatabaseError(error.message);
+    }
+  },
 };

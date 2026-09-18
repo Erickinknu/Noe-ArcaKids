@@ -1,6 +1,8 @@
 import { LocationService } from './location-service';
 import { storage } from '@noe-arcakids/storage';
-import type { Geofence } from '@noe-arcakids/types';
+import { notificationService } from '@/features/notifications';
+import { geofenceRepository } from '@/features/location/repositories/geofence-repository';
+import type { Geofence, GeofenceEvent } from '@noe-arcakids/types';
 
 jest.mock('@noe-arcakids/supabase', () => ({
   requireSupabaseClient: jest.fn(() => ({
@@ -26,6 +28,7 @@ jest.mock('@/features/identity/services/identity-service', () => ({
 jest.mock('@/features/notifications', () => ({
   notificationService: {
     scheduleGeofenceEnterNotification: jest.fn(async () => {}),
+    scheduleGeofenceExitNotification: jest.fn(async () => {}),
   },
 }));
 
@@ -39,6 +42,7 @@ jest.mock('@/features/location/repositories/geofence-repository', () => ({
   geofenceRepository: {
     getAll: jest.fn(async () => []),
     update: jest.fn(async () => {}),
+    recordEvent: jest.fn(async () => {}),
   },
 }));
 
@@ -130,5 +134,52 @@ describe('LocationService', () => {
 
     service.stopLocationMonitoring();
     expect(service.getState().isTracking).toBe(false);
+  });
+
+  it('fires only on real transitions and records enter + notifies on enter', async () => {
+    const notifications = jest.mocked(notificationService);
+    const repo = jest.mocked(geofenceRepository);
+    const geofence = { id: 'geo-1', name: 'Casa' } as Geofence;
+    service.geofences = [geofence];
+    const location = {
+      id: 'l1',
+      timestamp: 0,
+      latitude: -12.0,
+      longitude: -77.0,
+      accuracy: 20,
+      deviceUuid: 'device-1',
+      childId: 'child-1',
+    };
+    const event = (type: 'enter' | 'exit'): GeofenceEvent => ({
+      geofenceId: 'geo-1',
+      childId: 'child-1',
+      type,
+      timestamp: new Date().toISOString(),
+      latitude: -12.0,
+      longitude: -77.0,
+    });
+
+    // First observation of a state is the baseline: nothing fires.
+    await (service as any).handleGeofenceEvent(event('exit'), location);
+    expect(notifications.scheduleGeofenceEnterNotification).not.toHaveBeenCalled();
+    expect(notifications.scheduleGeofenceExitNotification).not.toHaveBeenCalled();
+    expect(repo.recordEvent).not.toHaveBeenCalled();
+
+    // Repeated same-state events are ignored.
+    await (service as any).handleGeofenceEvent(event('exit'), location);
+    expect(notifications.scheduleGeofenceExitNotification).not.toHaveBeenCalled();
+
+    // Real transition to enter fires the enter notification and records the event.
+    await (service as any).handleGeofenceEvent(event('enter'), location);
+    expect(notifications.scheduleGeofenceEnterNotification).toHaveBeenCalledWith('Casa', 'Niño');
+    expect(notifications.scheduleGeofenceExitNotification).not.toHaveBeenCalled();
+    expect(repo.recordEvent).toHaveBeenCalledWith('device-1', 'geo-1', 'enter', -12.0, -77.0);
+
+    // Real transition back to exit fires the exit notification and records it
+    // (past the 60s debounce, which guards against boundary flapping).
+    service.geofenceTriggeredAt['geo-1'] = 0;
+    await (service as any).handleGeofenceEvent(event('exit'), location);
+    expect(notifications.scheduleGeofenceExitNotification).toHaveBeenCalledWith('Casa', 'Niño');
+    expect(repo.recordEvent).toHaveBeenCalledWith('device-1', 'geo-1', 'exit', -12.0, -77.0);
   });
 });

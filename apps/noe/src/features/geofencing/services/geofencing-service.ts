@@ -1,6 +1,21 @@
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
 import { DatabaseError } from '@noe-arcakids/shared';
-import type { Geofence, GeofenceEvent } from '@noe-arcakids/types';
+import type { Geofence, GeofenceEvent, GeofenceEventRecord } from '@noe-arcakids/types';
+
+function mapEventRecord(r: any): GeofenceEventRecord {
+  return {
+    id: r.id,
+    familyId: r.family_id,
+    childId: r.child_id,
+    geofenceId: r.geofence_id,
+    geofenceName: r.geofence_name,
+    deviceUuid: r.device_uuid,
+    type: r.event_type,
+    latitude: r.latitude,
+    longitude: r.longitude,
+    createdAt: r.created_at,
+  };
+}
 
 export const geofencingService = {
   async listGeofences(): Promise<Geofence[]> {
@@ -93,6 +108,38 @@ export const geofencingService = {
     const client = requireSupabaseClient();
     const { error } = await client.from('geofences').delete().eq('id', id);
     if (error) throw new DatabaseError(error.message);
+  },
+
+  async listGeofenceEvents(childId: string, limit = 50): Promise<GeofenceEventRecord[]> {
+    const client = requireSupabaseClient();
+    const { data, error } = await client
+      .from('geofence_events')
+      .select('*')
+      .eq('child_id', childId)
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw new DatabaseError(error.message);
+    return (data ?? []).map(mapEventRecord);
+  },
+
+  subscribeToGeofenceEvents(onEvent: (event: GeofenceEventRecord) => void): () => void {
+    const client = requireSupabaseClient();
+    const channel = client
+      .channel('geofence-events-family')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'geofence_events' },
+        (payload) => {
+          const row = payload.new as Record<string, unknown>;
+          onEvent(mapEventRecord(row));
+        }
+      )
+      .subscribe();
+
+    return () => {
+      client.removeChannel(channel);
+    };
   },
 
   async checkGeofences(
