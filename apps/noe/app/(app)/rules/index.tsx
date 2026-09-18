@@ -185,6 +185,13 @@ export default function RulesScreen() {
           >
             <Text style={styles.saveBtnText}>{saving ? 'Guardando...' : 'Guardar límite'}</Text>
           </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.removeBtn, pressed && styles.saveBtnPressed]}
+            onPress={() => saveRules({ dailyLimitMinutes: null })}
+            disabled={saving}
+          >
+            <Text style={styles.removeBtnText}>Quitar límite</Text>
+          </Pressable>
         </Card>
 
         {/* ── Horario de sueño ── */}
@@ -320,6 +327,8 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   saveBtn: { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.md },
   saveBtnPressed: { opacity: 0.85 },
   saveBtnText: { color: colors.onPrimary, fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold },
+  removeBtn: { borderWidth: 1, borderColor: colors.danger, borderRadius: radius.md, paddingVertical: spacing.sm, alignItems: 'center', marginTop: spacing.sm },
+  removeBtnText: { color: colors.danger, fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.medium },
 
   // Quick grid
   sectionLabel: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1 },

@@ -7,6 +7,7 @@ import {
   Pressable,
   TextInput,
   Alert,
+  Modal,
   RefreshControl,
   ActivityIndicator,
 } from 'react-native';
@@ -59,6 +60,7 @@ export default function AppsControlScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [childName, setChildName] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [limitModalApp, setLimitModalApp] = useState<ChildApp | null>(null);
 
   const fetchApps = useCallback(async (isRefresh = false) => {
     if (!childId) return;
@@ -160,13 +162,24 @@ export default function AppsControlScreen() {
   }
 
   function promptTimeLimit(app: ChildApp) {
-    Alert.alert('Límite de tiempo', `¿Cuánto tiempo permitir para ${app.appLabel}?`, [
-      { text: '15 min', onPress: () => handleSetTimeLimit(app, 15) },
-      { text: '30 min', onPress: () => handleSetTimeLimit(app, 30) },
-      { text: '60 min', onPress: () => handleSetTimeLimit(app, 60) },
-      { text: '90 min', onPress: () => handleSetTimeLimit(app, 90) },
-      { text: 'Cancelar', style: 'cancel' },
-    ]);
+    setLimitModalApp(app);
+  }
+
+  async function handleRemoveLimit(app: ChildApp) {
+    if (!childId) return;
+    setSavingId(app.id);
+    try {
+      await appCategoryService.setCategory(childId, app.packageName, app.appLabel, 'free');
+      setApps((prev) =>
+        prev.map((a) =>
+          a.id === app.id ? { ...a, category: 'free', timeLimitMinutes: null } : a
+        )
+      );
+    } catch (cause) {
+      Alert.alert('Error', errorMessage(cause));
+    } finally {
+      setSavingId(null);
+    }
   }
 
   function promptMoveApp(app: ChildApp) {
@@ -329,7 +342,7 @@ export default function AppsControlScreen() {
                 </Pressable>
                 <Pressable
                   style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
-                  onPress={() => handleChangeCategory(app, 'limited')}
+                  onPress={() => promptTimeLimit(app)}
                 >
                   <MaterialIcons name="timer" size={14} color="#D97706" />
                   <Text style={[styles.actionBtnText, { color: '#D97706' }]}>Poner límite</Text>
@@ -350,7 +363,133 @@ export default function AppsControlScreen() {
           </Card>
         ))
       )}
+
+      {limitModalApp ? (
+        <TimeLimitModal
+          app={limitModalApp}
+          saving={savingId !== null}
+          onCancel={() => setLimitModalApp(null)}
+          onSave={(app, minutes) => {
+            setLimitModalApp(null);
+            handleSetTimeLimit(app, minutes);
+          }}
+          onRemove={(app) => {
+            setLimitModalApp(null);
+            handleRemoveLimit(app);
+          }}
+        />
+      ) : null}
     </ScrollView>
+  );
+}
+
+function TimeLimitModal({
+  app,
+  saving,
+  onCancel,
+  onSave,
+  onRemove,
+}: {
+  app: ChildApp | null;
+  saving: boolean;
+  onCancel: () => void;
+  onSave: (app: ChildApp, minutes: number) => void;
+  onRemove: (app: ChildApp) => void;
+}) {
+  const { colors } = useTheme();
+  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const [minutes, setMinutes] = useState(() => app?.timeLimitMinutes ?? 60);
+
+  const clamp = (m: number) => Math.min(1440, Math.max(1, Math.round(m)));
+
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onCancel}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <Text style={styles.modalTitle}>Límite de tiempo</Text>
+          {app ? <Text style={styles.modalSubtitle}>{app.appLabel}</Text> : null}
+
+          <View style={styles.modalSteppers}>
+            <Pressable style={styles.modalStepBtn} onPress={() => setMinutes(clamp(minutes - 60))}>
+              <MaterialIcons name="remove" size={18} color={colors.primary} />
+              <Text style={styles.modalStepLabel}>1h</Text>
+            </Pressable>
+            <Pressable style={styles.modalStepBtn} onPress={() => setMinutes(clamp(minutes - 15))}>
+              <MaterialIcons name="remove" size={18} color={colors.primary} />
+              <Text style={styles.modalStepLabel}>15m</Text>
+            </Pressable>
+            <Text style={styles.modalValue}>{formatDuration(minutes)}</Text>
+            <Pressable style={styles.modalStepBtn} onPress={() => setMinutes(clamp(minutes + 15))}>
+              <MaterialIcons name="add" size={18} color={colors.primary} />
+              <Text style={styles.modalStepLabel}>15m</Text>
+            </Pressable>
+            <Pressable style={styles.modalStepBtn} onPress={() => setMinutes(clamp(minutes + 60))}>
+              <MaterialIcons name="add" size={18} color={colors.primary} />
+              <Text style={styles.modalStepLabel}>1h</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.modalChips}>
+            {[15, 30, 60, 90, 120].map((m) => (
+              <Pressable
+                key={m}
+                style={[styles.modalChip, minutes === m && styles.modalChipActive]}
+                onPress={() => setMinutes(m)}
+              >
+                <Text style={[styles.modalChipText, minutes === m && styles.modalChipTextActive]}>
+                  {m} min
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <View style={styles.modalInputRow}>
+            <MaterialIcons name="edit" size={16} color={colors.textMuted} />
+            <TextInput
+              style={styles.modalInput}
+              value={String(minutes)}
+              onChangeText={(text) => {
+                if (text === '') {
+                  setMinutes(1);
+                  return;
+                }
+                const parsed = parseInt(text, 10);
+                if (!Number.isNaN(parsed)) setMinutes(clamp(parsed));
+              }}
+              keyboardType="number-pad"
+              maxLength={4}
+            />
+            <Text style={styles.modalInputSuffix}>min / día</Text>
+          </View>
+
+          <View style={styles.modalActions}>
+            <Pressable
+              style={({ pressed }) => [styles.modalRemoveBtn, pressed && styles.modalBtnPressed]}
+              disabled={saving}
+              onPress={() => app && onRemove(app)}
+            >
+              <Text style={styles.modalRemoveText}>Quitar límite</Text>
+            </Pressable>
+            <View style={styles.modalActionsRow}>
+              <Pressable
+                style={({ pressed }) => [styles.modalCancelBtn, pressed && styles.modalBtnPressed]}
+                disabled={saving}
+                onPress={onCancel}
+              >
+                <Text style={styles.modalCancelText}>Cancelar</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.modalSaveBtn, pressed && styles.modalBtnPressed]}
+                disabled={saving}
+                onPress={() => app && onSave(app, minutes)}
+              >
+                <Text style={styles.modalSaveText}>{saving ? 'Guardando...' : 'Guardar'}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -389,4 +528,31 @@ const makeStyles = (colors: ThemeColors) =>
   actionBtn: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.xs, paddingHorizontal: spacing.sm, borderRadius: radius.sm, backgroundColor: colors.background },
   actionBtnPressed: { opacity: 0.7 },
   actionBtnText: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium },
+
+  // Time limit modal
+  modalOverlay: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', alignItems: 'center', padding: spacing.lg },
+  modalContent: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, gap: spacing.md, width: '100%', maxWidth: 400 },
+  modalTitle: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
+  modalSubtitle: { fontSize: typography.fontSizes.body, color: colors.textMuted },
+  modalSteppers: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
+  modalStepBtn: { alignItems: 'center', justifyContent: 'center', gap: 2, minWidth: 44, paddingVertical: spacing.xs, paddingHorizontal: spacing.sm, borderRadius: radius.sm, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.background },
+  modalStepLabel: { fontSize: typography.fontSizes.caption, color: colors.primary, fontWeight: typography.fontWeights.medium },
+  modalValue: { minWidth: 84, textAlign: 'center', fontSize: typography.fontSizes.title, fontWeight: typography.fontWeights.bold, color: colors.text },
+  modalChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'center' },
+  modalChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.background },
+  modalChipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  modalChipText: { fontSize: typography.fontSizes.caption, color: colors.textMuted, fontWeight: typography.fontWeights.medium },
+  modalChipTextActive: { color: colors.onPrimary },
+  modalInputRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, backgroundColor: colors.background },
+  modalInput: { flex: 1, textAlign: 'center', paddingVertical: spacing.xs, fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.text },
+  modalInputSuffix: { fontSize: typography.fontSizes.caption, color: colors.textMuted },
+  modalActions: { gap: spacing.sm },
+  modalRemoveBtn: { alignItems: 'center', paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 1, borderColor: colors.danger, backgroundColor: colors.danger + '0D' },
+  modalRemoveText: { color: colors.danger, fontWeight: typography.fontWeights.semibold },
+  modalActionsRow: { flexDirection: 'row', gap: spacing.sm },
+  modalCancelBtn: { flex: 1, alignItems: 'center', paddingVertical: spacing.md, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.background },
+  modalCancelText: { color: colors.text, fontWeight: typography.fontWeights.semibold },
+  modalSaveBtn: { flex: 1, alignItems: 'center', paddingVertical: spacing.md, borderRadius: radius.md, backgroundColor: colors.primary },
+  modalSaveText: { color: colors.onPrimary, fontWeight: typography.fontWeights.semibold },
+  modalBtnPressed: { opacity: 0.85 },
 });

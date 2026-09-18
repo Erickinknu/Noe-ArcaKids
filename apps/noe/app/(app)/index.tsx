@@ -10,6 +10,7 @@ import {
   Alert,
   Modal,
   FlatList,
+  TextInput,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
@@ -177,20 +178,41 @@ export default function DashboardScreen() {
     [childSelectAction]
   );
 
-  const handleAddTime = useCallback(
-    (child: ChildSummary, minutes: number) => {
+  const handleSetLimit = useCallback(
+    (child: ChildSummary, minutes: number | null) => {
       if (!familyId) return;
-      const currentLimit = child.dailyLimitMinutes ?? 120;
+      if (minutes === null) {
+        Alert.alert(
+          tr('noe.dashboard.removeLimit'),
+          tr('noe.dashboard.removeLimitConfirm', { name: child.name }),
+          [
+            { text: tr('common.cancel'), style: 'cancel' },
+            {
+              text: tr('noe.dashboard.removeLimitConfirmButton'),
+              style: 'destructive',
+              onPress: async () => {
+                try {
+                  await parentalService.saveRules(familyId, child.id, { dailyLimitMinutes: null });
+                  fetchData(true);
+                } catch {
+                  Alert.alert(tr('noe.dashboard.comingSoon'));
+                }
+              },
+            },
+          ],
+        );
+        return;
+      }
       Alert.alert(
-        tr('noe.dashboard.addTimeTitle'),
-        tr('noe.dashboard.addTimeConfirm', { name: child.name, minutes }),
+        tr('noe.dashboard.adjustLimitTitle'),
+        tr('noe.dashboard.setLimitConfirm', { name: child.name, minutes }),
         [
           { text: tr('common.cancel'), style: 'cancel' },
           {
-            text: tr('noe.dashboard.addTimeConfirmButton'),
+            text: tr('noe.dashboard.setLimit'),
             onPress: async () => {
               try {
-                await parentalService.saveRules(familyId, child.id, { dailyLimitMinutes: currentLimit + minutes });
+                await parentalService.saveRules(familyId, child.id, { dailyLimitMinutes: minutes });
                 fetchData(true);
               } catch {
                 Alert.alert(tr('noe.dashboard.comingSoon'));
@@ -416,7 +438,7 @@ export default function DashboardScreen() {
               familyId={familyId}
               onRefresh={() => fetchData(true)}
               onQuickBlock={handleQuickBlock}
-              onAddTime={handleAddTime}
+              onSetLimit={handleSetLimit}
             />
           ))
         )}
@@ -542,18 +564,19 @@ function ChildRow({
   familyId,
   onRefresh,
   onQuickBlock,
-  onAddTime,
+  onSetLimit,
 }: {
   child: ChildSummary;
   familyId: string | null;
   onRefresh: () => void;
   onQuickBlock: (child: ChildSummary) => void;
-  onAddTime: (child: ChildSummary, minutes: number) => void;
+  onSetLimit: (child: ChildSummary, minutes: number | null) => void;
 }) {
   const { t: tr } = useTranslation();
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const router = useRouter();
+  const [limitModalVisible, setLimitModalVisible] = useState(false);
   const usageRatio =
     child.dailyLimitMinutes != null && child.dailyLimitMinutes > 0
       ? child.minutesToday / child.dailyLimitMinutes
@@ -613,17 +636,7 @@ function ChildRow({
 
       {/* Row 3: Quick action chips */}
       <View style={styles.childChips}>
-        <Pressable
-          style={styles.chip}
-          onPress={() =>
-            Alert.alert(tr('noe.dashboard.addTimeTitle'), '', [
-              { text: tr('noe.dashboard.addTimeOptions.fifteen'), onPress: () => onAddTime(child, 15) },
-              { text: tr('noe.dashboard.addTimeOptions.thirty'), onPress: () => onAddTime(child, 30) },
-              { text: tr('noe.dashboard.addTimeOptions.sixty'), onPress: () => onAddTime(child, 60) },
-              { text: tr('common.cancel'), style: 'cancel' },
-            ])
-          }
-        >
+        <Pressable style={styles.chip} onPress={() => setLimitModalVisible(true)}>
           <MaterialIcons name="add-circle-outline" size={16} color={colors.primary} />
           <Text style={styles.chipText}>{tr('noe.dashboard.addTime')}</Text>
         </Pressable>
@@ -636,7 +649,125 @@ function ChildRow({
           <Text style={[styles.chipText, { color: colors.textMuted }]}>{tr('noe.dashboard.details')}</Text>
         </Pressable>
       </View>
+
+      {limitModalVisible ? (
+        <DailyLimitModal
+          child={child}
+          visible
+          onClose={() => setLimitModalVisible(false)}
+          onApply={(c, minutes) => {
+            setLimitModalVisible(false);
+            onSetLimit(c, minutes);
+          }}
+        />
+      ) : null}
     </Card>
+  );
+}
+
+function DailyLimitModal({
+  child,
+  visible,
+  onClose,
+  onApply,
+}: {
+  child: ChildSummary;
+  visible: boolean;
+  onClose: () => void;
+  onApply: (child: ChildSummary, minutes: number | null) => void;
+}) {
+  const { t: tr } = useTranslation();
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+  const [minutes, setMinutes] = useState(() => child.dailyLimitMinutes ?? 120);
+
+  const clamp = (m: number) => Math.min(1440, Math.max(1, Math.round(m)));
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose} accessibilityViewIsModal>
+      <Pressable style={styles.modalOverlay} onPress={onClose}>
+        <Pressable style={styles.modalContent} onPress={(e) => e.stopPropagation()}>
+          <Text style={styles.modalTitle}>{tr('noe.dashboard.adjustLimitTitle')}</Text>
+          <Text style={styles.modalHint}>{tr('noe.dashboard.adjustLimitHint')}</Text>
+
+          <View style={styles.limitSteppers}>
+            <Pressable style={styles.modalStepBtn} onPress={() => setMinutes(clamp(minutes - 60))}>
+              <MaterialIcons name="remove" size={18} color={colors.primary} />
+              <Text style={styles.modalStepLabel}>1h</Text>
+            </Pressable>
+            <Pressable style={styles.modalStepBtn} onPress={() => setMinutes(clamp(minutes - 15))}>
+              <MaterialIcons name="remove" size={18} color={colors.primary} />
+              <Text style={styles.modalStepLabel}>15m</Text>
+            </Pressable>
+            <Text style={styles.modalValue}>{formatDuration(minutes)}</Text>
+            <Pressable style={styles.modalStepBtn} onPress={() => setMinutes(clamp(minutes + 15))}>
+              <MaterialIcons name="add" size={18} color={colors.primary} />
+              <Text style={styles.modalStepLabel}>15m</Text>
+            </Pressable>
+            <Pressable style={styles.modalStepBtn} onPress={() => setMinutes(clamp(minutes + 60))}>
+              <MaterialIcons name="add" size={18} color={colors.primary} />
+              <Text style={styles.modalStepLabel}>1h</Text>
+            </Pressable>
+          </View>
+
+          <View style={styles.limitChips}>
+            {[15, 30, 60, 90, 120, 240].map((m) => (
+              <Pressable
+                key={m}
+                style={[styles.limitChip, minutes === m && styles.limitChipActive]}
+                onPress={() => setMinutes(m)}
+              >
+                <Text style={[styles.limitChipText, minutes === m && styles.limitChipTextActive]}>
+                  {m} min
+                </Text>
+              </Pressable>
+            ))}
+          </View>
+
+          <View style={styles.limitInputRow}>
+            <MaterialIcons name="edit" size={16} color={colors.textMuted} />
+            <TextInput
+              style={styles.limitInput}
+              value={String(minutes)}
+              onChangeText={(text) => {
+                if (text === '') {
+                  setMinutes(1);
+                  return;
+                }
+                const parsed = parseInt(text, 10);
+                if (!Number.isNaN(parsed)) setMinutes(clamp(parsed));
+              }}
+              keyboardType="number-pad"
+              maxLength={4}
+            />
+            <Text style={styles.limitInputSuffix}>min / día</Text>
+          </View>
+
+          <View style={styles.limitActions}>
+            <Pressable
+              style={({ pressed }) => [styles.limitRemoveBtn, pressed && styles.limitBtnPressed]}
+              onPress={() => onApply(child, null)}
+            >
+              <Text style={styles.limitRemoveText}>{tr('noe.dashboard.removeLimit')}</Text>
+            </Pressable>
+            <View style={styles.limitActionsRow}>
+              <Pressable
+                style={({ pressed }) => [styles.limitCancelBtn, pressed && styles.limitBtnPressed]}
+                onPress={onClose}
+              >
+                <Text style={styles.limitCancelText}>{tr('common.cancel')}</Text>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [styles.limitSaveBtn, pressed && styles.limitBtnPressed]}
+                onPress={() => onApply(child, minutes)}
+              >
+                <Text style={styles.limitSaveText}>{tr('noe.dashboard.setLimit')}</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Pressable>
+      </Pressable>
+    </Modal>
   );
 }
 
@@ -1047,6 +1178,140 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     fontSize: typography.fontSizes.body,
     color: colors.textMuted,
     fontWeight: typography.fontWeights.medium,
+  },
+
+  /* ── Daily limit modal ── */
+  modalHint: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    textAlign: 'center',
+    marginBottom: spacing.xs,
+  },
+  limitSteppers: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+  },
+  modalStepBtn: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 2,
+    minWidth: 44,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  modalStepLabel: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.primary,
+    fontWeight: typography.fontWeights.medium,
+  },
+  modalValue: {
+    minWidth: 84,
+    textAlign: 'center',
+    fontSize: typography.fontSizes.subtitle,
+    fontWeight: typography.fontWeights.bold,
+    color: colors.text,
+  },
+  limitChips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+    justifyContent: 'center',
+  },
+  limitChip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  limitChipActive: {
+    backgroundColor: colors.primary,
+    borderColor: colors.primary,
+  },
+  limitChipText: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    fontWeight: typography.fontWeights.medium,
+  },
+  limitChipTextActive: {
+    color: colors.onPrimary,
+  },
+  limitInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.surface,
+  },
+  limitInput: {
+    flex: 1,
+    textAlign: 'center',
+    paddingVertical: spacing.xs,
+    fontSize: typography.fontSizes.body,
+    fontWeight: typography.fontWeights.semibold,
+    color: colors.text,
+  },
+  limitInputSuffix: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+  },
+  limitActions: {
+    gap: spacing.sm,
+    marginTop: spacing.xs,
+  },
+  limitRemoveBtn: {
+    alignItems: 'center',
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.danger,
+    backgroundColor: colors.dangerLight,
+  },
+  limitRemoveText: {
+    color: colors.danger,
+    fontWeight: typography.fontWeights.semibold,
+  },
+  limitActionsRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+  },
+  limitCancelBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  limitCancelText: {
+    color: colors.text,
+    fontWeight: typography.fontWeights.semibold,
+  },
+  limitSaveBtn: {
+    flex: 1,
+    alignItems: 'center',
+    paddingVertical: spacing.md,
+    borderRadius: radius.md,
+    backgroundColor: colors.primary,
+  },
+  limitSaveText: {
+    color: colors.onPrimary,
+    fontWeight: typography.fontWeights.semibold,
+  },
+  limitBtnPressed: {
+    opacity: 0.85,
   },
 
   /* ── Empty children card ── */
