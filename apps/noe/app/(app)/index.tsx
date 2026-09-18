@@ -290,7 +290,7 @@ export default function DashboardScreen() {
           {[
             { icon: 'lock' as const, label: 'Bloquear\ntodos', color: colors.danger, onPress: () => { setChildSelectAction('block'); setChildSelectVisible(true); } },
             { icon: 'notifications-active' as const, label: 'Enviar\nalerta', color: colors.warning, onPress: () => { setChildSelectAction('alert'); setChildSelectVisible(true); } },
-            { icon: 'location-searching' as const, label: 'Ubicar\nhijos', color: colors.success, onPress: () => router.push('/activity/location' as any) },
+            { icon: 'location-searching' as const, label: 'Ubicar\nhijos', color: colors.success, onPress: () => router.push('/location' as any) },
             { icon: 'school' as const, label: 'Modo\nestudio', color: colors.primary, onPress: () => router.push('/rules/modo-estudio' as any) },
           ].map((action) => (
             <Pressable

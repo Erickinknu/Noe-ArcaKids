@@ -69,7 +69,7 @@ export default function LocationScreen() {
     <View style={styles.screen}>
       {/* Header */}
       <View style={[styles.header, { paddingTop: screenPadding.paddingTop }]}>
-        <Pressable style={styles.backBtn} onPress={() => router.replace('/(app)/activity')}>
+<Pressable style={styles.backBtn} onPress={() => router.replace('/')}> 
           <MaterialIcons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Ubicar hijos</Text>

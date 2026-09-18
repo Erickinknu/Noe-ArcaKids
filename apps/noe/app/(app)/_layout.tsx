@@ -232,7 +232,7 @@ export default function AppLayout() {
       <Tabs.Screen name="activity/social" options={{ href: null }} />
       <Tabs.Screen name="activity/media" options={{ href: null }} />
       <Tabs.Screen name="activity/conversations" options={{ href: null }} />
-      <Tabs.Screen name="activity/location" options={{ href: null }} />
+      <Tabs.Screen name="location/index" options={{ href: null }} />
     </Tabs>
   );
 }
