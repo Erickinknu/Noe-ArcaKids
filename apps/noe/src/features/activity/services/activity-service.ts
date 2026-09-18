@@ -229,6 +229,31 @@ export const activityService = {
 
     return alerts.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
   },
+
+  async getBlockedHistory(childId: string, days: number = 7): Promise<BlockedHistoryItem[]> {
+    const client = requireSupabaseClient();
+
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    const startIso = startDate.toISOString();
+
+    const { data, error } = await client
+      .from('blocked_apps')
+      .select('id, package_name, app_label, created_at')
+      .eq('child_id', childId)
+      .gte('created_at', startIso)
+      .order('created_at', { ascending: false })
+      .limit(300);
+
+    if (error) throw error;
+
+    return (data ?? []).map((row) => ({
+      id: row.id,
+      packageName: row.package_name,
+      appLabel: row.app_label ?? null,
+      createdAt: row.created_at,
+    }));
+  },
 };
 
 export interface AlertItem {
@@ -238,4 +263,11 @@ export interface AlertItem {
   childName: string;
   message: string;
   timestamp: string;
+}
+
+export interface BlockedHistoryItem {
+  id: string;
+  packageName: string;
+  appLabel: string | null;
+  createdAt: string;
 }

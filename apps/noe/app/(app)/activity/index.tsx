@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
+import { Alert, Linking, Modal, Pressable, ScrollView, StyleSheet, Text, View, RefreshControl } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -10,7 +10,8 @@ import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { WeeklyChart } from '@/components/ui/weekly-chart';
-import { activityService, AlertItem, DailyUsage } from '@/features/activity/services/activity-service';
+import { activityService, AlertItem, DailyUsage, BlockedHistoryItem } from '@/features/activity/services/activity-service';
+import { appPlayStoreUrl, appWebSearchUrl, categoryForPackage, friendlyAppName } from '@/features/activity/utils/app-links';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
 import { unlockRequestService } from '@/features/unlock-request/services/unlock-request-service';
@@ -30,6 +31,18 @@ interface ChildActivitySummary {
   childName: string;
   totalMinutes: number;
   dailyData: DailyUsage[];
+}
+
+interface UsageDetail {
+  packageName: string;
+  appLabel?: string | null;
+  minutes?: number;
+  note?: string;
+}
+
+interface BlockGroup {
+  date: string;
+  items: BlockedHistoryItem[];
 }
 
 function toLocalDateKey(date: Date): string {
@@ -66,6 +79,16 @@ function getDayLetter(dateStr: string): string {
   return letters[day];
 }
 
+function formatBlockDay(dateStr: string): string {
+  const d = new Date(dateStr + 'T12:00:00');
+  const cap = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+  return cap(d.toLocaleDateString('es', { weekday: 'long', day: 'numeric', month: 'short' }));
+}
+
+function formatBlockTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
+}
+
 export default function ActivityScreen() {
   const { t: tr } = useTranslation();
   const router = useRouter();
@@ -74,6 +97,7 @@ export default function ActivityScreen() {
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [refreshing, setRefreshing] = useState(false);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [detailApp, setDetailApp] = useState<UsageDetail | null>(null);
   const approveVerse = useRandomVerse(['family', 'love']);
 
   const fetchChildren = useCallback(async () => {
@@ -89,20 +113,26 @@ export default function ActivityScreen() {
     () => selectedChildId ? activityService.getChildUsageByPackage(selectedChildId, 1) : Promise.resolve(null),
     [selectedChildId],
   );
+  const fetchBlockedHistory = useCallback(
+    () => selectedChildId ? activityService.getBlockedHistory(selectedChildId, 7) : Promise.resolve([] as BlockedHistoryItem[]),
+    [selectedChildId],
+  );
 
   const { data: usageData, error: usageError, loading: usageLoading, reload: reloadUsage } = useAsyncData<DailyUsage[]>(fetchUsage);
   const { data: alerts, error: alertsError, loading: alertsLoading, reload: reloadAlerts } = useAsyncData<AlertItem[]>(fetchAlerts);
   const { data: unlockRequests, error: unlockError, loading: unlockLoading, reload: reloadUnlockRequests } = useAsyncData<UnlockRequest[]>(fetchUnlockRequests);
   const { data: packageUsage, loading: packageLoading, reload: reloadPackageUsage } = useAsyncData(fetchPackageUsage);
+  const { data: blockedHistory, loading: blockedLoading, error: blockedError, reload: reloadBlockedHistory } = useAsyncData<BlockedHistoryItem[]>(fetchBlockedHistory);
 
   useEffect(() => {
     if (selectedChildId) {
       void reloadPackageUsage();
+      void reloadBlockedHistory();
     }
-  }, [selectedChildId, reloadPackageUsage]);
+  }, [selectedChildId, reloadPackageUsage, reloadBlockedHistory]);
 
-  const loading = usageLoading || alertsLoading || unlockLoading || childrenLoading;
-  const error = usageError || alertsError || unlockError || childrenError;
+  const loading = usageLoading || alertsLoading || unlockLoading || childrenLoading || blockedLoading;
+  const error = usageError || alertsError || unlockError || childrenError || blockedError;
   const onRetry = useCallback(() => {
     reloadUsage();
     reloadAlerts();
@@ -112,13 +142,13 @@ export default function ActivityScreen() {
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    Promise.all([reloadUsage(), reloadAlerts(), reloadUnlockRequests(), reloadChildren()]).finally(() => setRefreshing(false));
-  }, [reloadUsage, reloadAlerts, reloadUnlockRequests, reloadChildren]);
+    Promise.all([reloadUsage(), reloadAlerts(), reloadUnlockRequests(), reloadChildren(), reloadBlockedHistory()]).finally(() => setRefreshing(false));
+  }, [reloadUsage, reloadAlerts, reloadUnlockRequests, reloadChildren, reloadBlockedHistory]);
 
   useFocusEffect(
     useCallback(() => {
-      Promise.all([reloadUsage(), reloadAlerts(), reloadUnlockRequests(), reloadChildren()]).catch(() => {});
-    }, [reloadUsage, reloadAlerts, reloadUnlockRequests, reloadChildren])
+      Promise.all([reloadUsage(), reloadAlerts(), reloadUnlockRequests(), reloadChildren(), reloadBlockedHistory()]).catch(() => {});
+    }, [reloadUsage, reloadAlerts, reloadUnlockRequests, reloadChildren, reloadBlockedHistory])
   );
 
   const handleResolveRequest = useCallback(async (requestId: string, status: 'approved' | 'denied') => {
@@ -175,6 +205,17 @@ export default function ActivityScreen() {
   const hasNoChildren = (children?.length ?? 0) === 0;
   const hasSelectedData = selectedUsage.length > 0 || selectedAlerts.length > 0 || selectedUnlockRequests.length > 0;
   const maxPackageMinutes = packageUsage && packageUsage.packageUsages.length > 0 ? packageUsage.packageUsages[0].minutes : 0;
+
+  const blockedGroups = useMemo<BlockGroup[]>(() => {
+    const byDate = new Map<string, BlockedHistoryItem[]>();
+    for (const item of blockedHistory ?? []) {
+      const key = toLocalDateKey(new Date(item.createdAt));
+      const arr = byDate.get(key) ?? [];
+      arr.push(item);
+      byDate.set(key, arr);
+    }
+    return Array.from(byDate.entries()).map(([date, items]) => ({ date, items }));
+  }, [blockedHistory]);
 
   if (loading && !usageData && !children) return <LoadingState text={tr('noe.activity.loading')} />;
   if (error && !usageData && !children && !alerts) return <ErrorState message={error} onRetry={onRetry} />;
@@ -272,16 +313,31 @@ export default function ActivityScreen() {
                 ) : !packageUsage || packageUsage.packageUsages.length === 0 ? (
                   <Text style={styles.mutedText}>Sin datos de uso por app para hoy.</Text>
                 ) : (
-                  packageUsage.packageUsages.map((app, i) => (
-                    <View key={app.packageName} style={[styles.appRow, i < packageUsage.packageUsages.length - 1 && styles.appBorder]}>
-                      <View style={[styles.appDot, { backgroundColor: getBarColor(app.minutes, colors) }]} />
-                      <Text style={styles.appName} numberOfLines={1}>{app.packageName}</Text>
-                      <View style={styles.appBarBg}>
-                        <View style={[styles.appBarFill, { width: `${(app.minutes / maxPackageMinutes) * 100}%` }]} />
-                      </View>
-                      <Text style={styles.appMinutes}>{app.minutes}min</Text>
-                    </View>
-                  ))
+                  packageUsage.packageUsages.map((app, i) => {
+                    const category = categoryForPackage(app.packageName);
+                    return (
+                      <Pressable
+                        key={app.packageName}
+                        style={[styles.appRow, i < packageUsage.packageUsages.length - 1 && styles.appBorder]}
+                        onPress={() => setDetailApp({ packageName: app.packageName, appLabel: app.appLabel, minutes: app.minutes })}
+                      >
+                        <View style={[styles.appDot, { backgroundColor: getBarColor(app.minutes, colors) }]} />
+                        <View style={styles.appInfo}>
+                          <Text style={styles.appName} numberOfLines={1}>{friendlyAppName(app.packageName, app.appLabel)}</Text>
+                          {category ? (
+                            <Text style={styles.appCategory}>{category.label}</Text>
+                          ) : (
+                            <Text style={styles.appPackage} numberOfLines={1}>{app.packageName}</Text>
+                          )}
+                        </View>
+                        <View style={styles.appBarBg}>
+                          <View style={[styles.appBarFill, { width: `${(app.minutes / maxPackageMinutes) * 100}%` }]} />
+                        </View>
+                        <Text style={styles.appMinutes}>{app.minutes}min</Text>
+                        <MaterialIcons name="chevron-right" size={18} color={colors.textMuted} />
+                      </Pressable>
+                    );
+                  })
                 )}
               </Card>
 
@@ -301,6 +357,46 @@ export default function ActivityScreen() {
                     </Card>
                   ))}
                 </>
+              )}
+
+              {/* ── Blocked apps history (7 days, with detail & links) ── */}
+              <SectionHeader title="Historial de bloqueos (7 días)" />
+              {blockedGroups.length === 0 ? (
+                <Text style={styles.mutedText}>Sin bloqueos registrados en los últimos 7 días.</Text>
+              ) : (
+                blockedGroups.map((group) => (
+                  <View key={group.date} style={styles.blockDayGroup}>
+                    <Text style={styles.blockDay}>{formatBlockDay(group.date)}</Text>
+                    {group.items.map((blocked) => {
+                      const name = friendlyAppName(blocked.packageName, blocked.appLabel);
+                      return (
+                        <Pressable
+                          key={blocked.id}
+                          onPress={() =>
+                            setDetailApp({
+                              packageName: blocked.packageName,
+                              appLabel: blocked.appLabel,
+                              note: `Bloqueada el ${formatBlockTime(blocked.createdAt)}`,
+                            })
+                          }
+                        >
+                          <Card style={styles.blockCard}>
+                            <View style={styles.blockRow}>
+                              <View style={styles.blockIconWrap}>
+                                <MaterialIcons name="block" size={18} color={colors.danger} />
+                              </View>
+                              <View style={styles.blockInfo}>
+                                <Text style={styles.blockApp} numberOfLines={1}>{name}</Text>
+                                <Text style={styles.blockTime}>{formatBlockTime(blocked.createdAt)}</Text>
+                              </View>
+                              <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
+                            </View>
+                          </Card>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                ))
               )}
 
               {/* ── Unlock requests ── */}
@@ -370,7 +466,63 @@ export default function ActivityScreen() {
           )}
         </>
       )}
+      <UsageDetailModal detail={detailApp} onClose={() => setDetailApp(null)} />
     </ScrollView>
+  );
+}
+
+function UsageDetailModal({ detail, onClose }: { detail: UsageDetail | null; onClose: () => void }) {
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+  const openLink = useCallback((url: string) => {
+    Linking.openURL(url).catch(() => Alert.alert('Error', 'No se pudo abrir el enlace.'));
+  }, []);
+
+  if (!detail) return null;
+
+  const name = friendlyAppName(detail.packageName, detail.appLabel);
+  const category = categoryForPackage(detail.packageName);
+  const iconName = category?.icon as keyof typeof MaterialIcons.glyphMap;
+
+  return (
+    <Modal visible transparent animationType="fade" onRequestClose={onClose}>
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View
+            style={[
+              styles.modalIconWrap,
+              category ? { backgroundColor: category.color + '22' } : { backgroundColor: colors.primaryLight },
+            ]}
+          >
+            <MaterialIcons name={iconName ?? 'apps'} size={28} color={category?.color ?? colors.primary} />
+          </View>
+          <Text style={styles.modalTitle}>{name}</Text>
+          {detail.minutes != null ? (
+            <Text style={styles.modalValue}>{detail.minutes} min usados hoy</Text>
+          ) : null}
+          {detail.note ? <Text style={styles.modalValue}>{detail.note}</Text> : null}
+          {category ? (
+            <View style={styles.modalChip}>
+              <Text style={styles.modalChipText}>{category.label}</Text>
+            </View>
+          ) : null}
+          <Text style={styles.modalPackage} numberOfLines={1}>{detail.packageName}</Text>
+
+          <Pressable style={styles.linkBtn} onPress={() => openLink(appPlayStoreUrl(detail.packageName))}>
+            <MaterialIcons name="shop" size={18} color="#fff" />
+            <Text style={styles.linkBtnText}>Ver en Google Play</Text>
+          </Pressable>
+          <Pressable style={styles.linkBtnSecondary} onPress={() => openLink(appWebSearchUrl(name))}>
+            <MaterialIcons name="search" size={18} color={colors.primary} />
+            <Text style={styles.linkBtnSecondaryText}>Buscar la app en la web</Text>
+          </Pressable>
+
+          <Pressable style={styles.modalClose} onPress={onClose}>
+            <Text style={styles.modalCloseText}>Cerrar</Text>
+          </Pressable>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -397,10 +549,35 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   appRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm },
   appBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   appDot: { width: 10, height: 10, borderRadius: 5 },
-  appName: { width: 110, fontSize: typography.fontSizes.caption, color: colors.text, fontWeight: typography.fontWeights.medium },
+  appInfo: { flex: 1 },
+  appName: { fontSize: typography.fontSizes.body, color: colors.text, fontWeight: typography.fontWeights.medium },
+  appCategory: { fontSize: typography.fontSizes.caption, color: colors.textMuted, marginTop: 1 },
+  appPackage: { fontSize: typography.fontSizes.caption, color: colors.textMuted, marginTop: 1 },
   appBarBg: { flex: 1, height: 8, backgroundColor: colors.borderLight, borderRadius: radius.full, overflow: 'hidden' },
   appBarFill: { height: '100%', backgroundColor: colors.primary, borderRadius: radius.full },
   appMinutes: { width: 45, textAlign: 'right', fontSize: typography.fontSizes.caption, color: colors.textMuted, fontWeight: typography.fontWeights.medium },
+  blockDayGroup: { gap: spacing.xs },
+  blockDay: { fontSize: typography.fontSizes.subtitle, fontWeight: typography.fontWeights.semibold, color: colors.text, marginTop: spacing.xs },
+  blockCard: { ...shadows.sm },
+  blockRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  blockIconWrap: { width: 32, height: 32, borderRadius: 16, backgroundColor: colors.dangerLight, alignItems: 'center', justifyContent: 'center' },
+  blockInfo: { flex: 1 },
+  blockApp: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.medium, color: colors.text },
+  blockTime: { fontSize: typography.fontSizes.caption, color: colors.textMuted, marginTop: 2 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.45)', justifyContent: 'center', padding: spacing.lg },
+  modalContent: { backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.lg, alignItems: 'center', gap: spacing.sm },
+  modalIconWrap: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center' },
+  modalTitle: { fontSize: typography.fontSizes.subtitle, fontWeight: typography.fontWeights.bold, color: colors.text, textAlign: 'center' },
+  modalValue: { fontSize: typography.fontSizes.body, color: colors.textMuted, textAlign: 'center' },
+  modalChip: { backgroundColor: colors.primaryLight, borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: 4 },
+  modalChipText: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.primary },
+  modalPackage: { fontSize: typography.fontSizes.caption, color: colors.textMuted, maxWidth: '100%' },
+  linkBtn: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: spacing.sm, marginTop: spacing.xs },
+  linkBtnText: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: '#fff' },
+  linkBtnSecondary: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, borderWidth: 1, borderColor: colors.primary, borderRadius: radius.md, paddingVertical: spacing.sm },
+  linkBtnSecondaryText: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.primary },
+  modalClose: { paddingVertical: spacing.xs },
+  modalCloseText: { fontSize: typography.fontSizes.body, color: colors.textMuted, fontWeight: typography.fontWeights.medium },
   sectionLabel: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginTop: spacing.sm },
   monitorGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   monitorCard: { width: '31%', flexGrow: 1, alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
