@@ -1,6 +1,7 @@
 export const ROUTES = {
   auth: '/(auth)',
   app: '/(app)',
+  onboarding: '/(auth)/onboarding',
   login: '/(auth)/login',
   register: '/(auth)/register',
   forgotPassword: '/(auth)/forgot-password',

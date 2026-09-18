@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
-import { Link } from 'expo-router';
+import { Link, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
@@ -12,6 +12,7 @@ export default function RegisterScreen() {
   const { t: tr } = useTranslation();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { plan } = useLocalSearchParams<{ plan?: string }>();
   const [displayName, setDisplayName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -42,6 +43,12 @@ export default function RegisterScreen() {
         <Text style={styles.title}>{tr('noe.register.title')}</Text>
         <Text style={styles.subtitle}>{tr('noe.register.subtitle')}</Text>
       </View>
+      {plan === 'demo' ? (
+        <Text style={styles.planNote}>
+          Estás creando una cuenta gratuita de demostración. Puedes borrarla cuando quieras desde el
+          perfil.
+        </Text>
+      ) : null}
       <Input
         label={tr('noe.register.name')}
         value={displayName}
@@ -108,6 +115,15 @@ const makeStyles = (colors: ThemeColors) =>
   message: {
     color: colors.success,
     fontSize: typography.fontSizes.caption,
+  },
+  planNote: {
+    color: colors.primary,
+    fontSize: typography.fontSizes.caption,
+    lineHeight: 18,
+    backgroundColor: colors.primaryLight,
+    padding: spacing.md,
+    borderRadius: 8,
+    textAlign: 'center',
   },
   link: {
     color: colors.primary,

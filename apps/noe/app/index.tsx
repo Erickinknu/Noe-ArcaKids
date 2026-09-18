@@ -11,7 +11,7 @@ export default function IndexScreen() {
     return <Redirect href={ROUTES.app} />;
   }
   if (status === 'unauthenticated') {
-    return <Redirect href={ROUTES.login} />;
+    return <Redirect href={ROUTES.onboarding} />;
   }
   return <LoadingState text="" />;
 }
