@@ -228,12 +228,12 @@ export default function ActivityScreen() {
           <Text style={styles.sectionLabel}>Monitoreo detallado</Text>
           <View style={styles.monitorGrid}>
             {([
-              { icon: 'language' as const, title: 'Páginas\nweb', color: colors.primary, path: '/activity/web' },
-              { icon: 'play-circle' as const, title: 'YouTube\nvideos', color: colors.danger, path: '/activity/youtube' },
+              { icon: 'language' as const, title: 'Navegadores\nweb', color: colors.primary, path: '/activity/web' },
+              { icon: 'play-circle' as const, title: 'YouTube\napp', color: colors.danger, path: '/activity/youtube' },
               { icon: 'apps' as const, title: 'Apps\ninstaladas', color: colors.warning, path: '/activity/apps' },
               { icon: 'people' as const, title: 'Redes\nsociales', color: colors.danger, path: '/activity/social' },
-              { icon: 'photo-library' as const, title: 'Imágenes\nrecibidas', color: colors.success, path: '/activity/media' },
-              { icon: 'chat' as const, title: 'Conversa-\nciones', color: colors.success, path: '/activity/conversations' },
+              { icon: 'photo-library' as const, title: 'Fotos y\nvideos', color: colors.success, path: '/activity/media' },
+              { icon: 'chat' as const, title: 'Mensaje-\nría', color: colors.success, path: '/activity/conversations' },
             ] as const).map((item) => (
               <Pressable
                 key={item.title}

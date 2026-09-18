@@ -3,12 +3,12 @@ import { CategoryActivityScreen } from '@/features/activity/components/category-
 export default function WebActivityScreen() {
   return (
     <CategoryActivityScreen
-      title="Páginas web visitadas"
+      title="Navegadores web usados"
       category="web"
       icon="🌐"
-      description="Sitios web que ha visitado tu hijo recientemente."
-      emptyTitle="Aún no hay datos de páginas web"
-      emptyDescription="El historial de navegación aparecerá aquí cuando el dispositivo de tu hijo reporte esta información."
+      description="Tiempo de uso de las apps de navegación de tu hijo."
+      emptyTitle="Aún no hay datos de uso de navegadores"
+      emptyDescription="El tiempo de uso de las apps de navegación aparecerá aquí cuando el dispositivo de tu hijo reporte actividad."
     />
   );
 }
