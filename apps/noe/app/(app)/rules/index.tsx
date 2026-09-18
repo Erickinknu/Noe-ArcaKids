@@ -54,16 +54,7 @@ export default function RulesScreen() {
   const [bedtimeEndH, setBedtimeEndH] = useState(7);
   const [bedtimeEndM, setBedtimeEndM] = useState(0);
 
-  // Custom schedules
-  const [customSchedules, setCustomSchedules] = useState<{
-    id: string;
-    name: string;
-    enabled: boolean;
-    startH: number;
-    startM: number;
-    endH: number;
-    endM: number;
-  }[]>([]);
+  // Custom schedules edición vive en /rules/horarios (única fuente).
 
   const fetchFamily = useCallback(async (): Promise<FamilyData> => {
     const { family } = await familyService.getMyFamily();
@@ -140,26 +131,7 @@ export default function RulesScreen() {
     }
   }
 
-  function addCustomSchedule() {
-    const newSchedule = {
-      id: Date.now().toString(),
-      name: 'Nuevo horario',
-      enabled: true,
-      startH: 8,
-      startM: 0,
-      endH: 9,
-      endM: 0,
-    };
-    setCustomSchedules((prev) => [...prev, newSchedule]);
-  }
-
-  function removeCustomSchedule(id: string) {
-    setCustomSchedules((prev) => prev.filter((s) => s.id !== id));
-  }
-
-  function updateCustomSchedule(id: string, updates: Partial<typeof customSchedules[0]>) {
-    setCustomSchedules((prev) => prev.map((s) => (s.id === id ? { ...s, ...updates } : s)));
-  }
+  // La edición de horarios personalizados vive en /rules/horarios.
 
   // ── Loading / Error ──
   if (loading) {
@@ -253,67 +225,11 @@ export default function RulesScreen() {
           )}
         </Card>
 
-        {/* ── Horario personalizado ── */}
-        <Card style={styles.card}>
-          <View style={styles.ruleHeader}>
-            <View style={[styles.ruleIcon, { backgroundColor: '#05966918' }]}>
-              <MaterialIcons name="event" size={22} color="#059669" />
-            </View>
-            <View style={styles.ruleInfo}>
-              <Text style={styles.ruleTitle}>Horarios personalizados</Text>
-              <Text style={styles.ruleDesc}>Biblia, escuela, actividades, etc.</Text>
-            </View>
-          </View>
-
-          {customSchedules.map((sch) => (
-            <View key={sch.id} style={styles.customRow}>
-              <View style={styles.customTop}>
-                <Pressable onPress={() => updateCustomSchedule(sch.id, { enabled: !sch.enabled })}>
-                  <MaterialIcons name={sch.enabled ? 'check-circle' : 'radio-button-unchecked'} size={22} color={sch.enabled ? '#059669' : colors.textMuted} />
-                </Pressable>
-                <Text style={[styles.customName, !sch.enabled && { color: colors.textMuted }]}>{sch.name}</Text>
-                <Pressable onPress={() => {
-                  Alert.alert('Eliminar horario', `¿Eliminar "${sch.name}"?`, [
-                    { text: 'Cancelar', style: 'cancel' },
-                    { text: 'Eliminar', style: 'destructive', onPress: () => removeCustomSchedule(sch.id) },
-                  ]);
-                }}>
-                  <MaterialIcons name="delete-outline" size={20} color={colors.danger} />
-                </Pressable>
-              </View>
-              {sch.enabled && (
-                <View style={styles.customTimes}>
-                  <TimeInput
-                    hours={sch.startH}
-                    minutes={sch.startM}
-                    onHoursChange={(h) => updateCustomSchedule(sch.id, { startH: h })}
-                    onMinutesChange={(m) => updateCustomSchedule(sch.id, { startM: m })}
-                    label="Inicio"
-                  />
-                  <MaterialIcons name="arrow-forward" size={18} color={colors.textMuted} />
-                  <TimeInput
-                    hours={sch.endH}
-                    minutes={sch.endM}
-                    onHoursChange={(h) => updateCustomSchedule(sch.id, { endH: h })}
-                    onMinutesChange={(m) => updateCustomSchedule(sch.id, { endM: m })}
-                    label="Fin"
-                  />
-                </View>
-              )}
-            </View>
-          ))}
-
-          <Pressable style={({ pressed }) => [styles.addBtn, pressed && styles.addBtnPressed]} onPress={addCustomSchedule}>
-            <MaterialIcons name="add-circle-outline" size={20} color="#059669" />
-            <Text style={styles.addBtnText}>Agregar horario</Text>
-          </Pressable>
-        </Card>
-
         {/* ── Accesos rápidos ── */}
         <Text style={styles.sectionLabel}>Control avanzado</Text>
         <View style={styles.quickGrid}>
           {[
-            { icon: 'schedule' as const, title: 'Horarios de uso', color: '#6366F1', path: '/rules/horarios' },
+            { icon: 'schedule' as const, title: 'Horarios', color: '#6366F1', path: '/rules/horarios' },
             { icon: 'school' as const, title: 'Modo estudio', color: '#059669', path: '/rules/modo-estudio' },
             { icon: 'location-on' as const, title: 'Zonas seguras', color: '#D97706', path: '/rules/geofencing' },
             { icon: 'language' as const, title: 'Filtrado web', color: '#DC2626', path: '/rules/filtrado-web' },
@@ -398,22 +314,12 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   ruleInfo: { flex: 1 },
   ruleTitle: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.text },
   ruleValue: { fontSize: typography.fontSizes.caption, color: colors.textMuted, marginTop: 2 },
-  ruleDesc: { fontSize: typography.fontSizes.caption, color: colors.textMuted },
   timeSectionLabel: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginTop: spacing.md, marginBottom: spacing.xs },
 
   // Save
   saveBtn: { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.md },
   saveBtnPressed: { opacity: 0.85 },
   saveBtnText: { color: colors.onPrimary, fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold },
-
-  // Custom schedules
-  customRow: { marginTop: spacing.md, paddingTop: spacing.md, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-  customTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  customName: { flex: 1, fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.medium, color: colors.text },
-  customTimes: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md, marginTop: spacing.sm },
-  addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, borderWidth: 1.5, borderColor: '#059669', borderStyle: 'dashed', borderRadius: radius.md, padding: spacing.md, marginTop: spacing.md },
-  addBtnPressed: { backgroundColor: '#05966918' },
-  addBtnText: { fontSize: typography.fontSizes.body, color: '#059669', fontWeight: typography.fontWeights.medium },
 
   // Quick grid
   sectionLabel: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1 },

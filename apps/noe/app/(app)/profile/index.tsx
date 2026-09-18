@@ -89,70 +89,100 @@ export default function OtrosScreen() {
     );
   }, [tr]);
 
-  const menuItems: MenuItem[] = [
+  const sections: { key: string; title: string; items: MenuItem[] }[] = [
     {
-      icon: 'family-restroom',
-      title: 'Familia',
-      subtitle: 'Gestionar miembros y niños',
-      onPress: navigate('/profile/familia'),
+      key: 'account',
+      title: 'Cuenta · Familia',
+      items: [
+        {
+          icon: 'family-restroom',
+          title: 'Familia',
+          subtitle: 'Gestionar miembros y niños',
+          onPress: navigate('/profile/familia'),
+        },
+        {
+          icon: 'person',
+          title: 'Perfil',
+          subtitle: 'Información de tu cuenta',
+          onPress: navigate('/profile/cuenta'),
+        },
+      ],
     },
     {
-      icon: 'person',
-      title: 'Perfil',
-      subtitle: 'Información de tu cuenta',
-      onPress: navigate('/profile/cuenta'),
+      key: 'security',
+      title: 'Seguridad',
+      items: [
+        {
+          icon: 'lock',
+          title: 'Código PIN',
+          subtitle: 'PIN para bloquear el acceso a NOE con contraseña',
+          onPress: navigate('/profile/pin'),
+        },
+        {
+          icon: 'settings',
+          title: 'Configuración de la app',
+          subtitle: 'Tema, idioma y seguridad',
+          onPress: navigate('/profile/config'),
+        },
+      ],
     },
     {
-      icon: 'notifications',
+      key: 'notifications',
       title: 'Notificaciones',
-      subtitle: 'Ajustes de alertas y notificaciones',
-      onPress: navigate('/profile/notifications'),
+      items: [
+        {
+          icon: 'notifications',
+          title: 'Notificaciones',
+          subtitle: 'Ajustes de alertas y notificaciones',
+          onPress: navigate('/profile/notifications'),
+        },
+      ],
     },
     {
-      icon: 'lock',
-      title: 'Código PIN',
-      subtitle: 'PIN para bloquear el acceso a NOE con contraseña',
-      onPress: navigate('/profile/pin'),
+      key: 'support',
+      title: 'Plan y soporte',
+      items: [
+        {
+          icon: 'card-membership',
+          title: 'Suscripción',
+          subtitle: 'Plan actual y opciones de pago',
+          onPress: navigate('/profile/suscripcion'),
+        },
+        {
+          icon: 'help',
+          title: 'Conseguir ayuda',
+          subtitle: 'Centro de soporte y preguntas frecuentes',
+          onPress: navigate('/profile/ayuda'),
+        },
+        {
+          icon: 'lightbulb',
+          title: 'Sugiere una idea',
+          subtitle: 'Comparte tus ideas para mejorar NOE',
+          onPress: navigate('/profile/sugerir'),
+        },
+        {
+          icon: 'share',
+          title: 'Compartir app',
+          subtitle: 'Enviar la app a otros padres',
+          onPress: navigate('/profile/compartir'),
+        },
+      ],
     },
     {
-      icon: 'settings',
-      title: 'Configuración de la app',
-      subtitle: 'Tema, idioma y preferencias',
-      onPress: navigate('/profile/config'),
-    },
-    {
-      icon: 'card-membership',
-      title: 'Suscripción',
-      subtitle: 'Plan actual y opciones de pago',
-      onPress: navigate('/profile/suscripcion'),
-    },
-    {
-      icon: 'help',
-      title: 'Conseguir ayuda',
-      subtitle: 'Centro de soporte y preguntas frecuentes',
-      onPress: navigate('/profile/ayuda'),
-    },
-    {
-      icon: 'lightbulb',
-      title: 'Sugiere una idea',
-      subtitle: 'Comparte tus ideas para mejorar NOE',
-      onPress: navigate('/profile/sugerir'),
-    },
-    {
-      icon: 'share',
-      title: 'Compartir app',
-      subtitle: 'Enviar la app a otros padres',
-      onPress: navigate('/profile/compartir'),
-    },
-    {
-      icon: 'privacy-tip',
-      title: 'Política de privacidad',
-      onPress: navigate('/profile/privacidad'),
-    },
-    {
-      icon: 'description',
-      title: 'Términos de uso',
-      onPress: navigate('/profile/terminos'),
+      key: 'legal',
+      title: 'Legal',
+      items: [
+        {
+          icon: 'privacy-tip',
+          title: 'Política de privacidad',
+          onPress: navigate('/profile/privacidad'),
+        },
+        {
+          icon: 'description',
+          title: 'Términos de uso',
+          onPress: navigate('/profile/terminos'),
+        },
+      ],
     },
   ];
 
@@ -176,64 +206,70 @@ export default function OtrosScreen() {
     >
       <Text style={styles.headerTitle}>Otros</Text>
 
-      {/* ── Toggle: Bloquear instalaciones ── */}
-      <View style={styles.toggleCard}>
-        <View style={styles.toggleLeft}>
-          <MaterialIcons
-            name={toggleItem.icon}
-            size={22}
-            color={toggleItem.color ?? colors.primary}
-          />
-          <View style={styles.toggleTextGroup}>
-            <Text style={styles.toggleTitle}>{toggleItem.title}</Text>
-            <Text style={styles.toggleSubtitle}>{toggleItem.subtitle}</Text>
+      {sections.map((section) => (
+        <View key={section.key} style={styles.section}>
+          <Text style={styles.sectionTitle}>{section.title}</Text>
+
+          {section.key === 'security' ? (
+            <View style={styles.toggleCard}>
+              <View style={styles.toggleLeft}>
+                <MaterialIcons
+                  name={toggleItem.icon}
+                  size={22}
+                  color={toggleItem.color ?? colors.primary}
+                />
+                <View style={styles.toggleTextGroup}>
+                  <Text style={styles.toggleTitle}>{toggleItem.title}</Text>
+                  <Text style={styles.toggleSubtitle}>{toggleItem.subtitle}</Text>
+                </View>
+              </View>
+              <Switch
+                value={toggleItem.value}
+                onValueChange={toggleItem.onValueChange}
+                trackColor={{ false: colors.border, true: colors.primary }}
+                thumbColor="#fff"
+              />
+            </View>
+          ) : null}
+
+          <View style={styles.menuGroup}>
+            {section.items.map((item) => (
+              <Pressable
+                key={item.title}
+                style={({ pressed }) => [
+                  styles.menuItem,
+                  pressed && styles.menuItemPressed,
+                ]}
+                onPress={item.onPress}
+              >
+                <MaterialIcons
+                  name={item.icon}
+                  size={22}
+                  color={item.danger ? colors.danger : colors.primary}
+                />
+                <View style={styles.menuTextGroup}>
+                  <Text
+                    style={[
+                      styles.menuTitle,
+                      item.danger && { color: colors.danger },
+                    ]}
+                  >
+                    {item.title}
+                  </Text>
+                  {item.subtitle ? (
+                    <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
+                  ) : null}
+                </View>
+                <MaterialIcons
+                  name="chevron-right"
+                  size={20}
+                  color={colors.textMuted}
+                />
+              </Pressable>
+            ))}
           </View>
         </View>
-        <Switch
-          value={toggleItem.value}
-          onValueChange={toggleItem.onValueChange}
-          trackColor={{ false: colors.border, true: colors.primary }}
-          thumbColor="#fff"
-        />
-      </View>
-
-      {/* ── Menu items ── */}
-      <View style={styles.menuGroup}>
-        {menuItems.map((item, i) => (
-          <Pressable
-            key={item.title}
-            style={({ pressed }) => [
-              styles.menuItem,
-              pressed && styles.menuItemPressed,
-            ]}
-            onPress={item.onPress}
-          >
-            <MaterialIcons
-              name={item.icon}
-              size={22}
-              color={item.danger ? colors.danger : colors.primary}
-            />
-            <View style={styles.menuTextGroup}>
-              <Text
-                style={[
-                  styles.menuTitle,
-                  item.danger && { color: colors.danger },
-                ]}
-              >
-                {item.title}
-              </Text>
-              {item.subtitle ? (
-                <Text style={styles.menuSubtitle}>{item.subtitle}</Text>
-              ) : null}
-            </View>
-            <MaterialIcons
-              name="chevron-right"
-              size={20}
-              color={colors.textMuted}
-            />
-          </Pressable>
-        ))}
-      </View>
+      ))}
 
       {/* ── Sign out ── */}
       <Pressable
@@ -274,6 +310,16 @@ const makeStyles = (colors: ThemeColors) =>
   },
 
   /* ── Toggle card ── */
+  section: {
+    gap: spacing.sm,
+  },
+  sectionTitle: {
+    fontSize: typography.fontSizes.caption,
+    fontWeight: typography.fontWeights.medium,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
   toggleCard: {
     flexDirection: 'row',
     alignItems: 'center',
