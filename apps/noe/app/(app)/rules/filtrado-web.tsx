@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, View, Pressable, TextInput, Alert } from 'react-native';
+import { ScrollView, StyleSheet, Text, View, Pressable, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -18,8 +18,6 @@ export default function FiltradoWebScreen() {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
-  const [newSite, setNewSite] = useState('');
-  const [saving, setSaving] = useState(false);
 
   const fetchChildren = useCallback(async () => {
     const { family } = await familyService.getMyFamily();
@@ -39,50 +37,14 @@ export default function FiltradoWebScreen() {
     return {
       ...cat,
       enabled: filter?.enabled ?? false,
-      blockedSites: filter?.blockedSites ?? [],
     };
   });
-
-  const allBlockedSites = categories.flatMap((c) => c.blockedSites);
 
   const handleToggle = async (categoryId: string) => {
     const cat = categories.find((c) => c.id === categoryId);
     if (!cat || !selectedChildId) return;
     try {
       await webFilterService.toggleCategory(selectedChildId, categoryId, !cat.enabled);
-      reloadFilters();
-    } catch (cause) {
-      Alert.alert('Error', errorMessage(cause));
-    }
-  };
-
-  const handleAddSite = async () => {
-    const site = newSite.trim().toLowerCase();
-    if (!site || !selectedChildId) return;
-    if (allBlockedSites.includes(site)) return;
-
-    // Add to the first enabled category, or 'adult' as default
-    const target = categories.find((c) => c.enabled) ?? categories.find((c) => c.id === 'adult');
-    if (!target) return;
-
-    setSaving(true);
-    try {
-      await webFilterService.addBlockedSite(selectedChildId, target.id, site);
-      setNewSite('');
-      reloadFilters();
-    } catch (cause) {
-      Alert.alert('Error', errorMessage(cause));
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const handleRemoveSite = async (site: string) => {
-    if (!selectedChildId) return;
-    const cat = categories.find((c) => c.blockedSites.includes(site));
-    if (!cat) return;
-    try {
-      await webFilterService.removeBlockedSite(selectedChildId, cat.id, site);
       reloadFilters();
     } catch (cause) {
       Alert.alert('Error', errorMessage(cause));
@@ -138,7 +100,12 @@ export default function FiltradoWebScreen() {
         <Text style={styles.headerTitle}>Filtrado web</Text>
       </Pressable>
       <Text style={styles.description}>
-        Bloquea sitios web inapropiados en el navegador del niño. Las categorías principales se filtran automáticamente.
+        Al activar una categoría, se bloquean las apps de navegación (Chrome, Firefox, etc.)
+        en el dispositivo del niño. El filtrado no inspecciona sitios ni contenido por URL.
+      </Text>
+      <Text style={styles.description}>
+        Con al menos una categoría activada los navegadores quedan bloqueados; al desactivar
+        todas las categorías, se vuelven a desbloquear.
       </Text>
 
       <Text style={styles.sectionLabel}>Categorías bloqueadas</Text>
@@ -156,41 +123,6 @@ export default function FiltradoWebScreen() {
             </Pressable>
           </View>
         ))}
-      </Card>
-
-      <Text style={styles.sectionLabel}>Sitios bloqueados manualmente</Text>
-      <Card>
-        {allBlockedSites.length === 0 && (
-          <Text style={styles.emptyText}>No hay sitios bloqueados aún</Text>
-        )}
-        {allBlockedSites.map((site, i) => (
-          <View key={site} style={[styles.siteRow, i < allBlockedSites.length - 1 && styles.siteBorder]}>
-            <MaterialIcons name="public-off" size={18} color={colors.danger} />
-            <Text style={styles.siteName}>{site}</Text>
-            <Pressable onPress={() => handleRemoveSite(site)}>
-              <MaterialIcons name="close" size={18} color={colors.textMuted} />
-            </Pressable>
-          </View>
-        ))}
-        <View style={styles.addRow}>
-          <TextInput
-            style={styles.addInput}
-            placeholder="ejemplo.com"
-            placeholderTextColor={colors.textMuted}
-            value={newSite}
-            onChangeText={setNewSite}
-            onSubmitEditing={handleAddSite}
-            autoCapitalize="none"
-            autoCorrect={false}
-          />
-          <Pressable
-            style={({ pressed }) => [styles.addBtn, pressed && styles.addBtnPressed]}
-            onPress={handleAddSite}
-            disabled={saving}
-          >
-            <MaterialIcons name="add" size={20} color={colors.onPrimary} />
-          </Pressable>
-        </View>
       </Card>
 
       <Pressable style={({ pressed }) => [styles.backToListBtn, pressed && styles.backToListBtnPressed]}
@@ -212,14 +144,6 @@ const makeStyles = (colors: ThemeColors) =>
   catBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   catLabel: { flex: 1, fontSize: typography.fontSizes.body, color: colors.text },
   catDisabled: { color: colors.textMuted },
-  siteRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm, gap: spacing.sm },
-  siteBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  siteName: { flex: 1, fontSize: typography.fontSizes.body, color: colors.text },
-  emptyText: { fontSize: typography.fontSizes.body, color: colors.textMuted, textAlign: 'center', paddingVertical: spacing.md },
-  addRow: { flexDirection: 'row', gap: spacing.sm, marginTop: spacing.sm, paddingTop: spacing.sm, borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: colors.border },
-  addInput: { flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, fontSize: typography.fontSizes.body, color: colors.text, backgroundColor: colors.background },
-  addBtn: { backgroundColor: colors.primary, borderRadius: radius.md, width: 44, height: 44, alignItems: 'center', justifyContent: 'center' },
-  addBtnPressed: { opacity: 0.85 },
   backToListBtn: { borderWidth: 1, borderColor: colors.primary, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center' },
   backToListBtnPressed: { backgroundColor: colors.primaryLight },
   backToListText: { color: colors.primary, fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold },

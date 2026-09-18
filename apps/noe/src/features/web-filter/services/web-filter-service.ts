@@ -10,6 +10,61 @@ export const CATEGORIES = [
   { id: 'drugs', label: 'Drogas', icon: 'medication' as const },
 ];
 
+// B2: without content-level filtering, "web filtering" blocks the browser apps
+// themselves. These are enforced through the existing blocked_apps mechanism.
+export const BROWSER_PACKAGES: { packageName: string; label: string }[] = [
+  { packageName: 'com.android.chrome', label: 'Chrome' },
+  { packageName: 'com.brave.browser', label: 'Brave' },
+  { packageName: 'org.mozilla.firefox', label: 'Firefox' },
+  { packageName: 'com.opera.browser', label: 'Opera' },
+  { packageName: 'com.microsoft.emmx', label: 'Edge' },
+  { packageName: 'com.duckduckgo.mobile.android', label: 'DuckDuckGo' },
+];
+
+const BROWSER_BLOCK_LABEL_PREFIX = 'Filtrado web:';
+
+async function reconcileBrowserBlocks(childId: string): Promise<void> {
+  const client = requireSupabaseClient();
+  const filters = await webFilterService.getFilters(childId);
+  const anyEnabled = filters.some((f) => f.enabled);
+  const packages = BROWSER_PACKAGES.map((b) => b.packageName);
+
+  if (anyEnabled) {
+    const { data: family } = await client
+      .from('families')
+      .select('id')
+      .limit(1)
+      .single();
+    if (!family) return;
+
+    const { data: existing } = await client
+      .from('blocked_apps')
+      .select('package_name')
+      .eq('child_id', childId)
+      .in('package_name', packages);
+    const existingNames = new Set((existing ?? []).map((r: any) => r.package_name));
+
+    for (const browser of BROWSER_PACKAGES) {
+      if (existingNames.has(browser.packageName)) continue;
+      await client.from('blocked_apps').insert({
+        family_id: family.id,
+        child_id: childId,
+        package_name: browser.packageName,
+        app_label: `${BROWSER_BLOCK_LABEL_PREFIX} ${browser.label}`,
+      });
+    }
+  } else {
+    // Only remove the browser blocks this feature created; manual blocks
+    // created by the parent are left untouched.
+    await client
+      .from('blocked_apps')
+      .delete()
+      .eq('child_id', childId)
+      .in('package_name', packages)
+      .like('app_label', `${BROWSER_BLOCK_LABEL_PREFIX}%`);
+  }
+}
+
 export interface WebFilter {
   id: string;
   category: string;
@@ -66,41 +121,7 @@ export const webFilterService = {
         enabled: true,
       });
     }
-  },
 
-  async addBlockedSite(childId: string, category: string, site: string): Promise<void> {
-    const client = requireSupabaseClient();
-    const { data } = await client
-      .from('web_filters')
-      .select('id, blocked_sites')
-      .eq('child_id', childId)
-      .eq('category', category)
-      .maybeSingle();
-
-    if (data) {
-      const sites = [...(data.blocked_sites ?? []), site];
-      await client
-        .from('web_filters')
-        .update({ blocked_sites: sites })
-        .eq('id', data.id);
-    }
-  },
-
-  async removeBlockedSite(childId: string, category: string, site: string): Promise<void> {
-    const client = requireSupabaseClient();
-    const { data } = await client
-      .from('web_filters')
-      .select('id, blocked_sites')
-      .eq('child_id', childId)
-      .eq('category', category)
-      .maybeSingle();
-
-    if (data) {
-      const sites = (data.blocked_sites ?? []).filter((s: string) => s !== site);
-      await client
-        .from('web_filters')
-        .update({ blocked_sites: sites })
-        .eq('id', data.id);
-    }
+    await reconcileBrowserBlocks(childId);
   },
 };
