@@ -18,8 +18,8 @@ Build del release ARCA KIDS (solo `arm64-v8a` por longitud de rutas):
 cd apps/arcakids/android
 .\gradlew.bat assembleRelease -PreactNativeArchitectures=arm64-v8a
 # APK en apps/arcakids/android/app/build/outputs/apk/release/
-# Ojo: sin -PreactNativeArchitectures=arm64-v8a falla en armeabi-v7a
-# (CMAKE_OBJECT_PATH_MAX se excede con la longitud de ruta del workspace).
+# gradle.properties ya excluye armeabi-v7a y x86 (CMAKE_OBJECT_PATH_MAX se excede
+# con la longitud de ruta del workspace); por defecto quedan arm64-v8a + x86_64.
 ```
 
 > Nunca usar `npm run build:*`. Git fuera de PATH en PowerShell: `& "C:\Program Files\Git\bin\git.exe"`.
@@ -33,6 +33,12 @@ cd android
 ```
 
 No borrar `apps/<app>/android`: sin esa carpeta se rompen `expo prebuild`, `expo run:android` y EAS.
+
+### Toolchain Android (JDK 17) y limpieza
+
+- **Gradle debe correr sobre JDK 17.** El JBR/launcher que trae Android Studio es JDK 25 y AGP 8.12 no lo soporta: emite `WARNING: A restricted method in java.lang.System has been called` y rompe la generación de prefab (`GeneratePrefabPackages` → `react-native-reanimated debug:x86 failed to configure C/C++`). Por eso `android/gradle/gradle-daemon-jvm.properties` (y el de cada app) fija `toolchainVersion=17`. Si Studio usara otro JDK: `Settings > Build, Execution, Deployment > Build Tools > Gradle > Gradle JDK = 17`.
+- **`clean`:** las tareas `externalNativeBuildClean*` de AGP reconfiguran CMake y fallan cuando no existen los codegen de las librerías (p.ej. tras un `clean` global del composite, que borra `node_modules/<lib>/android/build`). En `apps/<app>/android/app/build.gradle` están desactivadas y reemplazadas por `cleanNativeCxx`, que borra `app/.cxx`; el siguiente build reconfigura CMake desde cero.
+- Los codegen (`node_modules/<lib>/android/build/generated/source/codegen/jni`) los regenera cada `generateCodegenArtifactsFromSchema` durante el build. Si CMake falla con `add_subdirectory ... which is not an existing directory`, correr un build (p.ej. `:app:configureCMakeDebug[x86_64]`) para regenerarlos.
 
 ## 2. Sentry
 

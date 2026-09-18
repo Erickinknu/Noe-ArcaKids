@@ -196,3 +196,21 @@ dependencies {
         implementation jscFlavor
     }
 }
+
+// --- Clean nativo robusto (workaround AGP) ----------------------------------
+// Las tareas externalNativeBuildClean* ejecutan `ninja clean`, que reconfigura
+// CMake y falla cuando faltan los artefactos de codegen de las librerias (p.ej.
+// tras un `clean` global/composite que borra node_modules/<lib>/android/build),
+// ademas de dejar arboles .cxx obsoletos. Se desactivan esas tareas y se limpia
+// .cxx directamente; el siguiente build reconfigura CMake desde cero.
+def cleanNativeCxx = tasks.register("cleanNativeCxx", Delete) {
+    delete project.file(".cxx")
+}
+tasks.configureEach { t ->
+    if (t.name.startsWith("externalNativeBuildClean")) {
+        t.enabled = false
+    }
+}
+tasks.matching { it.name == "clean" }.configureEach {
+    dependsOn cleanNativeCxx
+}
