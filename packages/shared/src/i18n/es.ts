@@ -239,6 +239,10 @@ export const es = {
         'Durante la configuración de Android, escanea este QR para hacer de ARCA KIDS el Device Owner y vincular el dispositivo automáticamente.',
       copyPayload: 'Copiar',
       copied: 'Copiado',
+      linkLabel: 'Vínculo de emparejamiento',
+      linkShareHint:
+        'Ábrelo en el dispositivo del niño con ARCA KIDS instalado, o compártelo por mensaje.',
+      shareLink: 'Compartir vínculo',
     },
     deviceControl: {
       title: 'Control remoto',
@@ -461,6 +465,10 @@ export const es = {
       scanInstead: 'Mejor escanear el QR',
       cameraPermission:
         'Se necesita permiso de c\u00e1mara para escanear el c\u00f3digo QR.',
+      deepLinking: 'Vinculando con el c\u00f3digo del v\u00ednculo\u2026',
+      deepFail: 'Este v\u00ednculo no contiene un c\u00f3digo v\u00e1lido.',
+      deepError: 'No se pudo vincular desde este v\u00ednculo:',
+      manual: 'Introducir el c\u00f3digo manualmente',
     },
     profile: {
       title: 'Perfil',

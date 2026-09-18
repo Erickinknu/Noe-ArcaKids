@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -20,6 +20,7 @@ import {
   type LinkingMode,
   DEVICE_ADMIN_COMPONENT_SHORT,
 } from '@/features/linking/services/linking-service';
+import { buildPairingLink } from '@/features/linking/services/pairing-link';
 import type { ChildProfile, ProvisioningPayload } from '@noe-arcakids/types';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { Card, errorMessage, useAsyncData, useTheme, useVerseOfDay, VerseBanner, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
@@ -104,6 +105,13 @@ export default function LinkingScreen() {
       ? JSON.stringify(buildAndroidProvisioningExtras(payload))
       : buildCompactQrValue(payload)
     : '';
+
+  const pairingLink = payload ? buildPairingLink(payload.code, payload.familyId) : '';
+
+  const handleShareLink = useCallback(() => {
+    if (!pairingLink) return;
+    Share.share({ message: pairingLink });
+  }, [pairingLink]);
   const displayChildName =
     mode === 'family' ? tr('noe.linking.modeFamily') : (activeChild?.displayName ?? '');
 
@@ -234,6 +242,14 @@ export default function LinkingScreen() {
           {qrType === 'dpc' ? (
             <Text style={styles.muted}>{tr('noe.linking.provisioningHelp')}</Text>
           ) : null}
+          <View style={styles.shareBlock}>
+            <Text style={styles.payloadLabel}>{tr('noe.linking.linkLabel')}</Text>
+            <Text style={styles.payloadJson} selectable>{pairingLink}</Text>
+            <Text style={styles.muted}>{tr('noe.linking.linkShareHint')}</Text>
+            <Button variant="outline" onPress={handleShareLink}>
+              {tr('noe.linking.shareLink')}
+            </Button>
+          </View>
           <Text style={styles.payloadLabel}>
             {qrType === 'dpc'
               ? tr('noe.linking.qrPayloadLabel')
@@ -370,5 +386,10 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     padding: spacing.sm,
     borderRadius: radius.md,
     width: '100%',
+  },
+  shareBlock: {
+    width: '100%',
+    gap: spacing.sm,
+    alignItems: 'center',
   },
 });

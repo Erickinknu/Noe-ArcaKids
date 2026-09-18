@@ -233,6 +233,10 @@ export const en = {
         'During Android setup, scan this QR to make ARCA KIDS the Device Owner and link the device automatically.',
       copyPayload: 'Copy',
       copied: 'Copied',
+      linkLabel: 'Pairing link',
+      linkShareHint:
+        'Open it on the child\u2019s device with ARCA KIDS installed, or share it by message.',
+      shareLink: 'Share link',
     },
     deviceControl: {
       title: 'Remote control',
@@ -451,6 +455,10 @@ export const en = {
       linkDevice: 'Link device',
       scanInstead: 'Scan QR instead',
       cameraPermission: 'Camera permission is needed to scan the QR code.',
+      deepLinking: 'Linking with the code from the link\u2026',
+      deepFail: 'This link does not contain a valid code.',
+      deepError: 'Could not link from this link:',
+      manual: 'Enter the code manually',
     },
     profile: {
       title: 'Profile',
