@@ -46,11 +46,17 @@ export default function LocationScreen() {
       await fetchLocations();
     };
     runFetch();
+    // Live updates via Supabase Realtime (device reports new GPS position).
+    const unsubscribe = deviceControlService.subscribeToLocationUpdates(() => {
+      if (!cancelled) fetchLocations(true);
+    });
+    // Fallback polling in case the realtime socket drops.
     const interval = setInterval(() => {
       if (!cancelled) fetchLocations(true);
-    }, 10000);
+    }, 30000);
     return () => {
       cancelled = true;
+      unsubscribe();
       clearInterval(interval);
     };
   }, [fetchLocations]);
@@ -73,6 +79,10 @@ export default function LocationScreen() {
           <MaterialIcons name="arrow-back" size={24} color={colors.text} />
         </Pressable>
         <Text style={styles.headerTitle}>Ubicar hijos</Text>
+        <View style={styles.liveBadge}>
+          <View style={styles.liveDot} />
+          <Text style={styles.liveText}>Tiempo real</Text>
+        </View>
         <Pressable style={styles.refreshBtn} onPress={() => fetchLocations(true)}>
           <MaterialIcons name="refresh" size={22} color={colors.primary} />
         </Pressable>
@@ -203,6 +213,26 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  liveBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+    backgroundColor: colors.successLight,
+  },
+  liveDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.success,
+  },
+  liveText: {
+    fontSize: typography.fontSizes.caption,
+    fontWeight: typography.fontWeights.semibold,
+    color: colors.success,
   },
   center: {
     flex: 1,

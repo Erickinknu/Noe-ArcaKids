@@ -1,4 +1,4 @@
-import { useRef, useCallback, useMemo } from 'react';
+import { useRef, useCallback, useMemo, useEffect } from 'react';
 import { WebView, type WebViewMessageEvent } from 'react-native-webview';
 
 export interface MapMarker {
@@ -22,68 +22,105 @@ interface OSMMapProps {
   style?: any;
 }
 
-function buildHTML(markers: MapMarker[], region: OSMMapProps['region']): string {
-  const markerJS = markers
-    .map(
-      (m) => `
-    L.marker([${m.latitude}, ${m.longitude}], {
-      icon: L.divIcon({
-        className: 'custom-marker',
-        html: '<div style="background:${m.color || '#DC2626'};width:24px;height:24px;border-radius:50%;border:3px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3);"></div>',
-        iconSize: [24, 24],
-        iconAnchor: [12, 12],
-      })
-    }).addTo(map).bindPopup('<b>${m.title}</b>${m.description ? '<br>' + m.description : ''}').on('click', function() {
-      window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'markerPress', id: '${m.id}' }));
-    });
-  `
-    )
-    .join('\n');
+function esc(value: unknown): string {
+  return String(value ?? '').replace(/</g, '\\u003c');
+}
 
+function buildGeoJSON(markers: MapMarker[]): string {
+  const features = markers.map((m) => ({
+    type: 'Feature',
+    geometry: { type: 'Point', coordinates: [m.longitude, m.latitude] },
+    properties: {
+      id: String(m.id).replace(/[^\w-]/g, ''),
+      title: esc(m.title),
+      description: esc(m.description ?? ''),
+      color: m.color ?? '#DC2626',
+    },
+  }));
+  return JSON.stringify({ type: 'FeatureCollection', features });
+}
+
+function buildHTML(region: OSMMapProps['region']): string {
   const centerLat = region.latitude;
   const centerLng = region.longitude;
-  const zoom = Math.round(Math.log2(360 / region.longitudeDelta));
+  const zoom = Math.round(Math.log2(360 / region.longitudeDelta)) + 1;
+  const safeZoom = Math.max(1, Math.min(19, zoom));
 
   return `<!DOCTYPE html>
 <html>
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+  <link href="https://unpkg.com/maplibre-gl@5.3.0/dist/maplibre-gl.css" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     html, body, #map { width: 100%; height: 100%; }
-    .custom-marker { background: transparent; border: none; }
-    .leaflet-popup-content-wrapper { border-radius: 8px; }
+    .maplibregl-popup-content { border-radius: 8px; font-family: system-ui, sans-serif; }
+    .maplibregl-ctrl-attrib { font-size: 9px; }
   </style>
 </head>
 <body>
   <div id="map"></div>
+  <script src="https://unpkg.com/maplibre-gl@5.3.0/dist/maplibre-gl.js"></script>
   <script>
-    var map = L.map('map', {
-      zoomControl: false,
+    window.__mapReady = false;
+
+    var __map = new maplibregl.Map({
+      container: 'map',
+      style: {
+        version: 8,
+        sources: {
+          'osm': {
+            type: 'raster',
+            tiles: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
+            tileSize: 256,
+            attribution: '&copy; OpenStreetMap',
+          },
+        },
+        layers: [
+          { id: 'osm', type: 'raster', source: 'osm' },
+        ],
+      },
+      center: [${centerLng}, ${centerLat}],
+      zoom: ${safeZoom},
       attributionControl: false,
-    }).setView([${centerLat}, ${centerLng}], ${zoom});
+    });
 
-    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-    }).addTo(map);
+    __map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
+    __map.addControl(new maplibregl.AttributionControl({ compact: true }), 'bottom-left');
 
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    function updateLocationMarkers(fc) {
+      if (!__map.getSource('children')) return;
+      __map.getSource('children').setData(fc);
+    }
+    window.updateLocationMarkers = updateLocationMarkers;
 
-    L.control.attribution({ position: 'bottomleft' })
-      .addAttribution('&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>')
-      .addTo(map);
-
-    ${markerJS}
-
-    ${markers.length > 0 ? `
-      var group = L.featureGroup(map._layers ? Object.values(map._layers).filter(function(l) { return l instanceof L.Marker; }) : []);
-      if (group.getLayers().length > 0) {
-        map.fitBounds(group.getBounds().pad(0.3));
+    __map.on('load', function () {
+      if (!__map.getSource('children')) {
+        __map.addSource('children', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection', features: [] },
+        });
+        __map.addLayer({
+          id: 'children-dots',
+          type: 'circle',
+          source: 'children',
+          paint: {
+            'circle-radius': 10,
+            'circle-color': ['get', 'color'],
+            'circle-stroke-width': 3,
+            'circle-stroke-color': '#ffffff',
+          },
+        });
+        __map.on('click', 'children-dots', function (e) {
+          var f = e.features && e.features[0];
+          if (f && f.properties && f.properties.id) {
+            window.ReactNativeWebView.postMessage(JSON.stringify({ type: 'markerPress', id: f.properties.id }));
+          }
+        });
       }
-    ` : ''}
+      window.__mapReady = true;
+    });
   </script>
 </body>
 </html>`;
@@ -91,8 +128,35 @@ function buildHTML(markers: MapMarker[], region: OSMMapProps['region']): string 
 
 export function OSMMap({ markers, region, onMarkerPress, style }: OSMMapProps) {
   const webViewRef = useRef<any>(null);
+  const readyRef = useRef(false);
 
-  const html = useMemo(() => buildHTML(markers, region), [markers, region]);
+  const { latitude, longitude, latitudeDelta, longitudeDelta } = region;
+
+  const html = useMemo(
+    () => buildHTML({ latitude, longitude, latitudeDelta, longitudeDelta }),
+    [latitude, longitude, latitudeDelta, longitudeDelta]
+  );
+
+  const pushMarkers = useCallback(
+    (ms: MapMarker[]) => {
+      if (!readyRef.current || !webViewRef.current) return;
+      const fc = buildGeoJSON(ms);
+      webViewRef.current.injectJavaScript(
+        `if (window.__mapReady) window.updateLocationMarkers(${fc}); true;`
+      );
+    },
+    []
+  );
+
+  // Push marker updates live without reloading the WebView.
+  useEffect(() => {
+    pushMarkers(markers);
+  }, [markers, pushMarkers]);
+
+  const handleLoad = useCallback(() => {
+    readyRef.current = true;
+    pushMarkers(markers);
+  }, [markers, pushMarkers]);
 
   const handleMessage = useCallback(
     (event: WebViewMessageEvent) => {
@@ -112,6 +176,7 @@ export function OSMMap({ markers, region, onMarkerPress, style }: OSMMapProps) {
       source={{ html }}
       style={[{ flex: 1 }, style]}
       onMessage={handleMessage}
+      onLoad={handleLoad}
       javaScriptEnabled={true}
       scrollEnabled={false}
       showsHorizontalScrollIndicator={false}

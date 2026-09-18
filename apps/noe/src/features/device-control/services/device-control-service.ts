@@ -126,6 +126,22 @@ export const deviceControlService = {
     });
   },
 
+  // Live location updates via Supabase Realtime (devices table, RLS-scoped).
+  subscribeToLocationUpdates(callback: () => void): () => void {
+    const client = requireSupabaseClient();
+    const channel = client
+      .channel('children-locations-live')
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'devices' },
+        () => callback()
+      )
+      .subscribe();
+    return () => {
+      client.removeChannel(channel);
+    };
+  },
+
   // ── FASE 10: Realtime remote control via device_commands / device_policies / device_status ──
 
   async sendCommand(
