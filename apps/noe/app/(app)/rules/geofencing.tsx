@@ -18,12 +18,23 @@ import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { geofencingService } from '@/features/geofencing/services/geofencing-service';
+import { OSMMap } from '@/components/ui/osm-map';
+import { deviceControlService, type ChildLocation } from '@/features/device-control/services/device-control-service';
 import { type Geofence, type GeofenceEventRecord } from '@noe-arcakids/types';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
 import { Card, useTheme, radius, spacing, typography, useAsyncData, type ThemeColors } from '@noe-arcakids/shared';
 
 type ChildOption = { id: string; displayName: string };
+
+const DEFAULT_MAP_REGION = {
+  latitude: -12.0464, // Lima, Peru
+  longitude: -77.0428,
+  latitudeDelta: 0.05,
+  longitudeDelta: 0.05,
+};
+
+const RADIUS_OPTIONS = [100, 250, 500, 1000, 2000];
 
 function formatEventTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('es', { hour: '2-digit', minute: '2-digit' });
@@ -39,6 +50,8 @@ export default function GeofencingScreen() {
   const [error, setError] = useState<string | null>(null);
   const [children, setChildren] = useState<ChildOption[]>([]);
   const [liveEvents, setLiveEvents] = useState<GeofenceEventRecord[]>([]);
+  const [childLocations, setChildLocations] = useState<ChildLocation[]>([]);
+  const [mapCenter, setMapCenter] = useState(DEFAULT_MAP_REGION);
 
   // Add form state
   const [showForm, setShowForm] = useState(false);
@@ -63,6 +76,25 @@ export default function GeofencingScreen() {
       setChildren(kids.map((c) => ({ id: c.id, displayName: c.displayName })));
       if (kids.length > 0 && !formChildId) {
         setFormChildId(kids[0].id);
+      }
+
+      const locations = await deviceControlService.getChildrenLocations();
+      setChildLocations(locations);
+
+      if (zonesData.length > 0) {
+        setMapCenter({
+          latitude: zonesData[0].latitude,
+          longitude: zonesData[0].longitude,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        });
+      } else if (locations.length > 0) {
+        setMapCenter({
+          latitude: locations[0].latitude,
+          longitude: locations[0].longitude,
+          latitudeDelta: 0.05,
+          longitudeDelta: 0.05,
+        });
       }
     } catch (cause: any) {
       setError(cause?.message ?? 'Error al cargar datos');
@@ -141,6 +173,30 @@ export default function GeofencingScreen() {
     ]);
   };
 
+  const handleMapPress = useCallback(
+    (latitude: number, longitude: number) => {
+      setFormLat(latitude.toFixed(6));
+      setFormLng(longitude.toFixed(6));
+      setMapCenter({
+        latitude,
+        longitude,
+        latitudeDelta: 0.05,
+        longitudeDelta: 0.05,
+      });
+      if (!showForm) setShowForm(true);
+    },
+    [showForm]
+  );
+
+  const draftZone = useMemo(() => {
+    if (!showForm || formLat === '' || formLng === '') return null;
+    const lat = parseFloat(formLat);
+    const lng = parseFloat(formLng);
+    const radius = parseInt(formRadius, 10);
+    if (isNaN(lat) || isNaN(lng) || isNaN(radius) || radius < 10) return null;
+    return { latitude: lat, longitude: lng, radiusMeters: radius };
+  }, [showForm, formLat, formLng, formRadius]);
+
   const handleAdd = async () => {
     if (!formName.trim()) {
       Alert.alert('Error', 'Ingresa un nombre para la zona');
@@ -197,6 +253,35 @@ export default function GeofencingScreen() {
       <Text style={styles.description}>
         Define zonas seguras (casa, escuela, etc.). Recibirás una alerta cuando tu hijo salga de una zona.
       </Text>
+
+      {children.length > 0 && (
+        <View style={styles.mapCard}>
+          <OSMMap
+            style={styles.map}
+            region={mapCenter}
+            zones={zones.map((zone) => ({
+              id: zone.id,
+              latitude: zone.latitude,
+              longitude: zone.longitude,
+              radiusMeters: zone.radius,
+              color: zone.enabled ? colors.primary : colors.textMuted,
+            }))}
+            draftZone={draftZone}
+            markers={childLocations.map((loc) => ({
+              id: loc.childId,
+              latitude: loc.latitude,
+              longitude: loc.longitude,
+              title: loc.displayName,
+              description: loc.isOnline ? 'En línea' : 'Desconectado',
+              color: loc.isOnline ? colors.success : colors.textMuted,
+            }))}
+            onMapPress={handleMapPress}
+          />
+          <Text style={styles.mapHint}>
+            Presiona el mapa para elegir el centro de la zona
+          </Text>
+        </View>
+      )}
 
       {zones.length === 0 && !showForm ? (
         <EmptyState icon="📍" title="Sin zonas definidas" description="Agrega una zona segura para comenzar" />
@@ -320,6 +405,27 @@ export default function GeofencingScreen() {
           />
 
           <Text style={styles.formLabel}>Radio (metros)</Text>
+          <View style={styles.radiusChips}>
+            {RADIUS_OPTIONS.map((r) => (
+              <Pressable
+                key={r}
+                style={[
+                  styles.radiusChip,
+                  parseInt(formRadius, 10) === r && styles.radiusChipSelected,
+                ]}
+                onPress={() => setFormRadius(String(r))}
+              >
+                <Text
+                  style={[
+                    styles.radiusChipText,
+                    parseInt(formRadius, 10) === r && styles.radiusChipTextSelected,
+                  ]}
+                >
+                  {r}m
+                </Text>
+              </Pressable>
+            ))}
+          </View>
           <TextInput
             style={styles.formInput}
             value={formRadius}
@@ -357,6 +463,20 @@ const makeStyles = (colors: ThemeColors) =>
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   headerTitle: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
   description: { fontSize: typography.fontSizes.body, color: colors.textMuted, lineHeight: 22 },
+  mapCard: {
+    borderRadius: radius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  map: { height: 260 },
+  mapHint: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    textAlign: 'center',
+    padding: spacing.sm,
+    backgroundColor: colors.background,
+  },
   sectionLabel: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginTop: spacing.xs },
   eventsEmpty: { fontSize: typography.fontSizes.body, color: colors.textMuted, textAlign: 'center', paddingVertical: spacing.md, lineHeight: 20 },
   eventRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm },
@@ -392,5 +512,10 @@ const makeStyles = (colors: ThemeColors) =>
   childOptionSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   childOptionText: { fontSize: typography.fontSizes.caption, color: colors.text },
   childOptionTextSelected: { color: colors.onPrimary },
+  radiusChips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginTop: spacing.xs, marginBottom: spacing.sm },
+  radiusChip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.full, borderWidth: 1, borderColor: colors.border },
+  radiusChipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
+  radiusChipText: { fontSize: typography.fontSizes.caption, color: colors.text },
+  radiusChipTextSelected: { color: colors.onPrimary },
   formActions: { flexDirection: 'row', gap: spacing.md, marginTop: spacing.md },
 });
