@@ -25,6 +25,11 @@ import {
   type ChildApp,
   type AppCategory,
 } from '@/features/app-categories/services/app-category-service';
+import {
+  suggestForPresets,
+  presetActionLabel,
+  type AppPreset,
+} from '@/features/app-categories/constants/app-presets';
 import { familyService } from '@/features/family/services/family-service';
 import { childService } from '@/features/children/services/child-service';
 
@@ -61,6 +66,9 @@ export default function AppsControlScreen() {
   const [childName, setChildName] = useState('');
   const [savingId, setSavingId] = useState<string | null>(null);
   const [limitModalApp, setLimitModalApp] = useState<ChildApp | null>(null);
+  const [appliedPresets, setAppliedPresets] = useState<Set<string>>(() => new Set());
+  const [dismissedPresets, setDismissedPresets] = useState<Set<string>>(() => new Set());
+  const [savingPreset, setSavingPreset] = useState<string | null>(null);
 
   const fetchApps = useCallback(async (isRefresh = false) => {
     if (!childId) return;
@@ -108,6 +116,40 @@ export default function AppsControlScreen() {
       app.packageName.toLowerCase().includes(searchQuery.toLowerCase());
     return matchesTab && matchesSearch;
   });
+
+  const suggestions = useMemo(() => suggestForPresets(apps), [apps]);
+  const pendingSuggestions = suggestions.filter(
+    (group) => !appliedPresets.has(group.preset.key) && !dismissedPresets.has(group.preset.key)
+  );
+
+  async function applyPreset(preset: AppPreset, groupApps: ChildApp[]) {
+    if (!childId) return;
+    setSavingPreset(preset.key);
+    try {
+      for (const app of groupApps) {
+        await appCategoryService.setCategory(
+          childId,
+          app.packageName,
+          app.appLabel,
+          preset.category,
+          preset.timeLimitMinutes
+        );
+      }
+      const ids = new Set(groupApps.map((app) => app.id));
+      setApps((prev) =>
+        prev.map((a) =>
+          ids.has(a.id)
+            ? { ...a, category: preset.category, timeLimitMinutes: preset.timeLimitMinutes ?? null }
+            : a
+        )
+      );
+      setAppliedPresets((prev) => new Set(prev).add(preset.key));
+    } catch (cause) {
+      Alert.alert('Error', errorMessage(cause));
+    } finally {
+      setSavingPreset(null);
+    }
+  }
 
   async function handleChangeCategory(app: ChildApp, newCategory: AppCategory) {
     if (!childId) return;
@@ -242,6 +284,52 @@ export default function AppsControlScreen() {
       <Text style={styles.description}>
         Clasifica las apps de tu hijo como con límite, bloqueadas o libres.
       </Text>
+
+      {/* Reglas sugeridas */}
+      {pendingSuggestions.length > 0 && (
+        <Card style={styles.sugCard}>
+          <View style={styles.sugHeader}>
+            <MaterialIcons name="lightbulb-outline" size={18} color="#D97706" />
+            <Text style={styles.sugTitle}>Reglas sugeridas</Text>
+          </View>
+          <Text style={styles.sugSubtitle}>
+            Basadas en la categoría de las apps instaladas. Toca ✓ para aplicar.
+          </Text>
+          {pendingSuggestions.map((group) => (
+            <View key={group.preset.key} style={styles.sugRow}>
+              <View
+                style={[styles.sugIcon, { backgroundColor: group.preset.color + '18' }]}
+              >
+                <MaterialIcons name={group.preset.icon as any} size={18} color={group.preset.color} />
+              </View>
+              <View style={styles.sugInfo}>
+                <Text style={styles.sugName}>{group.preset.label}</Text>
+                <Text style={styles.sugMeta}>
+                  {group.apps.length} app{group.apps.length > 1 ? 's' : ''} · {presetActionLabel(group.preset)}
+                </Text>
+              </View>
+              {savingPreset === group.preset.key ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Pressable
+                  style={({ pressed }) => [styles.sugApplyBtn, pressed && styles.actionBtnPressed]}
+                  onPress={() => applyPreset(group.preset, group.apps)}
+                >
+                  <MaterialIcons name="check-circle" size={22} color={colors.primary} />
+                </Pressable>
+              )}
+              <Pressable
+                style={({ pressed }) => [styles.sugDismissBtn, pressed && styles.actionBtnPressed]}
+                onPress={() =>
+                  setDismissedPresets((prev) => new Set(prev).add(group.preset.key))
+                }
+              >
+                <MaterialIcons name="close" size={16} color={colors.textMuted} />
+              </Pressable>
+            </View>
+          ))}
+        </Card>
+      )}
 
       {/* Search bar */}
       <View style={styles.searchBar}>
@@ -501,6 +589,19 @@ const makeStyles = (colors: ThemeColors) =>
   childChip: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, alignSelf: 'flex-start', backgroundColor: colors.primaryLight, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full },
   childChipText: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.primary },
   description: { fontSize: typography.fontSizes.body, color: colors.textMuted, lineHeight: 22 },
+
+  // Sugerencias
+  sugCard: { padding: spacing.md, gap: spacing.xs },
+  sugHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
+  sugTitle: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.text },
+  sugSubtitle: { fontSize: typography.fontSizes.caption, color: colors.textMuted, marginBottom: spacing.xs },
+  sugRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.xs },
+  sugIcon: { width: 34, height: 34, borderRadius: radius.sm, alignItems: 'center', justifyContent: 'center' },
+  sugInfo: { flex: 1, gap: 1 },
+  sugName: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.medium, color: colors.text },
+  sugMeta: { fontSize: typography.fontSizes.caption, color: colors.textMuted },
+  sugApplyBtn: { padding: spacing.xs },
+  sugDismissBtn: { padding: spacing.xs },
 
   // Search
   searchBar: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, backgroundColor: colors.background, borderRadius: radius.md, paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderWidth: 1, borderColor: colors.border },
