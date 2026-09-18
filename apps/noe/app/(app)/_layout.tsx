@@ -207,6 +207,7 @@ export default function AppLayout() {
       <Tabs.Screen name="settings" options={{ href: null }} />
       <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="children/[childId]" options={{ href: null }} />
+      <Tabs.Screen name="children/[childId]/devices" options={{ href: null }} />
       {/* Control sub-screens */}
       <Tabs.Screen name="rules/horarios" options={{ href: null }} />
       <Tabs.Screen name="rules/modo-estudio" options={{ href: null }} />

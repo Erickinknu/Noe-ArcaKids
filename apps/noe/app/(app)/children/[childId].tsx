@@ -14,6 +14,7 @@ import { familyService } from '@/features/family/services/family-service';
 import { deviceControlService } from '@/features/device-control/services/device-control-service';
 import { appCategoryService } from '@/features/app-categories/services/app-category-service';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
+import { ROUTES } from '@/constants';
 import { Card, Input, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
 import type { InstalledApp } from '@noe-arcakids/types';
@@ -174,10 +175,6 @@ export default function ChildDetailScreen() {
   }
 
   type ControlAction =
-    | 'lock'
-    | 'unlock'
-    | 'location'
-    | 'status'
     | 'kioskOn'
     | 'kioskOff'
     | 'captureOn'
@@ -208,18 +205,6 @@ export default function ChildDetailScreen() {
     setCommandFeedback(null);
     try {
       switch (kind) {
-        case 'lock':
-          await deviceControlService.lockDevice(uuid);
-          break;
-        case 'unlock':
-          await deviceControlService.unlockDevice(uuid);
-          break;
-        case 'location':
-          await deviceControlService.requestLocation(uuid);
-          break;
-        case 'status':
-          await reloadDevice();
-          break;
         case 'kioskOn':
           await deviceControlService.lockTask(uuid, true);
           setToggles((t) => ({ ...t, kiosk: true }));
@@ -299,7 +284,7 @@ export default function ChildDetailScreen() {
           }
           void reloadDevice();
         })();
-      }, kind === 'apps' || kind === 'status' ? 2500 : 1500);
+      }, kind === 'apps' ? 2500 : 1500);
     } catch (cause) {
       setCommandFeedback(`${tr('noe.deviceControl.commandFailed')}: ${errorMessage(cause)}`);
     } finally {
@@ -389,10 +374,10 @@ export default function ChildDetailScreen() {
         </Button>
       </Card>
 
-      {/* ── FASE 10: Remote control ── */}
+      {/* ── Dispositivos: resumen + gestión multi-dispositivo ── */}
       <Card style={styles.card}>
-        <SectionHeader title={tr('noe.deviceControl.title')} />
-        <Text style={styles.subtitle}>{tr('noe.deviceControl.subtitle')}</Text>
+        <SectionHeader title={tr('noe.deviceControl.devicesTitle')} />
+        <Text style={styles.subtitle}>{tr('noe.deviceControl.devicesSubtitle')}</Text>
 
         {deviceLoading ? (
           <LoadingState text={tr('common.loading')} />
@@ -400,7 +385,7 @@ export default function ChildDetailScreen() {
           <Text style={styles.muted}>{tr('noe.deviceControl.noDevice')}</Text>
         ) : (
           <View style={styles.statusBox}>
-            <Text style={styles.statusTitle}>{tr('noe.deviceControl.statusTitle')}</Text>
+            <Text style={styles.statusTitle}>{tr('noe.deviceControl.primaryDevice')}</Text>
             <Text style={styles.muted}>
               {deviceStatus.lastSeen
                 ? tr('noe.deviceControl.lastSeen', { time: new Date(deviceStatus.lastSeen).toLocaleString() })
@@ -408,11 +393,6 @@ export default function ChildDetailScreen() {
             </Text>
             {deviceStatus.battery !== null ? (
               <Text style={styles.muted}>{tr('noe.deviceControl.battery', { value: deviceStatus.battery })}</Text>
-            ) : null}
-            {deviceStatus.latitude !== null && deviceStatus.longitude !== null ? (
-              <Text style={styles.muted}>
-                {tr('noe.deviceControl.location', { lat: deviceStatus.latitude.toFixed(4), lon: deviceStatus.longitude.toFixed(4) })}
-              </Text>
             ) : null}
             <Text style={[styles.badge, deviceStatus.isLocked ? styles.badgeLocked : styles.badgeUnlocked]}>
               {deviceStatus.isLocked ? tr('noe.deviceControl.isLocked') : tr('noe.deviceControl.isUnlocked')}
@@ -422,38 +402,17 @@ export default function ChildDetailScreen() {
 
         <View style={styles.controlGrid}>
           <Button
-            onPress={() => runCommand('lock')}
-            loading={commandLoading === 'lock'}
-            disabled={!deviceStatus?.deviceUuid}
+            onPress={() => router.push({ pathname: '/children/[childId]/devices', params: { childId } })}
           >
-            {tr('noe.deviceControl.lock')}
+            {tr('noe.deviceControl.manageDevices')}
           </Button>
           <Button
             variant="secondary"
-            onPress={() => runCommand('unlock')}
-            loading={commandLoading === 'unlock'}
-            disabled={!deviceStatus?.deviceUuid}
+            onPress={() => router.push({ pathname: ROUTES.linking, params: { childId } })}
           >
-            {tr('noe.deviceControl.unlock')}
-          </Button>
-          <Button
-            variant="secondary"
-            onPress={() => runCommand('location')}
-            loading={commandLoading === 'location'}
-            disabled={!deviceStatus?.deviceUuid}
-          >
-            {tr('noe.deviceControl.requestLocation')}
-          </Button>
-          <Button
-            variant="ghost"
-            onPress={() => runCommand('status')}
-            loading={commandLoading === 'status'}
-          >
-            {tr('noe.deviceControl.viewStatus')}
+            {tr('noe.deviceControl.linkAnother')}
           </Button>
         </View>
-
-        {commandFeedback ? <Text style={styles.feedback}>{commandFeedback}</Text> : null}
       </Card>
 
       {/* ── FASE 11: control total desde la raíz ── */}
@@ -566,6 +525,8 @@ export default function ChildDetailScreen() {
       <Button variant="danger" onPress={confirmWipe} loading={commandLoading === 'wipe'} disabled={!deviceStatus?.deviceUuid}>
         {tr('noe.deviceControl.wipeButton')}
       </Button>
+
+      {commandFeedback ? <Text style={styles.feedback}>{commandFeedback}</Text> : null}
 
       <Button variant="danger" onPress={handleDelete}>
         {tr('noe.children.deleteChild')}

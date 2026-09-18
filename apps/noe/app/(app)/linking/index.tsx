@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import QRCode from 'react-native-qrcode-svg';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { ROUTES } from '@/constants';
@@ -35,6 +35,7 @@ export default function LinkingScreen() {
   const screenPadding = useScreenPadding();
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+  const { childId: requestedChildId } = useLocalSearchParams<{ childId?: string }>();
   const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
   const [mode, setMode] = useState<LinkingMode>('child');
   const [payload, setPayload] = useState<ProvisioningPayload | null>(null);
@@ -58,6 +59,14 @@ export default function LinkingScreen() {
     setActionError(null);
   }
 
+  // Preselect the child passed via ?childId= (from the child detail / devices
+  // screens) unless the parent has tapped a different child.
+  const activeChild = useMemo<ChildProfile | null>(() => {
+    if (selectedChild) return selectedChild;
+    if (!data || !requestedChildId) return null;
+    return data.children.find((c) => c.id === requestedChildId) ?? null;
+  }, [selectedChild, data, requestedChildId]);
+
   function handleModeChange(next: LinkingMode) {
     setMode(next);
     setPayload(null);
@@ -68,7 +77,7 @@ export default function LinkingScreen() {
   async function handleGenerate() {
     if (!data) return;
     // For family mode we still need a child row to bind the code against (DB constraint).
-    const childForCode = selectedChild ?? data.children[0];
+    const childForCode = activeChild ?? data.children[0];
     if (!childForCode) {
       setActionError(tr('noe.linking.noChildren'));
       return;
@@ -96,7 +105,7 @@ export default function LinkingScreen() {
       : buildCompactQrValue(payload)
     : '';
   const displayChildName =
-    mode === 'family' ? tr('noe.linking.modeFamily') : (selectedChild?.displayName ?? '');
+    mode === 'family' ? tr('noe.linking.modeFamily') : (activeChild?.displayName ?? '');
 
   if (loading) {
     return (
@@ -162,14 +171,14 @@ export default function LinkingScreen() {
               <Pressable
                 key={child.id}
                 onPress={() => handleSelect(child)}
-                style={[styles.childRow, child.id === selectedChild?.id && styles.childSelected]}
+                style={[styles.childRow, child.id === activeChild?.id && styles.childSelected]}
               >
                 <Text style={styles.childName}>{child.displayName}</Text>
               </Pressable>
             ))}
           </View>
         )}
-        {mode === 'child' && !selectedChild ? (
+        {mode === 'child' && !activeChild ? (
           <Text style={styles.hint}>{tr('noe.linking.chooseChild')}</Text>
         ) : null}
       </Card>
@@ -177,10 +186,10 @@ export default function LinkingScreen() {
       <Button
         onPress={handleGenerate}
         loading={generating}
-        disabled={mode === 'child' ? !selectedChild : data.children.length === 0}
+        disabled={mode === 'child' ? !activeChild : data.children.length === 0}
       >
-        {mode === 'child' && selectedChild
-          ? tr('noe.linking.generateCode', { name: selectedChild.displayName })
+        {mode === 'child' && activeChild
+          ? tr('noe.linking.generateCode', { name: activeChild.displayName })
           : tr('noe.linking.generateCode', { name: displayChildName || data.children[0]?.displayName || 'familia' })}
       </Button>
 
@@ -189,8 +198,8 @@ export default function LinkingScreen() {
       {payload && expiresAt ? (
         <Card style={[styles.pairingCard, shadows.sm]}>
           <Text style={styles.pairingLabel}>
-            {mode === 'child' && selectedChild
-              ? tr('noe.linking.codeFor', { name: selectedChild.displayName })
+            {mode === 'child' && activeChild
+              ? tr('noe.linking.codeFor', { name: activeChild.displayName })
               : tr('noe.linking.codeFor', { name: tr('noe.linking.modeFamily') })}
           </Text>
           <Text style={styles.code}>{payload.code}</Text>

@@ -233,6 +233,11 @@ export const es = {
     deviceControl: {
       title: 'Control remoto',
       subtitle: 'Bloquea, localiza y gestiona el dispositivo remotamente. Usa Realtime cuando está en línea.',
+      devicesTitle: 'Dispositivos',
+      devicesSubtitle: 'Consulta y gestiona cada dispositivo vinculado a este hijo.',
+      primaryDevice: 'Dispositivo principal',
+      manageDevices: 'Ver dispositivos',
+      linkAnother: 'Vincular otro',
       lock: 'Bloquear dispositivo',
       unlock: 'Desbloquear',
       requestLocation: 'Solicitar ubicación',

@@ -227,6 +227,11 @@ export const en = {
     deviceControl: {
       title: 'Remote control',
       subtitle: 'Lock, locate, and manage the device remotely. Uses Realtime when the device is online.',
+      devicesTitle: 'Devices',
+      devicesSubtitle: 'View and manage each device linked to this child.',
+      primaryDevice: 'Primary device',
+      manageDevices: 'View devices',
+      linkAnother: 'Link another',
       lock: 'Lock device',
       unlock: 'Unlock device',
       requestLocation: 'Request location',
