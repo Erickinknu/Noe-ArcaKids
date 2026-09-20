@@ -1,5 +1,5 @@
 import { useMemo, useEffect, useState } from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -39,6 +39,9 @@ export default function SettingsScreen() {
   const [isOwner, setIsOwner] = useState<boolean | null>(null);
   const [overlayGranted, setOverlayGranted] = useState<boolean | null>(null);
   const [showVerses, setShowVerses] = useShowVerses();
+  const [webFilterEnabled, setWebFilterEnabled] = useState<boolean | null>(null);
+  const [vpnConsented, setVpnConsented] = useState<boolean | null>(null);
+  const [webFilterApplying, setWebFilterApplying] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -71,6 +74,57 @@ export default function SettingsScreen() {
       clearInterval(timer);
     };
   }, []);
+
+  useEffect(() => {
+    let mounted = true;
+    const check = async () => {
+      try {
+        const [active, consented] = await Promise.all([
+          parentalBridge.isWebFilterActive(),
+          parentalBridge.isWebFilterConsented(),
+        ]);
+        if (mounted) {
+          setWebFilterEnabled(active);
+          setVpnConsented(consented);
+        }
+      } catch {
+        if (mounted) setWebFilterEnabled(false);
+      }
+    };
+    void check();
+    const timer = setInterval(check, 3000);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, []);
+
+  async function handleToggleWebFilter(next: boolean) {
+    if (webFilterApplying) return;
+    setWebFilterApplying(true);
+    try {
+      if (next) {
+        const consented = await parentalBridge.isWebFilterConsented();
+        if (!consented) {
+          await parentalBridge.requestWebFilterConsent();
+          await new Promise((resolve) => setTimeout(resolve, 1500));
+          const granted = parentalBridge.isAvailable()
+            ? await parentalBridge.isWebFilterConsented()
+            : false;
+          if (!granted) return;
+        }
+        await parentalBridge.setWebFilter(true);
+      } else {
+        await parentalBridge.setWebFilter(false);
+      }
+      setWebFilterEnabled(next);
+    } catch {
+      setWebFilterEnabled(false);
+      Alert.alert(tr('arcakids.parental.webFilterTitle'), tr('arcakids.parental.webFilterEnableError'));
+    } finally {
+      setWebFilterApplying(false);
+    }
+  }
 
   function handleSelect(lng: SupportedLanguage) {
     setLanguage(lng);
@@ -225,6 +279,66 @@ export default function SettingsScreen() {
           </View>
         </Card>
       ) : null}
+      <Card>
+        <View style={styles.statusRow}>
+          <View style={styles.statusLabels}>
+            <Text style={styles.statusText}>
+              {tr('arcakids.parental.webFilterTitle')}
+            </Text>
+            <Text style={styles.statusDetail}>
+              {webFilterEnabled === true
+                ? tr('arcakids.parental.webFilterActive')
+                : tr('arcakids.parental.webFilterInactive')}
+            </Text>
+          </View>
+          <Switch
+            value={webFilterEnabled === true}
+            disabled={webFilterApplying || webFilterEnabled === null}
+            onValueChange={handleToggleWebFilter}
+            trackColor={{ true: colors.primary, false: colors.border }}
+          />
+        </View>
+        <Text style={styles.cardDescription}>
+          {tr('arcakids.parental.webFilterDescription')}
+        </Text>
+        <View style={styles.statusRow}>
+          <View style={styles.statusLabels}>
+            <Text style={styles.statusText}>
+              {tr('arcakids.parental.webFilterConsentTitle')}
+            </Text>
+            <Text
+              style={[
+                styles.statusDetail,
+                vpnConsented ? styles.statusOk : styles.statusPending,
+              ]}
+            >
+              {vpnConsented
+                ? tr('arcakids.parental.webFilterConsentGrated')
+                : tr('arcakids.parental.webFilterConsentMissing')}
+            </Text>
+          </View>
+          {vpnConsented === false ? (
+            <Pressable
+              onPress={() => {
+                void parentalBridge.requestWebFilterConsent().then(() => {
+                  setTimeout(async () => {
+                    setVpnConsented(
+                      parentalBridge.isAvailable()
+                        ? await parentalBridge.isWebFilterConsented()
+                        : false
+                    );
+                  }, 1500);
+                });
+              }}
+              style={[styles.actionButton, styles.actionButtonPrimary]}
+            >
+              <Text style={styles.actionButtonText}>
+                {tr('arcakids.parental.grantWebFilter')}
+              </Text>
+            </Pressable>
+          ) : null}
+        </View>
+      </Card>
       <Card>
         <Text style={styles.cardTitle}>{tr('settings.language')}</Text>
         <Text style={styles.cardDescription}>

@@ -718,6 +718,57 @@ class ParentalUsageModule(private val reactContext: ReactApplicationContext) :
         }
     }
 
+    // ── Internet Seguro (Parte 5): VPN de filtrado de dominios ──────────
+
+    @ReactMethod
+    fun isWebFilterConsented(promise: Promise) {
+        try {
+            promise.resolve(android.net.VpnService.prepare(reactContext) == null)
+        } catch (e: Exception) {
+            promise.resolve(false)
+        }
+    }
+
+    @ReactMethod
+    fun requestWebFilterConsent(promise: Promise) {
+        try {
+            val intent = android.net.VpnService.prepare(reactContext)
+            if (intent == null) {
+                promise.resolve(true)
+                return
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            reactContext.startActivity(intent)
+            promise.resolve(false)
+        } catch (e: Exception) {
+            promise.reject("ERR_VPN_CONSENT", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun configureWebFilter(enabled: Boolean, promise: Promise) {
+        try {
+            if (enabled && android.net.VpnService.prepare(reactContext) != null) {
+                promise.reject("ERR_VPN_CONSENT", "VPN consent required")
+                return
+            }
+            VpnFilterService.setEnabled(reactContext, enabled)
+            if (enabled) VpnFilterService.start(reactContext) else VpnFilterService.stop(reactContext)
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("ERR_WEB_FILTER", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun isWebFilterActive(promise: Promise) {
+        try {
+            promise.resolve(VpnFilterService.isEnabled(reactContext))
+        } catch (e: Exception) {
+            promise.resolve(false)
+        }
+    }
+
     // ── Fase 1: nombres del prompt sobre lógica real (aliases) ────────
 
     private fun usageTodayMinutes(): Map<String, Long> {
@@ -2051,6 +2102,17 @@ function withArcakidsManifest(config) {
       }
     }
 
+    // VpnFilterService (Internet Seguro: VPN de filtrado de dominios + historial).
+    if (application.service) {
+      const hasVpn = application.service.some((s) => s.$ && s.$['android:name'] === '.VpnFilterService');
+      if (!hasVpn) {
+        application.service.push({
+          $: { 'android:name': '.VpnFilterService', 'android:exported': 'false', 'android:permission': 'android.permission.BIND_VPN_SERVICE' },
+          'intent-filter': [{ action: [{ $: { 'android:name': 'android.net.VpnService' } }] }],
+        });
+      }
+    }
+
     return mod;
   });
 }
@@ -2105,6 +2167,12 @@ function withArcakidsFiles(config) {
         'AccessibilityEnforcementService.kt': accessibilityEnforcementServiceContent(pkg),
         'BlockAlarm.kt': blockAlarmContent(pkg),
       };
+      // VpnFilterService is large; its fallback is the live source in the
+      // monorepo working tree (single source of truth, no template to drift).
+      const vpnFilterLivePath = path.join(__dirname, '..', 'apps', 'arcakids', 'android', 'app/src/main/java/com/arcakids/child', 'VpnFilterService.kt');
+      let vpnFilterFallback = '';
+      try { vpnFilterFallback = fs.readFileSync(vpnFilterLivePath, 'utf8'); } catch (_) {}
+      if (vpnFilterFallback.trim().length > 0) files['VpnFilterService.kt'] = vpnFilterFallback;
       for (const [file, fallback] of Object.entries(files)) {
         const live = path.join(javaBase, file);
         let content = fallback;

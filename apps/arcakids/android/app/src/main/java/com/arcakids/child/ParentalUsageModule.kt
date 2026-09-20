@@ -13,6 +13,7 @@ import com.facebook.react.bridge.ReactContextBaseJavaModule
 import com.facebook.react.bridge.ReactMethod
 import com.facebook.react.bridge.WritableArray
 import com.facebook.react.bridge.WritableMap
+import android.net.VpnService
 import org.json.JSONArray
 import org.json.JSONObject
 import java.util.Calendar
@@ -272,6 +273,58 @@ class ParentalUsageModule(private val reactContext: ReactApplicationContext) :
             promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("ERR_BLOCK_ALARM", e.message, e)
+        }
+    }
+
+    // ── Internet Seguro (Parte 5): VPN de filtrado de dominios ──────────
+
+    @ReactMethod
+    fun isWebFilterConsented(promise: Promise) {
+        try {
+            promise.resolve(VpnService.prepare(reactContext) == null)
+        } catch (e: Exception) {
+            promise.resolve(false)
+        }
+    }
+
+    @ReactMethod
+    fun requestWebFilterConsent(promise: Promise) {
+        try {
+            val intent = VpnService.prepare(reactContext)
+            if (intent == null) {
+                promise.resolve(true)
+                return
+            }
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            reactContext.startActivity(intent)
+            promise.resolve(false)
+        } catch (e: Exception) {
+            promise.reject("ERR_VPN_CONSENT", e.message, e)
+        }
+    }
+
+    /** Enables/disables Internet Seguro (VPN filter service). */
+    @ReactMethod
+    fun configureWebFilter(enabled: Boolean, promise: Promise) {
+        try {
+            if (enabled && VpnService.prepare(reactContext) != null) {
+                promise.reject("ERR_VPN_CONSENT", "VPN consent required")
+                return
+            }
+            VpnFilterService.setEnabled(reactContext, enabled)
+            if (enabled) VpnFilterService.start(reactContext) else VpnFilterService.stop(reactContext)
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("ERR_WEB_FILTER", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun isWebFilterActive(promise: Promise) {
+        try {
+            promise.resolve(VpnFilterService.isEnabled(reactContext))
+        } catch (e: Exception) {
+            promise.resolve(false)
         }
     }
 

@@ -549,6 +549,16 @@ export const en = {
       todayUsage: "Today's usage",
       minutesValue: '{{minutes}} min',
       minutesOfLimit: '{{minutes}} of {{limit}} min',
+      webFilterTitle: 'Safe Internet',
+      webFilterDescription:
+        'Filters websites using the rules your parents set up in NOE and logs the domains visited.',
+      webFilterConsentTitle: 'VPN connection',
+      webFilterConsentGrated: 'Granted',
+      webFilterConsentMissing: 'VPN consent needed',
+      grantWebFilter: 'Grant VPN',
+      webFilterActive: 'Active',
+      webFilterInactive: 'Disabled',
+      webFilterEnableError: 'Could not enable Safe Internet',
       blockedDailyTitle: 'Time is up!',
       blockedDailyText:
         "You've used all of today's screen time. Take a break and see you tomorrow!",

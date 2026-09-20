@@ -559,6 +559,16 @@ export const es = {
       todayUsage: 'Uso de hoy',
       minutesValue: '{{minutes}} min',
       minutesOfLimit: '{{minutes}} de {{limit}} min',
+      webFilterTitle: 'Internet Seguro',
+      webFilterDescription:
+        'Filtra los sitios web seg\u00fan las reglas que configuran tus pap\u00e1s en NOE y registra los dominios visitados.',
+      webFilterConsentTitle: 'Conexi\u00f3n VPN',
+      webFilterConsentGrated: 'Concedida',
+      webFilterConsentMissing: 'Sin consentimiento VPN',
+      grantWebFilter: 'Conceder VPN',
+      webFilterActive: 'Activo',
+      webFilterInactive: 'Desactivado',
+      webFilterEnableError: 'No se pudo activar Internet Seguro',
       blockedDailyTitle: '\u00a1Tiempo terminado!',
       blockedDailyText:
         'Ya usaste el tiempo de hoy. Descansa un poco y \u00a1nos vemos ma\u00f1ana!',

@@ -26,6 +26,9 @@ interface NativeParentalUsage {
   getLaunchableApps(): Promise<LaunchableApp[]>;
   launchApp(packageName: string): Promise<boolean>;
   updateEnforcementState(stateJson: string): Promise<null>;
+  getTodayUsage(): Promise<Record<string, number>>;
+  getAppUsage(packageName: string): Promise<number>;
+  updateEnforcement(stateJson: string): Promise<null>;
   updateBlockedPackages(packageNamesJson: string, blocked: boolean): Promise<null>;
   updateDeviceState(deviceStateJson: string): Promise<null>;
   startEnforcement(): Promise<null>;
@@ -35,6 +38,10 @@ interface NativeParentalUsage {
     supabaseAnonKey: string,
     deviceUuid: string
   ): Promise<null>;
+  isWebFilterConsented(): Promise<boolean>;
+  requestWebFilterConsent(): Promise<boolean>;
+  configureWebFilter(enabled: boolean): Promise<null>;
+  isWebFilterActive(): Promise<boolean>;
 }
 
 const isAndroid = Platform.OS === 'android';
@@ -94,6 +101,21 @@ export const parentalBridge = {
     await native!.updateEnforcementState(JSON.stringify(state));
   },
 
+  async getTodayUsage(): Promise<Record<string, number>> {
+    if (!native) return {};
+    return native.getTodayUsage();
+  },
+
+  async getAppUsage(packageName: string): Promise<number> {
+    if (!native) return 0;
+    return native.getAppUsage(packageName);
+  },
+
+  async updateEnforcement(state: EnforcementState): Promise<void> {
+    assertNative('updateEnforcement');
+    await native!.updateEnforcement(JSON.stringify(state));
+  },
+
   async updateBlockedPackages(packageNames: string[], blocked: boolean): Promise<void> {
     assertNative('updateBlockedPackages');
     await native!.updateBlockedPackages(JSON.stringify(packageNames), blocked);
@@ -128,5 +150,25 @@ export const parentalBridge = {
       params.supabaseAnonKey,
       params.deviceUuid
     );
+  },
+
+  async isWebFilterConsented(): Promise<boolean> {
+    if (!native) return false;
+    return native.isWebFilterConsented();
+  },
+
+  async requestWebFilterConsent(): Promise<boolean> {
+    if (!native) return false;
+    return native.requestWebFilterConsent();
+  },
+
+  async setWebFilter(enabled: boolean): Promise<void> {
+    assertNative('configureWebFilter');
+    await native!.configureWebFilter(enabled);
+  },
+
+  async isWebFilterActive(): Promise<boolean> {
+    if (!native) return false;
+    return native.isWebFilterActive();
   },
 };
