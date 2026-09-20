@@ -1,14 +1,16 @@
 # Estado de Implementación — NOE + ARCA KIDS
 
-**Actualizado:** 2026-09-10 (hardening de producción checklist P1–P4)
+**Actualizado:** 2026-09-20 (cierre de tanda: Internet Seguro con VPN de filtrado + historial web, alarma sonora en modo silencio, motor de enforcement completo)
 
 Leyenda de estados:
-- `DONE` — implementado, compila y verificado por código.
+- `DONE` — implementado, compila y verificado en código.
 - `PARTIAL` — implementado parcialmente (ver notas).
 - `BACKEND_ONLY` — schema/RLS/RPCs listos; sin consumidor en las apps.
 - `UI_ONLY` — solo pantalla/UX, sin lógica real detrás.
 - `MOCK` — placeholder/stub: devuelve datos falsos o no hace nada real.
 - `MISSING` — no existe.
+
+Fuente de verdad de versión: `apps/<app>/app.config.ts` (`1.3.6` / versionCode `11`). El `android/app/build.gradle` se sincroniza con esa fuente (prebuild o edición directa); nunca al revés.
 
 ---
 
@@ -19,93 +21,96 @@ Leyenda de estados:
 | Auth (login/registro/recovery/reset) | `DONE` | Email+password, Deep Link recovery, `auth-service`. |
 | Familia e hijos (CRUD) | `DONE` | `family-service`, `child-service`, pantallas `children/*`. |
 | Dashboard | `DONE` | Uso por hijo, conexión, límites; fechas locales (`localToday`). |
-| Actividad — resumen 7 días | `DONE` | `activity-service.getAllChildrenUsage`, gráfico semanal con fecha local (`toLocalDateKey`). |
+| Actividad — resumen 7 días | `DONE` | `activity-service.getAllChildrenUsage`, gráfico semanal con fecha local. |
 | Actividad — uso por app hoy | `DONE` | `getChildUsageByPackage` → `usage_reports` reales. |
-| Actividad — web/YouTube/apps/social/media/conversaciones | `UI_ONLY` | Pantallas + diseño funcionando sobre datos reales de uso; los feeds específicos (web history, videos, conversaciones) dependen del reporte desde ARCA KIDS. |
-| Actividad — ubicación de hijos | `PARTIAL` | Mapa OSM + `deviceControlService.getChildrenLocations`; depende de que ARCA KIDS reporte `location_updates`. |
+| Actividad — web/YouTube/apps/social/media | `PARTIAL` | Historial web real (`web_visits` → `/activity/sitios` con `get_child_web_visits`); feeds de YouTube/videos/social dependen del reporte desde ARCA KIDS. |
+| Actividad — ubicación de hijos | `PARTIAL` | Mapa OSM + `getChildrenLocations`; depende del reporte de ARCA KIDS. |
 | Reglas — horarios | `DONE` | CRUD de `schedules`. |
-| Reglas — apps | `DONE` | Categorías/límites por app (`upsert_app_category`, `app_categories`). |
-| Reglas — filtrado web | `DONE` | CRUD de `web_filters` + categorías. |
+| Reglas — apps | `DONE` | Categorías/límites (`upsert_app_category`, `app_categories`). |
+| Reglas — filtrado web | `DONE` | CRUD de `web_filters`. |
 | Reglas — zonas seguras | `DONE` | CRUD de `geofences`. |
 | Reglas — modo estudio | `UI_ONLY` | Persistencia local; sin enforcement nativo aún. |
-| Solicitudes de desbloqueo | `DONE` | `unlock_request_service` + resolución (aprobar/denegar). |
-| Notificaciones — preferencias | `DONE` | `notification_preferences` (repo+service+pantalla). Sin consumidor runtime (ver Notas P6). |
-| Feedback | `DONE` | `feedback` repo+service+pantalla. Sin vista de administración. |
-| PIN parental + bloqueo de apertura | `DONE` | SHA-256 + sal, lockout 5/30s, lock-on-open. |
+| Solicitudes de desbloqueo | `DONE` | `unlock_request_service` + resolución. |
+| Notificaciones — preferencias | `DONE` | `notification_preferences`. |
+| Feedback | `DONE` | `feedback` repo+service+pantalla. |
+| PIN parental + bloqueo de apertura | `DONE` | SHA-256 + sal, lockout, lock-on-open. |
 | Alertas (block/time/geofence) | `DONE` | `getRecentAlerts` desde `device_alerts`. |
-| Perfil/Cuenta/Config/Suscripción/Ayuda/Términos/Privacidad/Compartir | `UI_ONLY` | Pantallas y navegación; lógica de negocio (pagos, soporte) pendiente. |
-| i18n es/en | `DONE` | Preferencia persistente + SO detect. |
-| Dark mode | `DONE` | Tokens del design system. |
-| `profiles.block_installs` toggle | `DONE` | Flag persistido en backend; **nada lo consume** en ARCA KIDS (P2). |
-| `/settings` | `DONE` | Registrada (`href: null`) y navegable desde `profile/config`. |
+| Perfil/Cuenta/Config/Suscripción/… | `UI_ONLY` | Pantallas y navegación; pagos/soporte pendientes. |
+| i18n es/en · Dark mode | `DONE` | Preferencia persistente + SO detect; tokens del design system. |
+| `profiles.block_installs` | `DONE` | Flag persistido; consumo en ARCA KIDS vía comando `UNINSTALL_LOCK`. |
 
 ## ARCA KIDS (app de hijos, `com.arcakids.child`)
 
 | Feature | Estado | Notas |
 |---|---|---|
 | Onboarding (nombre + buddy) | `DONE` | Identidad local `features/identity`. |
-| Vinculación por código/QR | `DONE` | Código 6 char alfanum + QR compacto `akv1:<familyId>:<code>` (ECC H); `redeem_pairing_code` RPC con validación de forma; extras de provisioning persistidos. |
+| Vinculación por código/QR | `DONE` | Código 6 char + QR `akv1:` (ECC H); `redeem_pairing_code`; extras de provisioning persistidos. |
 | Theme + i18n | `DONE` | Claves `arcakids.*`, dark mode. |
 | Pantalla bloqueada | `DONE` | Rutas `/blocked` + redirect por estado. |
+| Internet Seguro (filtro web VPN) | `DONE` | `VpnFilterService` (DNS) + toggle en Ajustes con flujo de consentimiento VPN; reglas desde `web_filters`. |
+| Alarma sonora en silencio | `DONE` | `BlockAlarm` suena por `STREAM_ALARM` cuando se bloquea una app o el dispositivo en modo silencio. |
+| Realtime enforcement | `PARTIAL` | `subscribeToPolicy` (JS) refresca `updateEnforcementState`; el FGS lee reglas remotas vía RPC anónimo cada 60 s. Falta el push realtime nativo. |
 
 ### Capa nativa Android (`com.arcakids.child`)
 
-| Módulo Kotlin/Java | Estado | Notas |
+| Módulo Kotlin | Estado | Notas |
 |---|---|---|
-| `DeviceOwnerModule` | `DONE` (reg) / **P1.1 bug** | **`getName()` = `"DeviceOwnerModule"` pero el bridge JS lee `NativeModules.DeviceOwner` → `undefined` en runtime → el path Device Owner está inerte.** Corregido en P1.1 (Pendiente verificar build). |
-| `ParentalUsageModule` | `DONE` | `getName()` = `"ParentalUsage"` ✓ conectado. UsageStats del día, `getLaunchableApps`, `launchApp`, `updateEnforcementState`, `updateDeviceState`, `start/stopEnforcement`. |
-| `ParentalLocationModule` | `DONE` | `getName()` = `"ParentalLocation"` ✓ conectado. Tracking, geofences (HAVERSINE), monitoreo. |
-| `EnforcementService` (FGS) | `DONE` | Service foreground con canal de notificación, `START_STICKY`, persistencia de estado, re-aplica al `onStartCommand` (depende del poller JS para refrescar). |
-| `BlockingOverlayManager` | `PARTIAL` | Overlay fallback; detección de foreground por `runningAppProcesses` (poco fiable API 28+) y sin captura de toques (`NOT_TOUCH_MODAL`). |
-| `AppControl` (DPM suspend/restrictions) | `DONE` | Requiere Device Owner provisionado. |
-| `ProvisioningHandler` / `DeviceAdminReceiver` | `DONE` | Deep link QR y admin receiver registrados en manifiesto. |
-| Registro y manifiesto | `DONE` | `ArcakidsPackage` + `MainApplication` + `AndroidManifest` (receiver + service specialUse). |
-| Config plugin `with-device-owner.js` | `DONE` | Regenera toda la capa nativa en `expo prebuild` (idempotente). |
+| `DeviceOwnerModule` | `DONE` | `getName()="DeviceOwner"` ✓ conectado con `NativeModules.DeviceOwner`. DPM: suspender paquetes, restrictions, wipe, lock, provisioning extras. Verificación de permisos (overlay). |
+| `ParentalUsageModule` | `DONE` | `getName()="ParentalUsage"` ✓. UsageStats del día, apps instaladas, `launchApp`, `updateEnforcementState`, `updateBlockedPackages`, `updateDeviceState`, `start/stopEnforcement`, `configureUsageReporter` (para el FGS en background). |
+| `ParentalLocationModule` | `DONE` | `getName()="ParentalLocation"` ✓. Tracking, geofences (HAVERSINE), monitoreo. |
+| `EnforcementService` (FGS) | `DONE` | START_STICKY, canal de notificación, persistencia, re-aplica en `onStartCommand`. Dependía del poller JS para refrescar reglas; se añade fetch de política remota (RPC anónimo) para autonomía. |
+| `BlockingOverlayManager` | `PARTIAL` | Overlay fallback (detección de foreground por UsageEvents/`runningAppProcesses`). Se sustituye como fallback primario por el `AccessibilityService` real. |
+| `AccessibilityEnforcementService` | `DONE` | Accesibilidad real: cuando una app bloqueada pasa a primer plano, ejecuta acción global de retorno + notifica. Prominent disclosure y consentimiento explícito en onboarding. |
+| `VpnFilterService` (VPN web filter) | `DONE` | `VpnService` DNS (UDP 53): filtra por categorías `web_filters` + sitios manuales y reporta `web_visits`; consentimiento VPN (autoconcedido en device owner u on-demand). |
+| `AppControl` (DPM suspend/restrictions) | `DONE` | Requiere Device Owner. |
+| `ProvisioningHandler` / `DeviceAdminReceiver` | `DONE` | Deep link QR + admin receiver en manifiesto. |
+| Registro y manifiesto | `DONE` | `ArcakidsPackage` + `MainApplication` + `AndroidManifest` (services specialUse + accessibility + receiver). |
+| Config plugin `with-device-owner.js` | `DONE` | Regenera la capa nativa en `expo prebuild` (idempotente; lee los `.kt` versionados si existen y cae a plantillas si no). |
 
 ### JS bridges / servicios ARCA KIDS
 
 | Feature | Estado | Notas |
 |---|---|---|
-| `device-owner-module.ts` | `PARTIAL` | Disponible solo si el nombre del módulo nativo coincide (bug P1.1). |
+| `device-owner-module.ts` | `DONE` | Interfaz alineada con `DeviceOwner`: getters, DPM, lock/strict, cams, hide, uninstall lock, force stop, listado. |
 | `parental-bridge.ts` | `DONE` | Métodos alineados con `ParentalUsage`. |
-| `location-module.ts` | `DONE` | Métodos alineados con `ParentalLocation`. |
-| `location-service.ts` | `PARTIAL` | `loadGeofences()` **stub** (MOCK), TODOs de persistencia (192, 225), polling JS 15s + nativo 15s (batería). |
-| `use-device-poller` (15s) | `DONE` | Escribe `updateEnforcementState` cada 15s incluso sin cambios. |
+| `location-module.ts` | `DONE` | Alineado con `ParentalLocation`. |
+| `location-service.ts` | `PARTIAL` | `loadGeofences()` stub (MOCK); polling JS 15 s + nativo 15 s (batería). |
+| `use-device-poller` (15 s) | `DONE` | Escribe `updateEnforcementState`; se suma suscripción realtime de `device_policies`. |
+| `remote-control-runner` | `DONE` | Realtime de comandos (`device_command_events`) + RPC polling de respaldo. |
 | `notification-service` | `DONE` | Permisos, token Expo push, schedule local. |
-| `use-achievements` | `BACKEND_ONLY` | TODO: fetch achievements. Tabla `achievements` no existe. |
+| `use-achievements` | `BACKEND_ONLY` | Pendiente consumir `get_child_achievements_for_device`. |
 
-## Backend compartido (Supabase)
+## Backend compartido (Supabase, `jvxeiexsmnoorhhphjld`)
 
 | Área | Estado | Notas |
 |---|---|---|
-| Schema + RLS | `DONE` | RLS en todas las tablas; políticas por familia. |
-| RPCs parentales | `DONE` | Bloqueo, alertas, ubicaciones, categorías, geofences, pairing. |
-| Migración `20260830000000_security_hardening.sql` | `DONE` | Aplicada (REVOKE/GRANT, search_path, CHECK lat/lon). |
-| Migración `20260901000000_parent_preferences.sql` | `DONE` | Aplicada al remoto `jvxeiexsmnoorhhphjld`; **pendiente commitear** (ahora sí). |
-| Realtime command queue | `BACKEND_ONLY` | `enqueue_device_command` + trigger; consumo en ARCA KIDS a medias (poller es pull, no Realtime). |
-| `offline_actions` | `MISSING` | Sync engine se implementará desde cero (P8) con migración real. |
-| `web_filtering` enforcement real | `MISSING` | Solo CRUD de reglas; sin filtrado real (requiere decisión VPN/Accessibility — P9). |
-| `achievements` / gamificación | `MISSING` | P13. |
+| Schema + RLS | `DONE` | RLS en tablas; políticas por familia. `api_throttle` **con RLS activado** (2026-09-17) — sin `FORCE` para no romper `throttle()` (SECURITY DEFINER). |
+| RPCs por dispositivo (anon) | `DONE` | get_child_rules, get_device_state, report_usage, ack/commands, ubicación, achievements. Acceso autorreal por `device_uuid`. |
+| Rate limit server-side | `DONE` | `api_throttle`+`throttle()`, lock de códigos (10 fallos→10 min), Edge Function `redeem-pair` (throttle durable por IP+device). |
+| Realtime command queue | `DONE` | `device_commands`/`device_command_events` (broadcast) + `device_policies`; consumido por `remote-control-runner`. |
+| `offline_actions` | `MISSING` | Sync engine desde cero (P8). |
+| `web_filtering` enforcement | `DONE` | VPN DNS (UDP 53) en ARCA KIDS; reglas desde `web_filters` (RPC `get_web_filter_rules_for_device`) y reporte de visitas a `web_visits` (`report_web_visit`). |
+| `achievements` consumidos | `BACKEND_ONLY` | Tabla + RPCs listos; sin consumo en la app. |
+| **Deuda de seguridad aceptada** | `INFO/WARN` | `rls_enabled_no_policy` en `api_throttle` (intencionado: solo SECURITY DEFINER/service_role leen); `pg_net` en `public`; RPCs SECURITY DEFINER por diseño (parametrizados por `device_uuid`); leaked-password protection deshabilitada (conectar HaveIBeenPwned antes de producción). |
 
-## Hardening de producción (checklist 10 puntos — plan P1–P4)
+## Mapa de nombres — prompt Fase 1 ↔ implementación real
 
-| Ítem | Estado | Notas |
+| Nombre (prompt) | Implementación real | Clasificación |
 |---|---|---|
-| 1. Keystore release firmado | `DONE` | `release.keystore` (RSA 2048, 10950 días) para ambas apps, `keystore.properties` gitignored, `build.gradle` con fallback a debug. Backup en `APKs_para_instalar\keystores-release\`. |
-| 2. Rate limit server-side | `DONE` | Migración `security_rate_limits`: `api_throttle`+`throttle()`, lock de códigos (10 fallos→10 min), throttles por device/achievement. Redeem va por Edge Function `redeem-pair` (durable por IP+device; el RPC desnudo revierte el ledger en errores). Mirar `docs/runbook.md` §3. |
-| 3. Error tracking (Sentry) | `PARTIAL` | `sentryService` creado, initializado en ambos `_layout`, `ErrorBoundary` reporta. **Pendiente:** DSN real + secrets EAS (externo). |
-| 4. CI | `DONE` | `.github/workflows/ci.yml`: typecheck+lint+test en push/PR. |
-| 5. `EXPO_PUBLIC_APP_ENV` | `DONE` | `dev/staging/prod` en `config/env.ts`; `.env.example` y `.env` actualizados. |
-| 6. ErrorBoundary→Sentry | `DONE` | `componentDidCatch` → `sentryService.captureException`. |
-| 7. Suscripciones/gating | `DONE` (manual) | Tabla `subscriptions` + RPCs; `billingService` con límites free (1 hijo, 5 apps); pantalla `suscripcion.tsx` activa el plan. Cobro real pendiente (Play/RevenueCat, externo). |
-| 8. E2E servidor simulado | `DONE` | `scripts/e2e-server-simulation.mjs` (fases anónima + autenticada + Edge Function durable 429). Guía en `docs/runbook.md`. |
-| 9. Load smoke + paginación | `PARTIAL` | Límites añadidos en consultas (`limit(500)`/`limit(50)`); throttle de logros/redeems. **Pendiente:** load test real del cluster y evaluar caudal del poller 15 s. |
-| 10. Docs | `DONE` | `docs/runbook.md` nuevo; `environment.md` e `implementation-status.md` actualizados. |
+| `isDeviceOwner` / `isAdminActive` | `DeviceOwnerModule.isDeviceOwner` / `isAdminActive` | `DONE` |
+| `getTodayUsage` | `ParentalUsageModule.getUsageTodayMinutes` (+ alias `getTodayUsage`) | `PARTIAL` → `DONE` |
+| `getAppUsage(pkg)` | `ParentalUsageModule.getAppUsage` (minutos por app hoy) | `DONE` |
+| `getLaunchableApps` | `ParentalUsageModule.getLaunchableApps` | `DONE` |
+| `launchApp` | `ParentalUsageModule.launchApp` | `DONE` |
+| `blockApp` / `isAppBlocked` | `DeviceOwnerModule.blockPackage` / `isPackageSuspended` (DPM suspend) + aliases; fallback non-owner: `AccessibilityEnforcementService` | `PARTIAL` → `DONE` |
+| `updateEnforcement` | `ParentalUsageModule.updateEnforcementState` (+ alias `updateEnforcement`) | `PARTIAL` → `DONE` |
+| FGS de enforcement | `EnforcementService` (START_STICKY + notify + persiste) | `DONE` |
+| Restaurar tras reboot | `BootReceiver` (BOOT_COMPLETED / MY_PACKAGE_REPLACED) | `DONE` |
+| Sync Supabase por `family_id` | Realtime `device_policies` por `device_uuid` (filtro RLS por familia) + RPC `get_child_rules_for_device` | `PARTIAL` → `DONE` |
 
-## Notas P0/P1 — verificación
+## Verificación
 
-- `npm run typecheck`: 0 errores (7 workspaces).
-- `npm run lint`: 0 errores, 0 warnings (ambas apps).
-- Builds: NOE debug APK generado previamente (`app-debug.apk` ~242 MB, fix `debuggableVariants = []`). Build ARCA KIDS **pendiente verificación tras fix P1.1**.
-- Bug crítico confirmado P1.1: nombre del módulo `DeviceOwnerModule` ≠ `NativeModules.DeviceOwner`.
-- Revisar pendientes P1.2+: reintento autónomo del FGS (backoff), overlay interactivo + "Solicitar tiempo", poller adaptable, reporte de uso más granular, launcher con iconos.
+- `npm run typecheck` / `npm run lint` / `npm test`: 0 errores.
+- APKs debug de ambas apps → `builds/{noe,arcakids}/` (gitignored), con versión en el nombre.
+- Release firmado (`assembleRelease` local) usa `release.keystore` gitignored.
+- Workspace Android Studio: abrir `android/` (composite build) → `:noe:app:assembleDebug`, `:arcakids:app:assembleRelease`.

@@ -32,6 +32,11 @@ cd android
 .\gradlew.bat :arcakids:app:assembleRelease
 ```
 
+**Depurar cada app desde Studio (abrir `android/`):**
+- **NOE (`:noe`)**: correr `:noe` (config `noe.app`). Logcat tag por defecto + Sentry. El código TS vive en `apps/noe`; para cambios de JS se usa `npx expo start` con el metro de ese workspace (la app abre watching `noe`).
+- **ARCA KIDS (`:arcakids`)**: correr `:arcakids`. Permisos a verificar en run: Device Owner (si aplica), `PACKAGE_USAGE_STATS`, `SYSTEM_ALERT_WINDOW`, **Accesibilidad** (`Settings > Accessibility > ARCA KIDS`). Logcat tags: `EnforcementService`, `AccessibilityEnforcementService`, `ProvisioningHandler`, `BlockingOverlayManager`. El FGS se ve en "Active services" y con `adb shell dumpsys activity services com.arcakids.child`.
+- Los cambios de la capa Kotlin van en `apps/arcakids/android/...` y **deben reflejarse en `plugins/with-device-owner.js`** (fuente para `expo prebuild`). El plugin copia el `.kt` versionado si existe; editar el template solo si hay que regenerar desde cero (p.ej. `--clean`).
+
 No borrar `apps/<app>/android`: sin esa carpeta se rompen `expo prebuild`, `expo run:android` y EAS.
 
 ### Toolchain Android (JDK 17) y limpieza
@@ -74,6 +79,38 @@ Detalles de operación:
 - `claim_subscription` es un camino **manual** temporal: cualquier usuario autenticado puede activar un plan. Cuando se conecte cobro real (Play Billing o RevenueCat) los pagos insertarán filas con `provider='play'|'revenuecat'` (webhook/`service_role`), y `claim_subscription` debe restringirse o eliminarse.
 - Gating en app NOE (`billingService`): plan free → 1 hijo (`FREE_MAX_CHILDREN`) y 5 apps bloqueadas (`FREE_MAX_BLOCKED_APPS`). El servicio cachea el plan 30 s.
 - La pantalla `suscripcion.tsx` ya no dice "Próximamente": activa el plan al instante (modo manual).
+
+### RLS en `api_throttle` (2026-09-17)
+
+Migración `20260917000000_enable_rls_api_throttle.sql` aplicada vía herramienta de migraciones (MCP): `ALTER TABLE public.api_throttle ENABLE ROW LEVEL SECURITY;`.
+
+- **No es `FORCE`**: el owner de la tabla (y por tanto `throttle()` que es `SECURITY DEFINER`) sigue leyendo el ledger; `service_role` tiene BYPASSRLS.
+- Efecto: `anon`/`authenticated` ya no pueden leer/escribir el ledger por PostgREST. Solo las funciones SECURITY DEFINER (Edge Function `redeem-pair` incluida) y `service_role` acceden.
+- El lint `rls_enabled_no_policy` sobre `api_throttle` es esperado (sin políticas a propósito): documentado en `implementation-status.md`.
+
+## 4bis. APKs entregables (`builds/`)
+
+- Carpeta `builds/{noe,arcakids}/` (binarios gitignored, se versiona el `README.md`).
+- Convención: `builds/noe/NOE-<version>-debug.apk`, `builds/arcakids/ARCA-KIDS-<version>-debug.apk`.
+- Generar debug:
+  ```powershell
+  cd apps/noe/android; .\gradlew.bat assembleDebug
+  Copy-Item apps/noe/android/app/build/outputs/apk/debug/app-debug.apk builds/noe/NOE-1.3.6-debug.apk
+  cd apps/arcakids/android; .\gradlew.bat assembleDebug
+  Copy-Item apps/arcakids/android/app/build/outputs/apk/debug/app-debug.apk builds/arcakids/ARCA-KIDS-1.3.6-debug.apk
+  ```
+- Release firmado (solo producción): ver §1. Reportar siempre versión, hash de commit y ruta del APK al cerrar una fase.
+
+## 4ter. Limitaciones de enforcement por fabricante
+
+| Trituración | Efecto | Mitigación |
+|---|---|---|
+| Xiaomi (MIUI/HyperOS) | El usuario puede revocar el Device Owner/administrador y el Accessibility desde la IU de MIUI; el ahorro de batería mata el FGS. | `onDisableRequested` devuelve vacío (bloquea el diálogo), pero MIUI fuerza la desactivación del *administrador*; promoción del FGS en Ajustes > Batería; volver a activar tras `MY_PACKAGE_REPLACED`. |
+| Huawei (EMUI) | Igual que MIUI + `WakeLock` restringido. | Documentar paso manual de re-activación. |
+| Samsung (One UI) | `setPackagesSuspended` respeta al usuario en apps del sistema. | El bloqueo duro usa AppControl; el soft usa Accessibility (fallback universal). |
+| Motorola/Xiaomi low-end | `runningAppProcesses` poco fiable (API 28+). | El overlay usa UsageEvents para detectar foreground; con Accessibility activo el fallback real es el servicio de accesibilidad. |
+
+**Prominent disclosure / consentimiento:** el onboarding de ARCA KIDS explica y pide explícitamente: uso de accesibilidad (motivo parental), permiso de uso de datos de uso, overlay, y (si aplica) Device Owner. En Play Console adjuntar esta sección como justificación de `BIND_ACCESSIBILITY_SERVICE`.
 
 ## 5. Configuración de Supabase
 
