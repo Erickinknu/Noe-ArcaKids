@@ -51,6 +51,10 @@ build/
 dist/
 APK/
 
+# Deliverable APKs (keep the README, ignore the binaries)
+builds/*
+!builds/README.md
+
 # Root android/ = workspace composite de Android Studio (agrupa apps/*/android).
 # Se versiona a propósito; sus salidas se ignoran arriba. app.json suelto de prebuild sí se ignora.
 app.json
