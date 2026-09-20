@@ -197,4 +197,162 @@ class DeviceOwnerModule(reactContext: ReactApplicationContext) : ReactContextBas
             promise.reject("ERR_PROVISION_CLEAR", e.message, e)
         }
     }
+
+    // ── Command-driven DPM operations (real, not mocks) ──────────────
+
+    private fun requireOwner(): Boolean {
+        return dpm.isDeviceOwnerApp(reactApplicationContext.packageName)
+    }
+
+    @ReactMethod
+    fun getInstalledApps(promise: Promise) {
+        try {
+            val pm = reactApplicationContext.packageManager
+            val list = pm.queryIntentActivities(
+                Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0
+            )
+            val array = Arguments.createArray()
+            for (resolveInfo in list) {
+                val info = resolveInfo.activityInfo ?: continue
+                if (info.packageName == reactApplicationContext.packageName) continue
+                val item = Arguments.createMap()
+                item.putString("packageName", info.packageName)
+                item.putString("label", try { info.loadLabel(pm).toString() } catch (e: Exception) { info.packageName })
+                array.pushMap(item)
+            }
+            promise.resolve(array)
+        } catch (e: Exception) {
+            promise.reject("ERR_APPS", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun isPackageSuspended(packageName: String, promise: Promise) {
+        try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) { promise.resolve(false); return }
+            promise.resolve(dpm.isPackageSuspended(admin, packageName))
+        } catch (e: Exception) {
+            promise.reject("ERR_IS_SUSPENDED", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun blockPackage(packageName: String, blocked: Boolean, promise: Promise) {
+        try {
+            if (!requireOwner()) { promise.reject("ERR_NOT_OWNER", "App is not device owner"); return }
+            if (packageName == reactApplicationContext.packageName) { promise.resolve(false); return }
+            dpm.setPackagesSuspended(admin, arrayOf(packageName), blocked)
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERR_SUSPEND", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun blockApp(packageName: String, blocked: Boolean, promise: Promise) {
+        blockPackage(packageName, blocked, promise)
+    }
+
+    @ReactMethod
+    fun isAppBlocked(packageName: String, promise: Promise) {
+        isPackageSuspended(packageName, promise)
+    }
+
+    @ReactMethod
+    fun setScreenCaptureDisabled(disabled: Boolean, promise: Promise) {
+        try {
+            if (!requireOwner()) { promise.reject("ERR_NOT_OWNER", "App is not device owner"); return }
+            dpm.setScreenCaptureDisabled(admin, disabled)
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERR_SCREEN_CAPTURE", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun setCameraDisabled(disabled: Boolean, promise: Promise) {
+        try {
+            if (!requireOwner()) { promise.reject("ERR_NOT_OWNER", "App is not device owner"); return }
+            dpm.setCameraDisabled(admin, disabled)
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERR_CAMERA", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun setApplicationHidden(packageNamesJson: String, hidden: Boolean, promise: Promise) {
+        try {
+            if (!requireOwner()) { promise.reject("ERR_NOT_OWNER", "App is not device owner"); return }
+            val arr = JSONArray(packageNamesJson)
+            val packages = Array(arr.length()) { arr.getString(it) }
+                .filter { it != reactApplicationContext.packageName }
+            for (pkg in packages) dpm.setApplicationHidden(admin, pkg, hidden)
+            promise.resolve(packages.toTypedArray())
+        } catch (e: Exception) {
+            promise.reject("ERR_HIDE", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun setUninstallBlocked(packageNamesJson: String, blocked: Boolean, promise: Promise) {
+        try {
+            if (!requireOwner()) { promise.reject("ERR_NOT_OWNER", "App is not device owner"); return }
+            val arr = JSONArray(packageNamesJson)
+            val packages = Array(arr.length()) { arr.getString(it) }
+                .filter { it != reactApplicationContext.packageName }
+            for (pkg in packages) dpm.setUninstallBlocked(admin, pkg, blocked)
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERR_UNINSTALL_LOCK", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun forceStopPackages(packageNamesJson: String, promise: Promise) {
+        try {
+            if (!requireOwner()) { promise.reject("ERR_NOT_OWNER", "App is not device owner"); return }
+            val arr = JSONArray(packageNamesJson)
+            val am = reactApplicationContext.getSystemService(android.app.ActivityManager::class.java)
+            for (i in 0 until arr.length()) {
+                val pkg = arr.getString(i)
+                if (pkg == reactApplicationContext.packageName) continue
+                try {
+                    am.killBackgroundProcesses(pkg)
+                } catch (ignored: Exception) {
+                }
+            }
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERR_FORCE_STOP", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun startLockTask(promise: Promise) {
+        try {
+            reactApplicationContext.getSharedPreferences("arcakids_device", Context.MODE_PRIVATE)
+                .edit().putBoolean("lock_task", true).apply()
+            val activity = getCurrentActivity()
+            if (activity != null) activity.startLockTask()
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERR_LOCK_TASK", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun stopLockTask(promise: Promise) {
+        try {
+            reactApplicationContext.getSharedPreferences("arcakids_device", Context.MODE_PRIVATE)
+                .edit().putBoolean("lock_task", false).apply()
+            val activity = getCurrentActivity()
+            if (activity != null) {
+                try { activity.stopLockTask() } catch (ignored: SecurityException) {}
+            }
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERR_LOCK_TASK", e.message, e)
+        }
+    }
 }

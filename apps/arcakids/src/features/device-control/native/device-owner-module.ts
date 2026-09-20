@@ -20,6 +20,8 @@ interface NativeDeviceOwner {
   setUninstallBlocked(packageNamesJson: string, blocked: boolean): Promise<boolean>;
   forceStopPackages(packageNamesJson: string): Promise<boolean>;
   getInstalledApps(): Promise<InstalledApp[]>;
+  blockApp(packageName: string, blocked: boolean): Promise<boolean>;
+  isAppBlocked(packageName: string): Promise<boolean>;
   hasSystemAlertWindowPermission(): Promise<boolean>;
   openSystemAlertWindowSettings(): Promise<null>;
   getProvisioningExtras(): Promise<{
@@ -129,6 +131,16 @@ export const deviceOwnerBridge = {
   async getInstalledApps(): Promise<InstalledApp[]> {
     if (!native) return [];
     return native.getInstalledApps();
+  },
+
+  async blockApp(packageName: string, blocked: boolean): Promise<boolean> {
+    assertNative('blockApp');
+    return native!.blockApp(packageName, blocked);
+  },
+
+  async isAppBlocked(packageName: string): Promise<boolean> {
+    if (!native) return false;
+    return native.isAppBlocked(packageName);
   },
 
   async hasOverlayPermission(): Promise<boolean> {

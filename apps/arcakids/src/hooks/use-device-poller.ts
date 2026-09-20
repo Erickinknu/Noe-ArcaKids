@@ -4,6 +4,7 @@ import { parentalService } from '@/features/parental/services/parental-service';
 import { parentalRepository } from '@/features/parental/repositories/parental-repository';
 import { parentalBridge } from '@/features/parental/native/parental-bridge';
 import { deviceControlService } from '@/features/device-control/services/device-control-service';
+import { subscribeToPolicy } from '@/features/device-control/realtime/command-subscription';
 import { identityService } from '@/features/identity/services/identity-service';
 
 interface DeviceState {
@@ -16,6 +17,41 @@ const POLL_INTERVAL = 15000; // 15 seconds
 
 export function useDevicePoller() {
   const [state, setState] = useState<DeviceState | null>(null);
+
+  const syncRulesEnforcement = useCallback(async (deviceUuid: string) => {
+    // Fetch app categories and build enforcement state with per-app limits,
+    // then write rules (limits/bedtime/blocked apps) to the native enforcer.
+    let appCategories: {
+      packageName: string;
+      category: string;
+      timeLimitMinutes: number | null;
+    }[] = [];
+    try {
+      appCategories = await parentalRepository.getAppCategories(deviceUuid);
+    } catch (e) {
+      console.warn('App categories fetch error:', e);
+    }
+    const limitedApps = parentalService.getLimitedApps(appCategories);
+    const appLimitsObj: Record<string, number> = {};
+    limitedApps.forEach((limit, pkg) => {
+      appLimitsObj[pkg] = limit;
+    });
+
+    try {
+      const rules = await parentalService.getRulesForDevice(deviceUuid);
+      const enforcementState = parentalService.buildEnforcementState(
+        rules,
+        null,
+        appCategories
+      );
+      parentalBridge.updateEnforcementState({
+        ...enforcementState,
+        appLimits: appLimitsObj,
+      });
+    } catch (e) {
+      console.warn('Rules enforcement sync error:', e);
+    }
+  }, []);
 
   const poll = useCallback(async () => {
     try {
@@ -74,42 +110,11 @@ export function useDevicePoller() {
       // pushing rules-based enforcement state here would clobber it.
       if (currentState.isBlocked) return;
 
-      // 4) Fetch app categories and build enforcement state with per-app limits.
-      let appCategories: {
-        packageName: string;
-        category: string;
-        timeLimitMinutes: number | null;
-      }[] = [];
-      try {
-        appCategories = await parentalRepository.getAppCategories(deviceUuid);
-      } catch (e) {
-        console.warn('App categories fetch error:', e);
-      }
-      const limitedApps = parentalService.getLimitedApps(appCategories);
-      const appLimitsObj: Record<string, number> = {};
-      limitedApps.forEach((limit, pkg) => {
-        appLimitsObj[pkg] = limit;
-      });
-
-      // 5) Rules enforcement (limits/bedtime/blocked apps) with category merge.
-      try {
-        const rules = await parentalService.getRulesForDevice(deviceUuid);
-        const enforcementState = parentalService.buildEnforcementState(
-          rules,
-          null,
-          appCategories
-        );
-        parentalBridge.updateEnforcementState({
-          ...enforcementState,
-          appLimits: appLimitsObj,
-        });
-      } catch (e) {
-        console.warn('Rules enforcement sync error:', e);
-      }
+      await syncRulesEnforcement(deviceUuid);
     } catch (e) {
       console.warn('Device poller error:', e);
     }
-  }, []);
+  }, [syncRulesEnforcement]);
 
   useEffect(() => {
     let cancelled = false;
@@ -117,15 +122,37 @@ export function useDevicePoller() {
       if (cancelled) return;
       await poll();
     };
-    runPoll();
+    void runPoll();
     const interval = setInterval(() => {
-      runPoll();
+      void runPoll();
     }, POLL_INTERVAL);
     return () => {
       cancelled = true;
       clearInterval(interval);
     };
   }, [poll]);
+
+  // Realtime policy updates: refresh enforcement the moment the parent saves a
+  // new device_policies row, instead of waiting for the next poll.
+  useEffect(() => {
+    let sub: { unsubscribe: () => void } | undefined;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const device = await identityService.getLocalDevice();
+        if (cancelled) return;
+        sub = subscribeToPolicy(device.deviceUuid, () => {
+          void syncRulesEnforcement(device.deviceUuid);
+        });
+      } catch {
+        // Not provisioned yet: the poller will retry on its own.
+      }
+    })();
+    return () => {
+      cancelled = true;
+      sub?.unsubscribe();
+    };
+  }, [syncRulesEnforcement]);
 
   const dismissAlert = useCallback(async () => {
     try {

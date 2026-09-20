@@ -25,6 +25,19 @@ class MainActivity : ReactActivity() {
     ProvisioningHandler.handleIntent(this, intent)
   }
 
+  override fun onResume() {
+    super.onResume()
+    // Honra startLockTask/stopLockTask solicitados por comando remoto: el módulo
+    //  no puede llamar a la Activity desde background, así que persiste la petición
+    //  y MainActivity la aplica al volver a primer plano.
+    val lockTask = getSharedPreferences("arcakids_device", MODE_PRIVATE).getBoolean("lock_task", false)
+    try {
+      if (lockTask) startLockTask() else stopLockTask()
+    } catch (e: Exception) {
+      // startLockTask() requiere actividad actual; stopLockTask() sin modo activo.
+    }
+  }
+
   /**
    * Returns the name of the main component registered from JavaScript. This is used to schedule
    * rendering of the component.

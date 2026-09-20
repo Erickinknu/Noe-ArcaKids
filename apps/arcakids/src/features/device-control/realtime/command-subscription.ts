@@ -72,19 +72,23 @@ export function subscribeToPolicy(
   onPolicy: (policy: Record<string, unknown>) => void
 ): { unsubscribe: () => void } {
   const client = requireSupabaseClient();
+  // The child app authenticates as `anon`, and `device_policies` only grants
+  // SELECT to `authenticated`. Policy changes therefore flow through the
+  // `device_policy_events` broadcast table (same pattern as commands); the full
+  // row is delivered in `payload`.
   const channel = client
-    .channel(`device_policies:${deviceUuid}`)
+    .channel(`device_policy_events:${deviceUuid}`)
     .on(
       'postgres_changes',
       {
-        event: '*',
+        event: 'INSERT',
         schema: 'public',
-        table: 'device_policies',
+        table: 'device_policy_events',
         filter: `device_uuid=eq.${deviceUuid}`,
       },
       (payload) => {
-        const row = (payload.new ?? payload.old) as Record<string, unknown>;
-        onPolicy(row);
+        const row = (payload.new ?? {}) as { payload?: Record<string, unknown> };
+        onPolicy(row.payload ?? {});
       }
     )
     .subscribe();
