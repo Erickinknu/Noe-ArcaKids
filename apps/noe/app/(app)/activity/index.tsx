@@ -270,6 +270,7 @@ export default function ActivityScreen() {
           <View style={styles.monitorGrid}>
             {([
               { icon: 'language' as const, title: 'Navegadores\nweb', color: colors.primary, path: '/activity/web' },
+              { icon: 'history' as const, title: 'Sitios web\nvisitados', color: colors.warning, path: '/activity/sitios' },
               { icon: 'play-circle' as const, title: 'YouTube\napp', color: colors.danger, path: '/activity/youtube' },
               { icon: 'apps' as const, title: 'Apps\ninstaladas', color: colors.warning, path: '/activity/apps' },
               { icon: 'people' as const, title: 'Redes\nsociales', color: colors.danger, path: '/activity/social' },
@@ -279,7 +280,7 @@ export default function ActivityScreen() {
               <Pressable
                 key={item.title}
                 style={({ pressed }) => [styles.monitorCard, pressed && styles.monitorCardPressed]}
-                onPress={() => router.push({ pathname: item.path, params: { childId: selectedChild.id } })}
+                onPress={() => router.push({ pathname: item.path, params: { childId: selectedChild.id, childName: selectedChild.displayName } })}
               >
                 <View style={[styles.monitorIcon, { backgroundColor: item.color + '18' }]}>
                   <MaterialIcons name={item.icon} size={22} color={item.color} />
