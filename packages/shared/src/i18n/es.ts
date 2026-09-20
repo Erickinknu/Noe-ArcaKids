@@ -361,6 +361,46 @@ export const es = {
       addApp: 'Bloquear app',
       removeApp: 'Quitar',
     },
+    familyInvites: {
+      unirmeTitle: 'Unirme como responsable',
+      unirmeSubtitle:
+        'Une tu cuenta a un hogar usando el c\u00f3digo que te comparti\u00f3 uno de sus responsables.',
+      codeLabel: 'C\u00f3digo de invitaci\u00f3n',
+      codePlaceholder: 'Ej: 8F2K9Q',
+      unirmeButton: 'Unirme como responsable',
+      joining: 'Uniendo...',
+      joinSuccess: '\u00a1Listo! Ya eres responsable en el hogar "{{family}}".',
+      invalidCode: 'El c\u00f3digo es inv\u00e1lido o no se encontr\u00f3.',
+      expired:
+        'Esta invitaci\u00f3n ya expir\u00f3. Pide un c\u00f3digo nuevo a uno de los responsables.',
+      alreadyUsed: 'Esta invitaci\u00f3n ya fue usada por otro responsable.',
+      joinError: 'No se pudo completar la uni\u00f3n. Intenta de nuevo.',
+      notLoggedInTitle: 'Inicia sesi\u00f3n para unirte',
+      notLoggedInText:
+        'Necesitas una cuenta de NOE para unirte como responsable. Inicia sesi\u00f3n y vuelve a abrir el enlace.',
+      goToLogin: 'Iniciar sesi\u00f3n',
+      backToApp: 'Volver',
+      shareTitle: 'Invitar responsable',
+      shareHint:
+        'Comparte el c\u00f3digo y el enlace con otra persona adulta. Expira en 72 horas.',
+      shareMessage:
+        'Te invito a ser responsable en NOE y administrar juntos la seguridad digital de los ni\u00f1os. C\u00f3digo: {{code}}. Abre NOE y elige \u201cUnirme como responsable\u201d para aceptar: {{link}}',
+      inviteFailed: 'No se pudo generar la invitaci\u00f3n. Intenta de nuevo.',
+    },
+    familyMode: {
+      title: 'Modo de contenido',
+      description:
+        'Elige c\u00f3mo NOE y ARCA KIDS adaptan las sugerencias y el vers\u00edculo del d\u00eda.',
+      general: 'General',
+      generalDesc: 'Sugerencias y vers\u00edculos est\u00e1ndar.',
+      cristiano: 'Cristiano',
+      cristianoDesc: 'Vers\u00edculos centrados en la fe y la esperanza.',
+      educativo: 'Educativo',
+      educativoDesc:
+        'Prioriza la educaci\u00f3n y la sabidur\u00eda en las sugerencias y vers\u00edculos.',
+      sharing:
+        'El modo es \u00fanico para todo el hogar; si hay varios responsables, se aplica el mismo a todos los ni\u00f1os.',
+    },
   },
   arcakids: {
     onboarding: {

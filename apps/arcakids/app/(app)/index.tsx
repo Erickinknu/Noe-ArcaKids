@@ -4,7 +4,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import type { DeviceRules } from '@noe-arcakids/types';
+import type { DeviceRules, FamilyMode } from '@noe-arcakids/types';
 
 import { useParentalStatus } from '@/hooks/use-parental-status';
 import { useAchievements } from '@/features/achievements/use-achievements';
@@ -22,6 +22,7 @@ import {
   spacing,
   typography,
   type ThemeColors,
+  type VerseTheme,
 } from '@noe-arcakids/shared';
 
 function formatMinutes(mins: number): string {
@@ -98,7 +99,28 @@ export default function HomeScreen() {
   const { totalAchieved, totalAvailable, loading: achievementsLoading } = useAchievements();
 
   const isMorning = new Date().getHours() < 12;
-  const verseOfDay = useVerseOfDay(isMorning ? (['morning'] as const) : undefined);
+  const { data: familyModeData } = useAsyncData(() => identityService.getFamilyMode());
+  const familyMode: FamilyMode = familyModeData ?? 'general';
+  const modeVerseThemes = useMemo(() => {
+    if (familyMode === 'cristiano') {
+      return {
+        morning: ['morning', 'hope', 'covenant', 'purpose'] as const,
+        day: ['hope', 'covenant', 'purpose', 'gratitude'] as const,
+      };
+    }
+    if (familyMode === 'educativo') {
+      return {
+        morning: ['morning', 'wisdom', 'purpose'] as const,
+        day: ['wisdom', 'purpose'] as const,
+      };
+    }
+    return null;
+  }, [familyMode]);
+  const verseOfDay = useVerseOfDay(
+    isMorning
+      ? (modeVerseThemes?.morning as readonly VerseTheme[] | undefined)
+      : (modeVerseThemes?.day as readonly VerseTheme[] | undefined)
+  );
   const restVerse = useRandomVerse(['rest'] as const);
   const eggTaps = useRef(0);
   const [eggShown, setEggShown] = useState(false);

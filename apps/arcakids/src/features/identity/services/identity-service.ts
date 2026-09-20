@@ -1,4 +1,5 @@
 import { ValidationError, t } from '@noe-arcakids/shared';
+import type { FamilyMode } from '@noe-arcakids/types';
 
 import {
   identityRepository,
@@ -16,6 +17,10 @@ export const identityService = {
 
   getChildInfo(): Promise<ChildInfo | null> {
     return identityRepository.getChildInfo();
+  },
+
+  getFamilyMode(): Promise<FamilyMode> {
+    return identityRepository.getFamilyMode();
   },
 
   isLinked(info: ChildInfo | null): info is ChildInfo & { childId: string; familyId: string } {

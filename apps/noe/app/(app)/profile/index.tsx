@@ -97,8 +97,14 @@ export default function OtrosScreen() {
         {
           icon: 'family-restroom',
           title: 'Familia',
-          subtitle: 'Gestionar miembros y niños',
+          subtitle: 'Gestionar responsables y niños',
           onPress: navigate('/profile/familia'),
+        },
+        {
+          icon: 'person-add',
+          title: 'Unirme como responsable',
+          subtitle: 'Unirme a un hogar por código',
+          onPress: navigate('/profile/unirme'),
         },
         {
           icon: 'person',

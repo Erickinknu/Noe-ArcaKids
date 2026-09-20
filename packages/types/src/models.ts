@@ -1,8 +1,11 @@
 export type Role = 'parent' | 'child';
 
+export type FamilyMode = 'general' | 'cristiano' | 'educativo';
+
 export interface Family {
   id: string;
   name: string;
+  mode: FamilyMode;
   createdAt: string;
   updatedAt: string;
 }

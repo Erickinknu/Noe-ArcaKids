@@ -1,4 +1,4 @@
-import type { Family, ParentProfile } from '@noe-arcakids/types';
+import type { Family, FamilyMode, ParentProfile } from '@noe-arcakids/types';
 import { DatabaseError } from '@noe-arcakids/shared';
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
 
@@ -10,6 +10,7 @@ export interface MyFamily {
 interface FamilyRow {
   id: string;
   name: string;
+  mode: FamilyMode;
   created_at: string;
   updated_at: string;
 }
@@ -28,15 +29,16 @@ interface MyFamilyRow {
 
 function toFamily(row: FamilyRow | FamilyRow[] | null): Family {
   if (!row) {
-    return { id: '', name: '', createdAt: '', updatedAt: '' };
+    return { id: '', name: '', mode: 'general', createdAt: '', updatedAt: '' };
   }
   const single = Array.isArray(row) ? row[0] : row;
   if (!single) {
-    return { id: '', name: '', createdAt: '', updatedAt: '' };
+    return { id: '', name: '', mode: 'general', createdAt: '', updatedAt: '' };
   }
   return {
     id: single.id,
     name: single.name,
+    mode: single.mode ?? 'general',
     createdAt: single.created_at,
     updatedAt: single.updated_at,
   };
@@ -66,14 +68,14 @@ export const familyRepository = {
     if (!user) {
       return {
         profile: { id: '', userId: null, email: null, displayName: '', avatarUrl: null, role: 'parent', createdAt: '', updatedAt: '', familyId: '' },
-        family: { id: '', name: '', createdAt: '', updatedAt: '' },
+        family: { id: '', name: '', mode: 'general', createdAt: '', updatedAt: '' },
       };
     }
 
     const { data, error } = await client
       .from('profiles')
       .select(
-        'id, user_id, display_name, avatar_url, email, role, created_at, updated_at, families(id, name, created_at, updated_at)'
+        'id, user_id, display_name, avatar_url, email, role, created_at, updated_at, families(id, name, mode, created_at, updated_at)'
       )
       .eq('user_id', user.id)
       .maybeSingle();
@@ -81,7 +83,7 @@ export const familyRepository = {
     if (error || !data) {
       return {
         profile: { id: '', userId: user.id, email: user.email ?? null, displayName: user.email?.split('@')[0] ?? '', avatarUrl: null, role: 'parent', createdAt: '', updatedAt: '', familyId: '' },
-        family: { id: '', name: '', createdAt: '', updatedAt: '' },
+        family: { id: '', name: '', mode: 'general', createdAt: '', updatedAt: '' },
       };
     }
     return mapRow(data as unknown as MyFamilyRow);
@@ -90,6 +92,15 @@ export const familyRepository = {
   async renameFamily(familyId: string, name: string): Promise<void> {
     const client = requireSupabaseClient();
     const { error } = await client.from('families').update({ name }).eq('id', familyId);
+
+    if (error) {
+      throw new DatabaseError(error.message);
+    }
+  },
+
+  async setFamilyMode(familyId: string, mode: string): Promise<void> {
+    const client = requireSupabaseClient();
+    const { error } = await client.from('families').update({ mode }).eq('id', familyId);
 
     if (error) {
       throw new DatabaseError(error.message);

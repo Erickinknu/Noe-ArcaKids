@@ -353,6 +353,46 @@ export const en = {
       addApp: 'Block app',
       removeApp: 'Remove',
     },
+    familyInvites: {
+      unirmeTitle: 'Join as a caregiver',
+      unirmeSubtitle:
+        'Link your account to a household using the code that one of its caregivers shared with you.',
+      codeLabel: 'Invitation code',
+      codePlaceholder: 'e.g. 8F2K9Q',
+      unirmeButton: 'Join as a caregiver',
+      joining: 'Joining...',
+      joinSuccess: 'Done! You are now a caregiver in the household "{{family}}".',
+      invalidCode: 'The code is invalid or was not found.',
+      expired:
+        'This invitation has already expired. Ask one of the caregivers for a new code.',
+      alreadyUsed: 'This invitation has already been used by another caregiver.',
+      joinError: 'Could not complete the join. Try again.',
+      notLoggedInTitle: 'Log in to join',
+      notLoggedInText:
+        'You need a NOE account to join as a caregiver. Log in and open the link again.',
+      goToLogin: 'Log in',
+      backToApp: 'Back',
+      shareTitle: 'Invite caregiver',
+      shareHint:
+        'Share the code and the link with another adult. It expires in 72 hours.',
+      shareMessage:
+        'I invite you to be a caregiver in NOE and manage kids\u2019 digital safety together. Code: {{code}}. Open NOE and choose \u201cJoin as a caregiver\u201d to accept: {{link}}',
+      inviteFailed: 'Could not generate the invitation. Try again.',
+    },
+    familyMode: {
+      title: 'Content mode',
+      description:
+        'Choose how NOE and ARCA KIDS adapt suggestions and the verse of the day.',
+      general: 'General',
+      generalDesc: 'Standard suggestions and verses.',
+      cristiano: 'Christian',
+      cristianoDesc: 'Verses focused on faith and hope.',
+      educativo: 'Educational',
+      educativoDesc:
+        'Prioritizes education and wisdom in suggestions and verses.',
+      sharing:
+        'The mode is unique for the whole household; if there are several caregivers, it applies to all kids.',
+    },
   },
   arcakids: {
     onboarding: {

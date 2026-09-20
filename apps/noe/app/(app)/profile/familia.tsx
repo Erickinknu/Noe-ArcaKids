@@ -6,10 +6,12 @@ import {
   View,
   Pressable,
   Share,
+  ActivityIndicator,
 } from 'react-native';
 import { useFocusEffect, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
-import type { ChildProfile } from '@noe-arcakids/types';
+import type { ChildProfile, FamilyMode } from '@noe-arcakids/types';
 
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -20,17 +22,36 @@ import { SectionHeader } from '@/components/ui/section-header';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
+import { familyInviteService, buildInviteLink, type FamilyInvite } from '@/features/family-invites/services/family-invite-service';
 import type { MyFamily } from '@/features/family/repositories/family-repository';
 import { Card, Input, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
+interface ModeOption {
+  value: FamilyMode;
+  icon: string;
+  label: string;
+  description: string;
+}
+
+const MODE_OPTIONS: ModeOption[] = [
+  { value: 'general', icon: 'public', label: 'General', description: '+' },
+  { value: 'cristiano', icon: 'church', label: 'Cristiano', description: '+' },
+  { value: 'educativo', icon: 'school', label: 'Educativo', description: '+' },
+];
+
 export default function FamiliaScreen() {
   const router = useRouter();
+  const { t: tr } = useTranslation();
   const screenPadding = useScreenPadding();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [familyName, setFamilyName] = useState('');
+  const [mode, setMode] = useState<FamilyMode>('general');
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [invite, setInvite] = useState<FamilyInvite | null>(null);
+  const [generating, setGenerating] = useState(false);
+  const [savingMode, setSavingMode] = useState(false);
 
   const fetchFamilyAndChildren = useCallback(async () => {
     const familyData = await familyService.getMyFamily();
@@ -42,6 +63,8 @@ export default function FamiliaScreen() {
   const handleFamilyLoaded = useCallback(
     (result: { familyData: MyFamily; children: ChildProfile[] }) => {
       setFamilyName(result.familyData.family.name);
+      setMode(result.familyData.family.mode ?? 'general');
+      setInvite(null);
     },
     []
   );
@@ -59,10 +82,45 @@ export default function FamiliaScreen() {
     setActionError(null);
     try {
       await familyService.renameFamily(data.familyData.family.id, familyName);
+      await reload();
     } catch (cause: any) {
       setActionError(cause?.message ?? 'Error');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleInviteResponsible() {
+    if (!data) return;
+    setGenerating(true);
+    setActionError(null);
+    try {
+      const generated = await familyInviteService.createInvite(data.familyData.family.id);
+      setInvite(generated);
+      const link = buildInviteLink(generated.code);
+      const message = tr('noe.familyInvites.shareMessage', {
+        code: generated.code,
+        link,
+      });
+      await Share.share({ message }).catch(() => {});
+    } catch (cause: any) {
+      setActionError(cause?.message ?? tr('noe.familyInvites.inviteFailed'));
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  async function handleModeChange(next: FamilyMode) {
+    if (!data || next === mode) return;
+    setSavingMode(true);
+    setActionError(null);
+    try {
+      await familyService.setFamilyMode(data.familyData.family.id, next);
+      setMode(next);
+    } catch (cause: any) {
+      setActionError(cause?.message ?? 'Error');
+    } finally {
+      setSavingMode(false);
     }
   }
 
@@ -147,26 +205,92 @@ export default function FamiliaScreen() {
         )}
       </Card>
 
-      {/* Adults / Members */}
-      <SectionHeader title="Miembros de la familia" />
+      {/* Content mode */}
+      <SectionHeader title={tr('noe.familyMode.title')} />
+      <Card>
+        <Text style={styles.hint}>{tr('noe.familyMode.description')}</Text>
+        {MODE_OPTIONS.map((option) => {
+          const active = option.value === mode;
+          return (
+            <Pressable
+              key={option.value}
+              style={({ pressed }) => [styles.modeRow, pressed && styles.modeRowPressed]}
+              onPress={() => handleModeChange(option.value)}
+              disabled={savingMode}
+            >
+              <MaterialIcons name={option.icon as any} size={22} color={active ? colors.primary : colors.textMuted} />
+              <View style={styles.modeInfo}>
+                <Text style={[styles.modeLabel, active && { color: colors.primary }]}>{option.label}</Text>
+                <Text style={styles.modeDesc}>
+                  {option.value === 'general'
+                    ? tr('noe.familyMode.generalDesc')
+                    : option.value === 'cristiano'
+                      ? tr('noe.familyMode.cristianoDesc')
+                      : tr('noe.familyMode.educativoDesc')}
+                </Text>
+              </View>
+              {active ? <MaterialIcons name="check-circle" size={22} color={colors.primary} /> : null}
+            </Pressable>
+          );
+        })}
+        {savingMode ? <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: spacing.sm }} /> : null}
+        <Text style={styles.hint}>{tr('noe.familyMode.sharing')}</Text>
+      </Card>
+
+      {/* Adults / Caregivers */}
+      <SectionHeader title="Responsables" />
       <Card>
         <Text style={styles.hint}>
-          Los miembros adultos pueden administrar conjuntamente los dispositivos de los niños.
+          Los responsables pueden administrar conjuntamente los dispositivos de los niños.
         </Text>
         <View style={styles.inviteRow}>
           <Pressable
             style={({ pressed }) => [styles.inviteBtn, pressed && styles.inviteBtnPressed]}
-            onPress={() =>
-              Share.share({
-                message:
-                  'Únete a la familia en NOE para administrar juntos la seguridad digital de los niños. Descarga NOE e inicia sesión para compartir el control parental.',
-              }).catch(() => {})
-            }
+            onPress={handleInviteResponsible}
+            disabled={generating}
           >
-            <MaterialIcons name="person-add" size={20} color={colors.primary} />
-            <Text style={styles.inviteBtnText}>Invitar padre/tutor</Text>
+            {generating ? (
+              <ActivityIndicator size="small" color={colors.primary} />
+            ) : (
+              <>
+                <MaterialIcons name="person-add" size={20} color={colors.primary} />
+                <Text style={styles.inviteBtnText}>{tr('noe.familyInvites.shareTitle')}</Text>
+              </>
+            )}
           </Pressable>
         </View>
+
+        {invite ? (
+          <View style={styles.inviteResult}>
+            <Text style={styles.inviteHint}>{tr('noe.familyInvites.shareHint')}</Text>
+            <Pressable
+              style={({ pressed }) => [styles.inviteCodeBox, pressed && styles.inviteCodeBoxPressed]}
+              onPress={() => Share.share({
+                message: tr('noe.familyInvites.shareMessage', {
+                  code: invite.code,
+                  link: buildInviteLink(invite.code),
+                }),
+              }).catch(() => {})}
+            >
+              <View style={styles.inviteCodeInfo}>
+                <Text style={styles.inviteCodeLabel}>{tr('noe.familyInvites.codeLabel')}</Text>
+                <Text style={styles.inviteCodeText}>{invite.code}</Text>
+              </View>
+              <MaterialIcons name="share" size={20} color={colors.primary} />
+            </Pressable>
+            <Button
+              onPress={() => Share.share({
+                message: tr('noe.familyInvites.shareMessage', {
+                  code: invite.code,
+                  link: buildInviteLink(invite.code),
+                }),
+              }).catch(() => {})}
+              style={{ marginTop: spacing.sm }}
+            >
+              Compartir invitación
+            </Button>
+          </View>
+        ) : null}
       </Card>
 
       {actionError ? <ErrorState message={actionError} /> : null}
@@ -250,6 +374,62 @@ const makeStyles = (colors: ThemeColors) =>
     fontSize: typography.fontSizes.subtitle,
     fontWeight: typography.fontWeights.medium,
     color: colors.primary,
+  },
+  inviteResult: {
+    marginTop: spacing.md,
+    gap: spacing.sm,
+  },
+  inviteHint: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    lineHeight: 18,
+  },
+  inviteCodeBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: colors.primaryLight,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  inviteCodeBoxPressed: {
+    opacity: 0.7,
+  },
+  inviteCodeInfo: {
+    gap: 2,
+  },
+  inviteCodeLabel: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+  },
+  inviteCodeText: {
+    fontSize: typography.fontSizes.title,
+    fontWeight: typography.fontWeights.bold,
+    color: colors.primary,
+    letterSpacing: 4,
+  },
+  modeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+  },
+  modeRowPressed: {
+    opacity: 0.7,
+  },
+  modeInfo: {
+    flex: 1,
+    gap: 2,
+  },
+  modeLabel: {
+    fontSize: typography.fontSizes.body,
+    fontWeight: typography.fontWeights.medium,
+    color: colors.text,
+  },
+  modeDesc: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    lineHeight: 18,
   },
   childRow: {
     flexDirection: 'row',

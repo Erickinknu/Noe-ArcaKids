@@ -1,8 +1,10 @@
 import { ValidationError, t } from '@noe-arcakids/shared';
+import type { FamilyMode } from '@noe-arcakids/types';
 
 import { familyRepository, type MyFamily } from '../repositories/family-repository';
 
 const MAX_FAMILY_NAME_LENGTH = 60;
+const FAMILY_MODES: FamilyMode[] = ['general', 'cristiano', 'educativo'];
 
 export const familyService = {
   getMyFamily(): Promise<MyFamily> {
@@ -20,5 +22,12 @@ export const familyService = {
       );
     }
     await familyRepository.renameFamily(familyId, trimmed);
+  },
+
+  async setFamilyMode(familyId: string, mode: FamilyMode): Promise<void> {
+    if (!FAMILY_MODES.includes(mode)) {
+      throw new ValidationError(t('noe.familyMode.general'));
+    }
+    await familyRepository.setFamilyMode(familyId, mode);
   },
 };

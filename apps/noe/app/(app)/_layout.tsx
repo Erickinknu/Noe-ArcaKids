@@ -217,6 +217,7 @@ export default function AppLayout() {
       <Tabs.Screen name="profile/cuenta" options={{ href: null }} />
       <Tabs.Screen name="profile/notifications" options={{ href: null }} />
       <Tabs.Screen name="profile/pin" options={{ href: null }} />
+      <Tabs.Screen name="profile/unirme" options={{ href: null }} />
       <Tabs.Screen name="profile/config" options={{ href: null }} />
       <Tabs.Screen name="profile/ayuda" options={{ href: null }} />
       <Tabs.Screen name="profile/sugerir" options={{ href: null }} />
