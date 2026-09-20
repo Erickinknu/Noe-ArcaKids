@@ -78,6 +78,9 @@ class BlockingOverlayManager(private val context: Context) {
 
     private fun showOverlay(blockedPkg: String, dismissible: Boolean = true) {
         if (currentOverlay != null || !canDrawOverlays()) return
+        // Alarma audible (suena aunque el dispositivo esté en silencio),
+        // limitada internamente a una vez cada X ms para no ser molesta.
+        try { BlockAlarm.play(context) } catch (ignored: Exception) {}
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,

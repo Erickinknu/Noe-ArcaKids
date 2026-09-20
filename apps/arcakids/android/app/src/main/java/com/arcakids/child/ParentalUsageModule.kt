@@ -253,4 +253,77 @@ class ParentalUsageModule(private val reactContext: ReactApplicationContext) :
             promise.reject("ERR_USAGE_REPORTER", e.message, e)
         }
     }
+
+    /** Block alarm (audible in silent mode). Exposed so the JS layer can trigger or stop it. */
+    @ReactMethod
+    fun playBlockAlarm(promise: Promise) {
+        try {
+            BlockAlarm.play(reactContext)
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("ERR_BLOCK_ALARM", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun stopBlockAlarm(promise: Promise) {
+        try {
+            BlockAlarm.stop()
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("ERR_BLOCK_ALARM", e.message, e)
+        }
+    }
+
+    // ── Fase 1: nombres del prompt sobre lógica real (aliases) ────────
+
+    private fun usageTodayMinutes(): Map<String, Long> {
+        val usm = reactContext.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0)
+        val stats = usm.queryAndAggregateUsageStats(cal.timeInMillis, System.currentTimeMillis())
+        val result = mutableMapOf<String, Long>()
+        for ((pkg, s) in stats) {
+            if (pkg == reactContext.packageName) continue
+            val minutes = s.totalTimeInForeground / 60000
+            if (minutes > 0) result[pkg] = minutes
+        }
+        return result
+    }
+
+    @ReactMethod
+    fun getTodayUsage(promise: Promise) {
+        try {
+            val map = Arguments.createMap()
+            var total = 0L
+            for ((pkg, minutes) in usageTodayMinutes()) {
+                map.putDouble(pkg, minutes.toDouble()); total += minutes
+            }
+            map.putDouble("total", total.toDouble())
+            promise.resolve(map)
+        } catch (e: Exception) {
+            promise.reject("ERR_USAGE", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun getAppUsage(packageName: String, promise: Promise) {
+        try {
+            promise.resolve(usageTodayMinutes()[packageName]?.toDouble() ?: 0.0)
+        } catch (e: Exception) {
+            promise.reject("ERR_USAGE", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun updateEnforcement(stateJson: String, promise: Promise) {
+        try {
+            JSONObject(stateJson)
+            EnforcementService.saveState(reactContext, stateJson)
+            EnforcementService.start(reactContext)
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("ERR_ENFORCEMENT_STATE", e.message, e)
+        }
+    }
 }

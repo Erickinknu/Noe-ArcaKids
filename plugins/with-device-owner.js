@@ -11,7 +11,7 @@
  *
  * Idempotent: safe to run multiple times; only writes when content differs.
  */
-const { withAndroidManifest, withDangerousMod, createRunOncePlugin } = require('expo/config-plugins');
+const { withAndroidManifest, withDangerousMod, withStringsXml, createRunOncePlugin } = require('expo/config-plugins');
 const fs = require('fs');
 const path = require('path');
 
@@ -327,6 +327,164 @@ class DeviceOwnerModule(reactContext: ReactApplicationContext) : ReactContextBas
             promise.reject("ERR_PROVISION_CLEAR", e.message, e)
         }
     }
+
+    // ── Command-driven DPM operations (real, not mocks) ──────────────
+
+    private fun requireOwner(): Boolean {
+        return dpm.isDeviceOwnerApp(reactApplicationContext.packageName)
+    }
+
+    @ReactMethod
+    fun getInstalledApps(promise: Promise) {
+        try {
+            val pm = reactApplicationContext.packageManager
+            val list = pm.queryIntentActivities(
+                Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER), 0
+            )
+            val array = Arguments.createArray()
+            for (resolveInfo in list) {
+                val info = resolveInfo.activityInfo ?: continue
+                if (info.packageName == reactApplicationContext.packageName) continue
+                val item = Arguments.createMap()
+                item.putString("packageName", info.packageName)
+                item.putString("label", try { info.loadLabel(pm).toString() } catch (e: Exception) { info.packageName })
+                array.pushMap(item)
+            }
+            promise.resolve(array)
+        } catch (e: Exception) {
+            promise.reject("ERR_APPS", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun isPackageSuspended(packageName: String, promise: Promise) {
+        try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) { promise.resolve(false); return }
+            promise.resolve(dpm.isPackageSuspended(admin, packageName))
+        } catch (e: Exception) {
+            promise.reject("ERR_IS_SUSPENDED", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun blockPackage(packageName: String, blocked: Boolean, promise: Promise) {
+        try {
+            if (!requireOwner()) { promise.reject("ERR_NOT_OWNER", "App is not device owner"); return }
+            if (packageName == reactApplicationContext.packageName) { promise.resolve(false); return }
+            dpm.setPackagesSuspended(admin, arrayOf(packageName), blocked)
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERR_SUSPEND", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun blockApp(packageName: String, blocked: Boolean, promise: Promise) {
+        blockPackage(packageName, blocked, promise)
+    }
+
+    @ReactMethod
+    fun isAppBlocked(packageName: String, promise: Promise) {
+        isPackageSuspended(packageName, promise)
+    }
+
+    @ReactMethod
+    fun setScreenCaptureDisabled(disabled: Boolean, promise: Promise) {
+        try {
+            if (!requireOwner()) { promise.reject("ERR_NOT_OWNER", "App is not device owner"); return }
+            dpm.setScreenCaptureDisabled(admin, disabled)
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERR_SCREEN_CAPTURE", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun setCameraDisabled(disabled: Boolean, promise: Promise) {
+        try {
+            if (!requireOwner()) { promise.reject("ERR_NOT_OWNER", "App is not device owner"); return }
+            dpm.setCameraDisabled(admin, disabled)
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERR_CAMERA", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun setApplicationHidden(packageNamesJson: String, hidden: Boolean, promise: Promise) {
+        try {
+            if (!requireOwner()) { promise.reject("ERR_NOT_OWNER", "App is not device owner"); return }
+            val arr = JSONArray(packageNamesJson)
+            val packages = Array(arr.length()) { arr.getString(it) }
+                .filter { it != reactApplicationContext.packageName }
+            for (pkg in packages) dpm.setApplicationHidden(admin, pkg, hidden)
+            promise.resolve(packages.toTypedArray())
+        } catch (e: Exception) {
+            promise.reject("ERR_HIDE", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun setUninstallBlocked(packageNamesJson: String, blocked: Boolean, promise: Promise) {
+        try {
+            if (!requireOwner()) { promise.reject("ERR_NOT_OWNER", "App is not device owner"); return }
+            val arr = JSONArray(packageNamesJson)
+            val packages = Array(arr.length()) { arr.getString(it) }
+                .filter { it != reactApplicationContext.packageName }
+            for (pkg in packages) dpm.setUninstallBlocked(admin, pkg, blocked)
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERR_UNINSTALL_LOCK", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun forceStopPackages(packageNamesJson: String, promise: Promise) {
+        try {
+            if (!requireOwner()) { promise.reject("ERR_NOT_OWNER", "App is not device owner"); return }
+            val arr = JSONArray(packageNamesJson)
+            val am = reactApplicationContext.getSystemService(android.app.ActivityManager::class.java)
+            for (i in 0 until arr.length()) {
+                val pkg = arr.getString(i)
+                if (pkg == reactApplicationContext.packageName) continue
+                try {
+                    am.killBackgroundProcesses(pkg)
+                } catch (ignored: Exception) {
+                }
+            }
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERR_FORCE_STOP", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun startLockTask(promise: Promise) {
+        try {
+            reactApplicationContext.getSharedPreferences("arcakids_device", Context.MODE_PRIVATE)
+                .edit().putBoolean("lock_task", true).apply()
+            val activity = getCurrentActivity()
+            if (activity != null) activity.startLockTask()
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERR_LOCK_TASK", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun stopLockTask(promise: Promise) {
+        try {
+            reactApplicationContext.getSharedPreferences("arcakids_device", Context.MODE_PRIVATE)
+                .edit().putBoolean("lock_task", false).apply()
+            val activity = getCurrentActivity()
+            if (activity != null) {
+                try { activity.stopLockTask() } catch (ignored: SecurityException) {}
+            }
+            promise.resolve(true)
+        } catch (e: Exception) {
+            promise.reject("ERR_LOCK_TASK", e.message, e)
+        }
+    }
 }
 `;
 }
@@ -536,6 +694,79 @@ class ParentalUsageModule(private val reactContext: ReactApplicationContext) :
             promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("ERR_USAGE_REPORTER", e.message, e)
+        }
+    }
+
+    /** Block alarm (audible in silent mode). Exposed so the JS layer can trigger or stop it. */
+    @ReactMethod
+    fun playBlockAlarm(promise: Promise) {
+        try {
+            BlockAlarm.play(reactContext)
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("ERR_BLOCK_ALARM", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun stopBlockAlarm(promise: Promise) {
+        try {
+            BlockAlarm.stop()
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("ERR_BLOCK_ALARM", e.message, e)
+        }
+    }
+
+    // ── Fase 1: nombres del prompt sobre lógica real (aliases) ────────
+
+    private fun usageTodayMinutes(): Map<String, Long> {
+        val usm = reactContext.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.HOUR_OF_DAY, 0); cal.set(Calendar.MINUTE, 0); cal.set(Calendar.SECOND, 0); cal.set(Calendar.MILLISECOND, 0)
+        val stats = usm.queryAndAggregateUsageStats(cal.timeInMillis, System.currentTimeMillis())
+        val result = mutableMapOf<String, Long>()
+        for ((pkg, s) in stats) {
+            if (pkg == reactContext.packageName) continue
+            val minutes = s.totalTimeInForeground / 60000
+            if (minutes > 0) result[pkg] = minutes
+        }
+        return result
+    }
+
+    @ReactMethod
+    fun getTodayUsage(promise: Promise) {
+        try {
+            val map = Arguments.createMap()
+            var total = 0L
+            for ((pkg, minutes) in usageTodayMinutes()) {
+                map.putDouble(pkg, minutes.toDouble()); total += minutes
+            }
+            map.putDouble("total", total.toDouble())
+            promise.resolve(map)
+        } catch (e: Exception) {
+            promise.reject("ERR_USAGE", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun getAppUsage(packageName: String, promise: Promise) {
+        try {
+            promise.resolve(usageTodayMinutes()[packageName]?.toDouble() ?: 0.0)
+        } catch (e: Exception) {
+            promise.reject("ERR_USAGE", e.message, e)
+        }
+    }
+
+    @ReactMethod
+    fun updateEnforcement(stateJson: String, promise: Promise) {
+        try {
+            JSONObject(stateJson)
+            EnforcementService.saveState(reactContext, stateJson)
+            EnforcementService.start(reactContext)
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("ERR_ENFORCEMENT_STATE", e.message, e)
         }
     }
 }
@@ -957,6 +1188,9 @@ class BlockingOverlayManager(private val context: Context) {
 
     private fun showOverlay(blockedPkg: String) {
         if (currentOverlay != null || !canDrawOverlays()) return
+        // Alarma audible (suena aunque el dispositivo esté en silencio),
+        // limitada internamente a una vez cada X ms para no ser molesta.
+        try { BlockAlarm.play(context) } catch (ignored: Exception) {}
         val params = WindowManager.LayoutParams(
             WindowManager.LayoutParams.MATCH_PARENT,
             WindowManager.LayoutParams.MATCH_PARENT,
@@ -1192,11 +1426,13 @@ class EnforcementService : Service() {
     private var overlayManager: BlockingOverlayManager? = null
     private var lastApplied: Pair<String, Set<String>>? = null
     private var reactive: Boolean = false
+    private var lastPolicyFetch: Long = 0L
     private val looperHandler = Handler(Looper.getMainLooper())
     private val ioExecutor = Executors.newSingleThreadExecutor()
     private val pollRunnable = object : Runnable {
         override fun run() {
             if (!reactive) return
+            fetchRemotePolicyIfDue()
             applyEnforcement()
             reportUsageIfStale()
             looperHandler.postDelayed(this, nextPoll())
@@ -1257,7 +1493,15 @@ class EnforcementService : Service() {
     }
 
     private fun applyEnforcement() {
-        val state = EnforcementService.loadState(this) ?: run { enforcer?.releaseAll(); overlayManager?.stop(); return }
+        if (getSharedPreferences("arcakids_device", Context.MODE_PRIVATE).getBoolean("is_blocked", false)) {
+            applyTotalLock()
+            return
+        }
+        val state = EnforcementService.loadState(this) ?: run {
+            enforcer?.releaseAll(); overlayManager?.stop()
+            AccessibilityEnforcementService.syncBlockedSet(this, emptySet())
+            return
+        }
         val cal = Calendar.getInstance()
         val dayMinutes = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
         val withinBedtime = state.isBedtimeActive(dayMinutes)
@@ -1275,23 +1519,120 @@ class EnforcementService : Service() {
         if (isOwner && state.enforce) enforcer?.apply(blocked.toList())
         else enforcer?.releaseAll()
 
-        // Non-owner fallback: blocking overlay covers all blocked apps (including bedtime/all apps)
+        // Non-owner: accessibility blocks specific apps; the overlay covers the
+        // remaining targets (including bedtime/all-apps lock).
         val nonOwner = !isOwner
-        val overlayTargets = blocked.minus(setOf(packageName))
-        if (nonOwner && state.enforce && overlayTargets.isNotEmpty()) overlayManager?.show(overlayTargets)
-        else overlayManager?.stop()
+        if (nonOwner) {
+            AccessibilityEnforcementService.syncBlockedSet(this, blocked.minus(setOf(packageName)))
+            val overlayTargets = blocked.minus(setOf(packageName))
+            if (state.enforce && overlayTargets.isNotEmpty()) overlayManager?.show(overlayTargets)
+            else overlayManager?.stop()
+        } else {
+            AccessibilityEnforcementService.syncBlockedSet(this, emptySet())
+            overlayManager?.stop()
+        }
     }
 
-    private fun getAllBlockingSet(): MutableSet<String> {
+    private fun getAllBlockingSet(includeLauncher: Boolean = false): MutableSet<String> {
         val set = mutableSetOf<String>()
-        val launcher = packageManager.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)?.activityInfo?.packageName
+        val launcher = if (includeLauncher) null else packageManager.resolveActivity(Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME), 0)?.activityInfo?.packageName
         for (info in packageManager.getInstalledApplications(0)) {
             if (info.packageName == packageName) continue
-            if (info.packageName == launcher) continue
+            if (launcher != null && info.packageName == launcher) continue
             if ((info.flags and ApplicationInfo.FLAG_SYSTEM) != 0) continue
             set.add(info.packageName)
         }
         return set
+    }
+
+    private fun applyTotalLock() {
+        val isOwner = enforcer?.isDeviceOwner == true
+        val targets = getAllBlockingSet(includeLauncher = true)
+        if (isOwner) {
+            enforcer?.apply(targets.toList())
+        } else {
+            AccessibilityEnforcementService.syncBlockedSet(this, targets.minus(setOf(packageName)))
+            overlayManager?.showLockAll()
+        }
+    }
+
+    // ── Autonomous policy refresh (FGS survives without React) ─────────
+
+    private val REMOTE_POLICY_INTERVAL_MS = 60_000L
+
+    private fun hasRemoteReporter(): Boolean {
+        val p = getSharedPreferences(RP_REPORTER, Context.MODE_PRIVATE)
+        return !p.getString("supabase_url", null).isNullOrEmpty() &&
+            !p.getString("supabase_anon_key", null).isNullOrEmpty() &&
+            !p.getString("device_uuid", null).isNullOrEmpty()
+    }
+
+    private fun fetchRemotePolicyIfDue() {
+        if (!hasRemoteReporter()) return
+        val now = System.currentTimeMillis()
+        if (now - lastPolicyFetch < REMOTE_POLICY_INTERVAL_MS) return
+        lastPolicyFetch = now
+        ioExecutor.execute { fetchRemotePolicy() }
+    }
+
+    private fun fetchRemotePolicy() {
+        try {
+            val p = getSharedPreferences(RP_REPORTER, Context.MODE_PRIVATE)
+            val url = p.getString("supabase_url", null)!!.trimEnd('/')
+            val anonKey = p.getString("supabase_anon_key", null)!!
+            val deviceUuid = p.getString("device_uuid", null)!!
+
+            val policyRows = rpc(url, anonKey, "get_child_rules_for_device", JSONObject().put("p_device_uuid", deviceUuid))
+            if (policyRows.length() == 0) return
+            val row = policyRows.getJSONObject(0)
+
+            val blocked = JSONArray()
+            row.optJSONArray("blocked_packages")?.let { arr ->
+                for (i in 0 until arr.length()) blocked.put(arr.getString(i))
+            }
+
+            val stateJson = JSONObject()
+                .put("enforce", true)
+                .put("bedtimeEnabled", row.optBoolean("bedtime_enabled", false))
+                .put("bedtimeStart", if (row.isNull("bedtime_start")) JSONObject.NULL else row.optString("bedtime_start"))
+                .put("bedtimeEnd", if (row.isNull("bedtime_end")) JSONObject.NULL else row.optString("bedtime_end"))
+                .put("dailyLimitMinutes", if (row.isNull("daily_limit_minutes")) JSONObject.NULL else row.optLong("daily_limit_minutes"))
+                .put("bonusMinutes", 0)
+                .put("pausedUntil", JSONObject.NULL)
+                .put("blockedPackages", blocked)
+                .put("appLimits", JSONObject.NULL)
+
+            val stateRows = rpc(url, anonKey, "get_device_state_for_device", JSONObject().put("p_device_uuid", deviceUuid))
+            val isBlocked = stateRows.length() > 0 && stateRows.getJSONObject(0).optBoolean("is_blocked", false)
+
+            getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_STATE, stateJson.toString()).apply()
+            getSharedPreferences("arcakids_device", Context.MODE_PRIVATE)
+                .edit().putBoolean("is_blocked", isBlocked).apply()
+
+            looperHandler.post { applyEnforcement() }
+        } catch (t: Throwable) {
+            // Transient network error: retry on next cycle.
+        }
+    }
+
+    private fun rpc(url: String, anonKey: String, fn: String, params: JSONObject): JSONArray {
+        val connection = URL("\${url}/rest/v1/rpc/\${fn}").openConnection() as HttpURLConnection
+        try {
+            connection.requestMethod = "POST"
+            connection.doOutput = true
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.setRequestProperty("apikey", anonKey)
+            connection.setRequestProperty("Authorization", "Bearer \${anonKey}")
+            connection.connectTimeout = 8000
+            connection.readTimeout = 8000
+            OutputStreamWriter(connection.outputStream, Charsets.UTF_8).use { it.write(params.toString()) }
+            val input = connection.inputStream
+            val text = input.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            if (text.isBlank()) return JSONArray()
+            return JSONArray(text)
+        } finally {
+            connection.disconnect()
+        }
     }
 
     private fun usageToday(): Long {
@@ -1461,6 +1802,190 @@ data class EnforcementState(
 }
 
 // ---------------------------------------------------------------------------
+// Block alarm (audible in silent mode, Parte 7)
+// ---------------------------------------------------------------------------
+
+function blockAlarmContent(pkg) {
+  return `package ${pkg}
+
+import android.media.AudioManager
+import android.media.ToneGenerator
+import android.os.Handler
+import android.os.Looper
+
+/**
+ * Audible block alarm (Parte 7): a short alarm beep that plays even when the
+ * device is in silent/vibrate or Do-Not-Disturb, because it targets the
+ * STREAM_ALARM (USAGE_ALARM) audio stream. Used when enforcement blocks an app
+ * or the device (accessibility fallback and blocking overlay).
+ *
+ * Rate-limited so a child repeatedly retrying cannot keep it ringing forever;
+ * the alarm fires at most once every [MIN_INTERVAL_MS].
+ */
+object BlockAlarm {
+
+    private const val MIN_INTERVAL_MS = 30_000L
+    private const val TONE_DURATION_MS = 250
+    private const val ALARM_VOLUME_PERCENT = 100
+
+    @Volatile
+    private var lastPlayedMs = 0L
+
+    private var tone: ToneGenerator? = null
+    private val handler = Handler(Looper.getMainLooper())
+
+    @Synchronized
+    fun play(context: android.content.Context) {
+        val now = System.currentTimeMillis()
+        if (now - lastPlayedMs < MIN_INTERVAL_MS) return
+        lastPlayedMs = now
+
+        try {
+            val generator = ToneGenerator(AudioManager.STREAM_ALARM, ALARM_VOLUME_PERCENT)
+            tone = generator
+            generator.startTone(ToneGenerator.TONE_CDMA_ALERT_CALL_GUARD, TONE_DURATION_MS)
+            handler.postDelayed({
+                if (tone === generator) {
+                    try { generator.stopTone() } catch (ignored: Exception) {}
+                    try { generator.release() } catch (ignored: Exception) {}
+                    tone = null
+                }
+            }, TONE_DURATION_MS + 150L)
+        } catch (t: Throwable) {
+            // Audio unavailable (strict vendor builds, etc.): silent fallback.
+            tone = null
+        }
+    }
+
+    @Synchronized
+    fun stop() {
+        handler.removeCallbacksAndMessages(null)
+        tone?.let { t ->
+            try { t.stopTone() } catch (ignored: Exception) {}
+            try { t.release() } catch (ignored: Exception) {}
+        }
+        tone = null
+    }
+}
+`;
+}
+
+// ---------------------------------------------------------------------------
+// Accessibility enforcement (universal non-owner fallback)
+// ---------------------------------------------------------------------------
+
+const ACCESSIBILITY_CONFIG_XML = `<?xml version="1.0" encoding="utf-8"?>
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/accessibility_service_description"
+    android:accessibilityEventTypes="typeWindowStateChanged"
+    android:accessibilityFeedbackType="feedbackGeneric"
+    android:accessibilityFlags="flagIncludeNotImportantViews"
+    android:canRetrieveWindowContent="false"
+    android:notificationTimeout="100"
+    android:settingsActivity="" />
+`;
+
+function accessibilityEnforcementServiceContent(pkg) {
+  return `package ${pkg}
+
+import android.accessibilityservice.AccessibilityService
+import android.content.Context
+import android.content.Intent
+import android.provider.Settings
+import android.view.accessibility.AccessibilityEvent
+
+/**
+ * Accessibility-based blocking (real, universal fallback).
+ *
+ * When the app is NOT device owner, DPM package suspension is unavailable; this
+ * service detects when a blocked package moves to the foreground and exits it
+ * (global HOME action). It requires explicit user consent in the onboarding
+ * (prominent disclosure: control parental, no lectura de contenido estándar).
+ *
+ * The blocked set is written by [EnforcementService.applyEnforcement] through
+ * [syncBlockedSet]; the service re-reads it on every window change so the set
+ * is always up to date without restarting the service.
+ */
+class AccessibilityEnforcementService : AccessibilityService() {
+
+    companion object {
+        private const val PREFS = "arcakids_accessibility"
+        private const val KEY_BLOCKED = "blocked_set"
+        private const val EVENT_PREFS = "arcakids_device"
+        private const val KEY_LAST_BLOCK = "last_block_event_ms"
+        private const val BLOCK_COOLDOWN_MS = 800L
+
+        fun isEnabled(context: Context): Boolean {
+            return try {
+                val enabled = Settings.Secure.getString(
+                    context.contentResolver,
+                    Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
+                ) ?: ""
+                enabled.split(':').any { it.endsWith("AccessibilityEnforcementService") }
+            } catch (e: Exception) {
+                false
+            }
+        }
+
+        fun openSettings(context: Context) {
+            try {
+                val intent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS)
+                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                context.startActivity(intent)
+            } catch (e: Exception) {
+                // Ajustes de accesibilidad ausentes en algunos fabricantes.
+            }
+        }
+
+        fun syncBlockedSet(context: Context, blocked: Set<String>) {
+            context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .edit().putStringSet(KEY_BLOCKED, blocked).apply()
+        }
+
+        private fun loadBlockedSet(context: Context): Set<String> {
+            return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getStringSet(KEY_BLOCKED, emptySet()) ?: emptySet()
+        }
+    }
+
+    private var blockedSet: Set<String> = emptySet()
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        refreshBlockedSet()
+    }
+
+    override fun onAccessibilityEvent(event: AccessibilityEvent) {
+        if (event.eventType != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) return
+        refreshBlockedSet()
+        val pkg = event.packageName?.toString() ?: return
+        if (pkg !in blockedSet) return
+
+        val now = System.currentTimeMillis()
+        val prefs = getSharedPreferences(EVENT_PREFS, Context.MODE_PRIVATE)
+        if (now - prefs.getLong(KEY_LAST_BLOCK, 0L) < BLOCK_COOLDOWN_MS) return
+        prefs.edit().putLong(KEY_LAST_BLOCK, now).apply()
+
+        // Audible alarm (audible even in silent mode) so the parent hears the
+        // attempted block; rate-limited internally.
+        try { BlockAlarm.play(this) } catch (ignored: Exception) {}
+
+        // Exit the blocked app without landing on another blocked one.
+        performGlobalAction(GLOBAL_ACTION_HOME)
+    }
+
+    override fun onInterrupt() {
+        // No foreground work to stop.
+    }
+
+    private fun refreshBlockedSet() {
+        blockedSet = loadBlockedSet(this)
+    }
+}
+`;
+}
+
+// ---------------------------------------------------------------------------
 // Manifest manipulation
 // ---------------------------------------------------------------------------
 function withArcakidsManifest(config) {
@@ -1476,6 +2001,7 @@ function withArcakidsManifest(config) {
       'android.permission.FOREGROUND_SERVICE_SPECIAL_USE',
       'android.permission.PACKAGE_USAGE_STATS',
       'android.permission.POST_NOTIFICATIONS',
+      'android.permission.KILL_BACKGROUND_PROCESSES',
       'android.permission.WAKE_LOCK',
     ];
     if (!manifest['uses-permission']) manifest['uses-permission'] = [];
@@ -1512,6 +2038,29 @@ function withArcakidsManifest(config) {
       });
     }
 
+    // AccessibilityEnforcementService (universal non-owner fallback).
+    const SAName = 'AccessibilityEnforcementService';
+    if (application.service) {
+      const hasA11y = application.service.some((s) => s.$ && s.$['android:name'] === '.AccessibilityEnforcementService');
+      if (!hasA11y) {
+        application.service.push({
+          $: { 'android:name': '.AccessibilityEnforcementService', 'android:exported': 'true', 'android:permission': 'android.permission.BIND_ACCESSIBILITY_SERVICE' },
+          'intent-filter': [{ action: [{ $: { 'android:name': 'android.accessibilityservice.AccessibilityService' } }] }],
+          'meta-data': [{ $: { 'android:name': 'android.accessibilityservice', 'android:resource': '@xml/accessibility_service_config' } }],
+        });
+      }
+    }
+
+    return mod;
+  });
+}
+
+function withArcakidsStrings(config) {
+  return withStringsXml(config, (mod) => {
+    if (!mod.modResults.accessibility_service_description) {
+      mod.modResults.accessibility_service_description =
+        'ARCA KIDS usa la accesibilidad para aplicar el control parental: cuando una app con tiempo agotado o bloqueada por tus padres intenta abrirse, la cierra para proteger el tiempo de uso.';
+    }
     return mod;
   });
 }
@@ -1538,7 +2087,12 @@ function withArcakidsFiles(config) {
       // res/xml/device_admin.xml
       await ensureWrite(path.join(platformRoot, 'app/src/main/res/xml/device_admin.xml'), DEVICE_ADMIN_XML);
 
-      // Source files (mirror of android/app/src/main/java)
+      // res/xml/accessibility_service_config.xml (non-owner fallback)
+      await ensureWrite(path.join(platformRoot, 'app/src/main/res/xml/accessibility_service_config.xml'), ACCESSIBILITY_CONFIG_XML);
+
+      // Source files. Live files in the working tree win over the embedded
+      // templates below, so prebuild never reintroduces template drift. The
+      // templates are only used when the file is missing (e.g. --clean).
       const files = {
         'DeviceAdminReceiver.java': deviceAdminReceiverJavaContent(pkg),
         'ProvisioningHandler.java': provisioningHandlerContent(pkg),
@@ -1548,9 +2102,17 @@ function withArcakidsFiles(config) {
         'ArcakidsPackage.kt': arcakidsPackageContent(pkg),
         'BlockingOverlayManager.kt': blockingOverlayManagerContent(pkg),
         'EnforcementService.kt': enforcementServiceContent(pkg),
+        'AccessibilityEnforcementService.kt': accessibilityEnforcementServiceContent(pkg),
+        'BlockAlarm.kt': blockAlarmContent(pkg),
       };
-      for (const [file, content] of Object.entries(files)) {
-        await ensureWrite(path.join(javaBase, file), content);
+      for (const [file, fallback] of Object.entries(files)) {
+        const live = path.join(javaBase, file);
+        let content = fallback;
+        try {
+          const existing = await fs.promises.readFile(live, 'utf8');
+          if (existing.trim().length > 0) content = existing;
+        } catch (_) {}
+        await ensureWrite(live, content);
       }
 
       // Patch MainApplication to register ArcakidsPackage.
@@ -1594,6 +2156,21 @@ function withArcakidsFiles(config) {
             dirty = true;
           }
         }
+        // Honra startLockTask/stopLockTask solicitadas por comando remoto.
+        if (!content.includes('startLockTask')) {
+          content = content.replace(/\n\s*\}\s*$/, `\n
+  override fun onResume() {
+    super.onResume()
+    val lockTask = getSharedPreferences("arcakids_device", MODE_PRIVATE).getBoolean("lock_task", false)
+    try {
+      if (lockTask) startLockTask() else stopLockTask()
+    } catch (e: Exception) {
+    }
+  }
+}
+`);
+          dirty = true;
+        }
         if (dirty) await fs.promises.writeFile(mainActivityPath, content, 'utf8');
       } catch (_) {}
 
@@ -1605,6 +2182,7 @@ function withArcakidsFiles(config) {
 function withArcakids(config) {
   let cfg = withArcakidsManifest(config);
   cfg = withArcakidsFiles(cfg);
+  cfg = withArcakidsStrings(cfg);
   return cfg;
 }
 
