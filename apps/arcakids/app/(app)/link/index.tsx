@@ -6,6 +6,7 @@ import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 
 import { Button } from '@/components/ui/button';
+import { ParentalPinGate } from '@/components/parental-pin-gate';
 import { linkingService } from '@/features/linking/services/linking-service';
 import { Card, Input, errorMessage, useTheme, useVerseOfDay, VerseBanner, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
@@ -63,7 +64,8 @@ export default function LinkScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
+    <ParentalPinGate>
+      <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <Text style={styles.title}>{tr('arcakids.link.title')}</Text>
       <Text style={styles.subtitle}>{tr('arcakids.link.subtitle')}</Text>
 
@@ -106,7 +108,8 @@ export default function LinkScreen() {
       </Card>
 
       {error ? <Text style={styles.error}>{error}</Text> : null}
-    </SafeAreaView>
+      </SafeAreaView>
+    </ParentalPinGate>
   );
 }
 

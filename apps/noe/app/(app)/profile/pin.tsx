@@ -13,6 +13,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { pinService } from '@/features/pin/services/pin-service';
+import { pinSyncService } from '@/features/pin/services/pin-sync-service';
 import { Card, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 const PIN_LENGTH = 4;
@@ -91,7 +92,8 @@ export default function PinScreen() {
 
     setSaving(true);
     try {
-      await pinService.createPin(pin);
+      const config = await pinService.createPin(pin);
+      await pinSyncService.pushPinToFamily(config.salt, config.pinHash);
       setSavedFlash(true);
       setMode('done');
       setTimeout(() => setSavedFlash(false), 2000);
@@ -119,11 +121,12 @@ export default function PinScreen() {
 
     setSaving(true);
     try {
-      const updated = await pinService.updatePin(oldPin, pin);
-      if (!updated) {
+      const config = await pinService.updatePin(oldPin, pin);
+      if (!config) {
         setError('PIN anterior incorrecto');
         return;
       }
+      await pinSyncService.pushPinToFamily(config.salt, config.pinHash);
       setSavedFlash(true);
       setMode('done');
       setTimeout(() => setSavedFlash(false), 2000);
@@ -158,7 +161,7 @@ export default function PinScreen() {
             ? 'Ingresa el PIN actual para poder cambiarlo.'
             : mode === 'create-new'
             ? 'Ingresa el nuevo PIN que usarás para desbloquear NOE.'
-            : 'El código PIN protege el acceso a NOE (la app del padre). Úsalo para bloquear la apertura de la app.'}
+            : 'El código PIN protege el acceso a NOE (la app del padre) y las funciones sensibles de ARCA KIDS (configuración, perfil y vinculación).'}
         </Text>
 
         {mode === 'verify-old' && (
@@ -246,8 +249,10 @@ export default function PinScreen() {
       </Card>
 
       <Text style={styles.hint}>
-        Tu PIN se guarda de forma segura en este dispositivo. Puedes activar
-        “Bloqueo con PIN al abrir NOE” desde Configuración de la app.
+        Tu PIN se guarda de forma segura y se comparte (encriptado) con los
+        dispositivos de tu familia para proteger las secciones sensibles de
+        ARCA KIDS. Puedes activar “Bloqueo con PIN al abrir NOE” desde
+        Configuración de la app.
       </Text>
     </ScrollView>
   );

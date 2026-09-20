@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
+import { ParentalPinGate } from '@/components/parental-pin-gate';
 import { identityService } from '@/features/identity/services/identity-service';
 import type { ChildInfo } from '@/features/identity/repositories/identity-repository';
 import { useAchievements } from '@/features/achievements';
@@ -102,32 +103,34 @@ export default function ProfileScreen() {
         </Card>
       )}
 
-      <Card>
-        <Text style={styles.avatarPreview}>{avatar}</Text>
-        <Input
-          label={tr('arcakids.profile.nameLabel')}
-          value={name}
-          onChangeText={setName}
-          placeholder={tr('arcakids.profile.namePlaceholder')}
-        />
-        <Text style={styles.cardTitle}>{tr('arcakids.profile.pickBuddy')}</Text>
-        <View style={styles.avatarRow}>
-          {AVATARS.map((item) => (
-            <Pressable
-              key={item}
-              onPress={() => setAvatar(item)}
-              style={[styles.avatarOption, item === avatar && styles.avatarSelected]}
-            >
-              <Text style={styles.avatarEmoji}>{item}</Text>
-            </Pressable>
-          ))}
-        </View>
-        <Button onPress={handleSave} loading={saving}>
-          {tr('arcakids.profile.save')}
-        </Button>
-        {saved ? <Text style={styles.message}>{tr('arcakids.profile.saved')}</Text> : null}
-        {actionError ? <Text style={styles.error}>{actionError}</Text> : null}
-      </Card>
+      <ParentalPinGate variant="card">
+        <Card>
+          <Text style={styles.avatarPreview}>{avatar}</Text>
+          <Input
+            label={tr('arcakids.profile.nameLabel')}
+            value={name}
+            onChangeText={setName}
+            placeholder={tr('arcakids.profile.namePlaceholder')}
+          />
+          <Text style={styles.cardTitle}>{tr('arcakids.profile.pickBuddy')}</Text>
+          <View style={styles.avatarRow}>
+            {AVATARS.map((item) => (
+              <Pressable
+                key={item}
+                onPress={() => setAvatar(item)}
+                style={[styles.avatarOption, item === avatar && styles.avatarSelected]}
+              >
+                <Text style={styles.avatarEmoji}>{item}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Button onPress={handleSave} loading={saving}>
+            {tr('arcakids.profile.save')}
+          </Button>
+          {saved ? <Text style={styles.message}>{tr('arcakids.profile.saved')}</Text> : null}
+          {actionError ? <Text style={styles.error}>{actionError}</Text> : null}
+        </Card>
+      </ParentalPinGate>
       <Text style={styles.muted}>
         {linked ? tr('arcakids.profile.linked') : tr('arcakids.profile.notLinked')}
       </Text>

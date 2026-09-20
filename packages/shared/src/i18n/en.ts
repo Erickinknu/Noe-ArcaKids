@@ -580,6 +580,15 @@ export const en = {
         'Show a short Bible verse to inspire and guide you each day.',
       morningTitle: 'Good morning!',
     },
+    pinGate: {
+      title: 'PIN required',
+      description:
+        'This section is protected. Enter the PIN you set up in NOE.',
+      incomplete: 'Enter the 4-digit PIN',
+      wrongPin: 'Wrong PIN',
+      locked: 'Too many attempts. Wait 30 seconds and try again.',
+      hint: 'Ask your parent or caregiver for the family PIN.',
+    },
     blocked: {
       title: 'Device blocked',
       body:

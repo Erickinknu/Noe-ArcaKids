@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { setLanguage } from '@/i18n';
 import { useParentalStatus } from '@/hooks/use-parental-status';
+import { ParentalPinGate } from '@/components/parental-pin-gate';
 import { identityService } from '@/features/identity/services/identity-service';
 import { parentalBridge } from '@/features/parental/native/parental-bridge';
 import { deviceOwnerBridge } from '@/features/device-control/native/device-owner-module';
@@ -89,7 +90,8 @@ export default function SettingsScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
+    <ParentalPinGate>
+      <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
       <Text style={styles.title}>{tr('arcakids.home.settings')}</Text>
       {isLinked ? (
         <Card>
@@ -262,7 +264,8 @@ export default function SettingsScreen() {
           />
         </View>
       </Card>
-    </SafeAreaView>
+      </SafeAreaView>
+    </ParentalPinGate>
   );
 }
 

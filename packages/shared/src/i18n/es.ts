@@ -591,6 +591,16 @@ export const es = {
         'Muestra un vers\u00edculo breve para motivar y acompa\u00f1ar cada d\u00eda.',
       morningTitle: '\u00a1Buenos d\u00edas!',
     },
+    pinGate: {
+      title: 'C\u00f3digo PIN requerido',
+      description:
+        'Esta secci\u00f3n est\u00e1 protegida. Ingresa el PIN que configuraste en NOE.',
+      incomplete: 'Ingresa los 4 d\u00edgitos del PIN',
+      wrongPin: 'PIN incorrecto',
+      locked:
+        'Demasiados intentos. Espera 30 segundos e int\u00e9ntalo de nuevo.',
+      hint: 'P\u00eddele a tu padre, madre o responsable el c\u00f3digo PIN de la familia.',
+    },
     blocked: {
       title: 'Dispositivo bloqueado',
       body:

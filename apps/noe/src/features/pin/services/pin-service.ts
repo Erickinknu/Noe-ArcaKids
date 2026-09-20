@@ -65,7 +65,7 @@ export const pinService = {
     }
   },
 
-  async createPin(pin: string): Promise<void> {
+  async createPin(pin: string): Promise<PinConfig> {
     const salt = await generateSalt();
     const pinHash = await hashPin(salt, pin);
     const config: PinConfig = {
@@ -75,6 +75,7 @@ export const pinService = {
       failedAttempts: 0,
     };
     await storage.save(STORAGE_KEY, JSON.stringify(config));
+    return config;
   },
 
   async verifyPin(pin: string): Promise<boolean> {
@@ -104,11 +105,10 @@ export const pinService = {
     return matches;
   },
 
-  async updatePin(oldPin: string, newPin: string): Promise<boolean> {
+  async updatePin(oldPin: string, newPin: string): Promise<PinConfig | null> {
     const valid = await this.verifyPin(oldPin);
-    if (!valid) return false;
-    await this.createPin(newPin);
-    return true;
+    if (!valid) return null;
+    return this.createPin(newPin);
   },
 
   async isEnabled(): Promise<boolean> {
