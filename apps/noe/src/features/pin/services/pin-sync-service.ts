@@ -1,6 +1,7 @@
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
 
 import { familyService } from '@/features/family/services/family-service';
+import { pinService } from '@/features/pin/services/pin-service';
 
 /**
  * Best-effort sync of the parent PIN (salted hash) to every device of the
@@ -8,6 +9,17 @@ import { familyService } from '@/features/family/services/family-service';
  * the PIN stays valid locally in NOE regardless.
  */
 export const pinSyncService = {
+  /**
+   * Re-pushes the current PIN to every linked device. Called whenever NOE is
+   * opened, so a device that linked AFTER the PIN was created picks it up on
+   * the next launch instead of staying unprotected silently.
+   */
+  async syncCurrentPin(): Promise<void> {
+    const config = await pinService.getConfig();
+    if (!config?.enabled) return;
+    await this.pushPinToFamily(config.salt, config.pinHash);
+  },
+
   async pushPinToFamily(salt: string, pinHash: string): Promise<void> {
     try {
       const { family } = await familyService.getMyFamily();

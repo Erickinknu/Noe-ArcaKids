@@ -44,6 +44,7 @@ import { activityService, type AlertItem } from '@/features/activity/services/ac
 import { familyService } from '@/features/family/services/family-service';
 import { parentalService } from '@/features/parental/services/parental-service';
 import { deviceControlService } from '@/features/device-control/services/device-control-service';
+import { pinSyncService } from '@/features/pin/services/pin-sync-service';
 import { ROUTES } from '@/constants';
 
 const FETCH_TIMEOUT_MS = 10_000;
@@ -124,6 +125,7 @@ export default function DashboardScreen() {
   useFocusEffect(
     useCallback(() => {
       fetchData(true);
+      pinSyncService.syncCurrentPin();
     }, [fetchData])
   );
 
