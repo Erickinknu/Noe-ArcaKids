@@ -63,11 +63,13 @@ class EnforcementService : Service() {
     private var overlayManager: BlockingOverlayManager? = null
     private var lastApplied: Pair<String, Set<String>>? = null
     private var reactive: Boolean = false
+    private var lastPolicyFetch: Long = 0L
     private val looperHandler = Handler(Looper.getMainLooper())
     private val ioExecutor = Executors.newSingleThreadExecutor()
     private val pollRunnable = object : Runnable {
         override fun run() {
             if (!reactive) return
+            fetchRemotePolicyIfDue()
             applyEnforcement()
             reportUsageIfStale()
             looperHandler.postDelayed(this, nextPoll())
@@ -132,7 +134,11 @@ class EnforcementService : Service() {
             applyTotalLock()
             return
         }
-        val state = EnforcementService.loadState(this) ?: run { enforcer?.releaseAll(); overlayManager?.stop(); return }
+        val state = EnforcementService.loadState(this) ?: run {
+            enforcer?.releaseAll(); overlayManager?.stop()
+            AccessibilityEnforcementService.syncBlockedSet(this, emptySet())
+            return
+        }
         val cal = Calendar.getInstance()
         val dayMinutes = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
         val withinBedtime = state.isBedtimeActive(dayMinutes)
@@ -150,11 +156,18 @@ class EnforcementService : Service() {
         if (isOwner && state.enforce) enforcer?.apply(blocked.toList())
         else enforcer?.releaseAll()
 
-        // Non-owner fallback: blocking overlay covers all blocked apps (including bedtime/all apps)
+        // Non-owner: accessibility blocks specific apps; the overlay covers the
+        // remaining targets (including bedtime/all-apps lock).
         val nonOwner = !isOwner
-        val overlayTargets = blocked.minus(setOf(packageName))
-        if (nonOwner && state.enforce && overlayTargets.isNotEmpty()) overlayManager?.show(overlayTargets)
-        else overlayManager?.stop()
+        if (nonOwner) {
+            AccessibilityEnforcementService.syncBlockedSet(this, blocked.minus(setOf(packageName)))
+            val overlayTargets = blocked.minus(setOf(packageName))
+            if (state.enforce && overlayTargets.isNotEmpty()) overlayManager?.show(overlayTargets)
+            else overlayManager?.stop()
+        } else {
+            AccessibilityEnforcementService.syncBlockedSet(this, emptySet())
+            overlayManager?.stop()
+        }
     }
 
     private fun getAllBlockingSet(includeLauncher: Boolean = false): MutableSet<String> {
@@ -175,7 +188,87 @@ class EnforcementService : Service() {
         if (isOwner) {
             enforcer?.apply(targets.toList())
         } else {
+            AccessibilityEnforcementService.syncBlockedSet(this, targets.minus(setOf(packageName)))
             overlayManager?.showLockAll()
+        }
+    }
+
+    // ── Autonomous policy refresh (FGS survives without React) ─────────
+
+    private val REMOTE_POLICY_INTERVAL_MS = 60_000L
+
+    private fun hasRemoteReporter(): Boolean {
+        val p = getSharedPreferences(RP_REPORTER, Context.MODE_PRIVATE)
+        return !p.getString("supabase_url", null).isNullOrEmpty() &&
+            !p.getString("supabase_anon_key", null).isNullOrEmpty() &&
+            !p.getString("device_uuid", null).isNullOrEmpty()
+    }
+
+    private fun fetchRemotePolicyIfDue() {
+        if (!hasRemoteReporter()) return
+        val now = System.currentTimeMillis()
+        if (now - lastPolicyFetch < REMOTE_POLICY_INTERVAL_MS) return
+        lastPolicyFetch = now
+        ioExecutor.execute { fetchRemotePolicy() }
+    }
+
+    private fun fetchRemotePolicy() {
+        try {
+            val p = getSharedPreferences(RP_REPORTER, Context.MODE_PRIVATE)
+            val url = p.getString("supabase_url", null)!!.trimEnd('/')
+            val anonKey = p.getString("supabase_anon_key", null)!!
+            val deviceUuid = p.getString("device_uuid", null)!!
+
+            val policyRows = rpc(url, anonKey, "get_child_rules_for_device", JSONObject().put("p_device_uuid", deviceUuid))
+            if (policyRows.length() == 0) return
+            val row = policyRows.getJSONObject(0)
+
+            val blocked = JSONArray()
+            row.optJSONArray("blocked_packages")?.let { arr ->
+                for (i in 0 until arr.length()) blocked.put(arr.getString(i))
+            }
+
+            val stateJson = JSONObject()
+                .put("enforce", true)
+                .put("bedtimeEnabled", row.optBoolean("bedtime_enabled", false))
+                .put("bedtimeStart", if (row.isNull("bedtime_start")) JSONObject.NULL else row.optString("bedtime_start"))
+                .put("bedtimeEnd", if (row.isNull("bedtime_end")) JSONObject.NULL else row.optString("bedtime_end"))
+                .put("dailyLimitMinutes", if (row.isNull("daily_limit_minutes")) JSONObject.NULL else row.optLong("daily_limit_minutes"))
+                .put("bonusMinutes", 0)
+                .put("pausedUntil", JSONObject.NULL)
+                .put("blockedPackages", blocked)
+                .put("appLimits", JSONObject.NULL)
+
+            val stateRows = rpc(url, anonKey, "get_device_state_for_device", JSONObject().put("p_device_uuid", deviceUuid))
+            val isBlocked = stateRows.length() > 0 && stateRows.getJSONObject(0).optBoolean("is_blocked", false)
+
+            getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit().putString(KEY_STATE, stateJson.toString()).apply()
+            getSharedPreferences("arcakids_device", Context.MODE_PRIVATE)
+                .edit().putBoolean("is_blocked", isBlocked).apply()
+
+            looperHandler.post { applyEnforcement() }
+        } catch (t: Throwable) {
+            // Transient network error: retry on next cycle.
+        }
+    }
+
+    private fun rpc(url: String, anonKey: String, fn: String, params: JSONObject): JSONArray {
+        val connection = URL("${url}/rest/v1/rpc/$fn").openConnection() as HttpURLConnection
+        try {
+            connection.requestMethod = "POST"
+            connection.doOutput = true
+            connection.setRequestProperty("Content-Type", "application/json")
+            connection.setRequestProperty("apikey", anonKey)
+            connection.setRequestProperty("Authorization", "Bearer $anonKey")
+            connection.connectTimeout = 8000
+            connection.readTimeout = 8000
+            OutputStreamWriter(connection.outputStream, Charsets.UTF_8).use { it.write(params.toString()) }
+            val input = connection.inputStream
+            val text = input.bufferedReader(Charsets.UTF_8).use { it.readText() }
+            if (text.isBlank()) return JSONArray()
+            return JSONArray(text)
+        } finally {
+            connection.disconnect()
         }
     }
 
