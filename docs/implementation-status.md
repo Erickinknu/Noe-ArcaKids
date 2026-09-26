@@ -1,6 +1,6 @@
 # Estado de Implementación — NOE + ARCA KIDS
 
-**Actualizado:** 2026-09-20 (cierre de tanda: Internet Seguro con VPN de filtrado + historial web, alarma sonora en modo silencio, motor de enforcement completo)
+**Actualizado:** 2026-09-25 (cierre de tanda: paleta cálida NOE activada, dashboard con KPIs, privacidad/términos completos y cliente push en NOE; versión 1.4.0 / versionCode 12)
 
 Leyenda de estados:
 - `DONE` — implementado, compila y verificado en código.
@@ -10,7 +10,7 @@ Leyenda de estados:
 - `MOCK` — placeholder/stub: devuelve datos falsos o no hace nada real.
 - `MISSING` — no existe.
 
-Fuente de verdad de versión: `apps/<app>/app.config.ts` (`1.3.6` / versionCode `11`). El `android/app/build.gradle` se sincroniza con esa fuente (prebuild o edición directa); nunca al revés.
+Fuente de verdad de versión: `apps/<app>/app.config.ts` (`1.4.0` / versionCode `12`). El `android/app/build.gradle` se sincroniza con esa fuente (prebuild o edición directa); nunca al revés.
 
 ---
 
@@ -32,11 +32,13 @@ Fuente de verdad de versión: `apps/<app>/app.config.ts` (`1.3.6` / versionCode 
 | Reglas — modo estudio | `UI_ONLY` | Persistencia local; sin enforcement nativo aún. |
 | Solicitudes de desbloqueo | `DONE` | `unlock_request_service` + resolución. |
 | Notificaciones — preferencias | `DONE` | `notification_preferences`. |
+| Notificaciones — cliente push | `DONE` | `push-notification-service`: token Expo registrado en `push_tokens` al autenticar y borrado al salir (`_layout.tsx`), canal Android y handlers foreground/response. Push remoto real en APK release requiere `google-services.json` de Firebase. |
 | Feedback | `DONE` | `feedback` repo+service+pantalla. |
 | PIN parental + bloqueo de apertura | `DONE` | SHA-256 + sal, lockout, lock-on-open. |
 | Alertas (block/time/geofence) | `DONE` | `getRecentAlerts` desde `device_alerts`. |
 | Perfil/Cuenta/Config/Suscripción/… | `UI_ONLY` | Pantallas y navegación; pagos/soporte pendientes. |
 | i18n es/en · Dark mode | `DONE` | Preferencia persistente + SO detect; tokens del design system. |
+| Tema — paleta cálida NOE | `DONE` | `<ThemeProvider app="noe">` (primary `#0369A1`, fondos crema), headers de sección y tarjetas con sombra, iconos tipados. |
 | `profiles.block_installs` | `DONE` | Flag persistido; consumo en ARCA KIDS vía comando `UNINSTALL_LOCK`. |
 
 ## ARCA KIDS (app de hijos, `com.arcakids.child`)
