@@ -1,5 +1,16 @@
 import type { ExpoConfig } from 'expo/config';
 
+// @ts-ignore
+const fs = require('fs');
+// @ts-ignore
+const path = require('path');
+
+// @ts-ignore
+const googleServicesAvailable = fs.existsSync(
+  // @ts-ignore
+  path.resolve(__dirname, 'google-services.json')
+);
+
 const sentryOrg = process.env.SENTRY_ORG;
 const sentryProject = process.env.SENTRY_PROJECT;
 const sentryPlugins: NonNullable<ExpoConfig['plugins']> = sentryOrg && sentryProject
@@ -14,7 +25,7 @@ const sentryPlugins: NonNullable<ExpoConfig['plugins']> = sentryOrg && sentryPro
 const config: ExpoConfig = {
   name: 'NOE',
   slug: 'noe',
-  version: '1.3.6',
+  version: '1.4.0',
   orientation: 'portrait',
   icon: './assets/images/noe-icon.png',
   scheme: 'noe',
@@ -26,8 +37,9 @@ const config: ExpoConfig = {
   },
   android: {
     package: 'com.noe.parent',
-    versionCode: 11,
+    versionCode: 12,
     allowBackup: false,
+    ...(googleServicesAvailable ? { googleServicesFile: './google-services.json' } : {}),
     adaptiveIcon: {
       backgroundColor: '#E6F4FE',
       foregroundImage: './assets/images/noe-adaptive-foreground.png',
@@ -39,6 +51,13 @@ const config: ExpoConfig = {
   plugins: [
     'expo-router',
     'expo-local-authentication',
+    [
+      'expo-notifications',
+      {
+        color: '#0A84FF',
+        defaultChannel: 'default',
+      },
+    ],
     [
       'expo-splash-screen',
       {

@@ -6,6 +6,7 @@ import * as SplashScreen from 'expo-splash-screen';
 
 import { initI18n } from '@/i18n';
 import { useAuthStore } from '@/stores/auth-store';
+import { pushNotificationService } from '@/features/notifications/services/push-notification-service';
 import { ThemeProvider, useTheme, networkService, ErrorBoundary, sentryService } from '@noe-arcakids/shared';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
@@ -67,6 +68,41 @@ function RootNavigator() {
       clearTimeout(timeoutId);
     };
   }, [initialize]);
+
+  useEffect(() => {
+    let active = true;
+    let disposeNotifications: (() => void) | null = null;
+
+    pushNotificationService.configure().then((dispose) => {
+      if (!active) return;
+      disposeNotifications = dispose;
+    });
+
+    const register = async () => {
+      const granted = await pushNotificationService.requestPermissions();
+      if (granted) {
+        await pushNotificationService.registerPushToken();
+      }
+    };
+
+    if (useAuthStore.getState().status === 'authenticated') {
+      register();
+    }
+
+    const unsubscribe = useAuthStore.subscribe((state) => {
+      if (state.status === 'authenticated') {
+        register();
+      } else {
+        pushNotificationService.unregisterPushToken();
+      }
+    });
+
+    return () => {
+      active = false;
+      disposeNotifications?.();
+      unsubscribe();
+    };
+  }, []);
 
   useEffect(() => {
     if (ready) {
