@@ -10,6 +10,7 @@ import {
   spacing,
   typography,
   type AppColorTheme,
+  type AppPalette,
   type ThemeContextValue,
   type ThemeDeps,
 } from './theme';
@@ -18,7 +19,13 @@ const THEME_KEY = 'app/theme';
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-export function ThemeProvider({ children }: { children: ReactNode }) {
+export function ThemeProvider({
+  children,
+  app = 'default',
+}: {
+  children: ReactNode;
+  app?: AppPalette;
+}) {
   const systemScheme = useColorScheme();
   const [theme, setThemeState] = useState<AppColorTheme>('system');
 
@@ -37,7 +44,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const resolved: 'light' | 'dark' =
     theme === 'system' ? (systemScheme === 'dark' ? 'dark' : 'light') : theme;
 
-  const colors = getColors(resolved);
+  const colors = getColors(app, resolved);
   const shadows = getShadowsForScheme(resolved);
 
   const deps = useMemo<ThemeDeps>(
@@ -52,8 +59,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const value = useMemo<ThemeContextValue>(
-    () => ({ theme, resolved, colors, shadows, deps, setTheme }),
-    [theme, resolved, colors, shadows, deps, setTheme]
+    () => ({ theme, resolved, app, colors, shadows, deps, setTheme }),
+    [theme, resolved, app, colors, shadows, deps, setTheme]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

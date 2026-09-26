@@ -13,12 +13,12 @@ import {
   type ActivityCategory,
   type ChildUsageSummary,
 } from '@/features/activity/services/activity-service';
-import { Card, useTheme, useAsyncData, spacing, typography, radius, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, useAsyncData, spacing, typography, radius, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 interface CategoryScreenProps {
   title: string;
   category: ActivityCategory;
-  icon: string;
+  icon: keyof typeof MaterialIcons.glyphMap;
   description: string;
   emptyTitle: string;
   emptyDescription: string;
@@ -35,8 +35,8 @@ export function CategoryActivityScreen({
   const { t: tr } = useTranslation();
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const { childId } = useLocalSearchParams<{ childId?: string }>();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -120,7 +120,7 @@ export function CategoryActivityScreen({
           ))}
         </>
       ) : (
-        <EmptyState icon={icon} title={emptyTitle} description={emptyDescription} />
+        <EmptyState icon={<MaterialIcons name={icon} size={48} color={colors.textMuted} />} title={emptyTitle} description={emptyDescription} />
       )}
     </ScrollView>
   );
@@ -148,7 +148,7 @@ function friendlyName(packageName: string): string {
   return map[packageName] ?? packageName.split('.').pop() ?? packageName;
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
     screen: { padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
     headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
@@ -162,10 +162,10 @@ const makeStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.sm,
-      backgroundColor: colors.primaryLight,
+      ...shadows.sm,
     },
     summaryText: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.primary },
-    appCard: { gap: spacing.sm },
+    appCard: { gap: spacing.sm, ...shadows.sm },
     appRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
     appName: { flex: 1, fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.medium, color: colors.text },
     appMinutes: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.bold, color: colors.text },

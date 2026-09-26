@@ -89,7 +89,7 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <ThemeProvider>
+    <ThemeProvider app="noe">
       <ErrorBoundary>
         <RootNavigator />
       </ErrorBoundary>

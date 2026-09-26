@@ -2,6 +2,8 @@ import { Platform, type ViewStyle } from 'react-native';
 
 export type AppColorTheme = 'light' | 'dark' | 'system';
 
+export type AppPalette = 'default' | 'noe';
+
 const lightColors = {
   primary: '#0072DE',
   primaryLight: '#E6F4FE',
@@ -24,6 +26,34 @@ const lightColors = {
   inputBorder: '#CBD5E1',
   inputPlaceholder: '#94A3B8',
   inputRadius: 10,
+  inputMinHeight: 48,
+} as const;
+
+// Palette cálida de NOE (dirección «Arena clara» mezclada con calidez de «Cálido & cercano»).
+// Conserva la identidad de marca (MASTER.md): azul primario #0369A1, acentos verde/ámbar,
+// fondos crema cálidos, tarjetas en blanco cálido. Se activa con <ThemeProvider app="noe">.
+const noeLightColors = {
+  primary: '#0369A1',
+  primaryLight: '#E8F1F9',
+  onPrimary: '#FFFFFF',
+  background: '#FFFDF8',
+  surface: '#F7F1E4',
+  surfaceHover: '#EFE7D4',
+  text: '#25201A',
+  textSecondary: '#403A31',
+  textMuted: '#7D6F57',
+  border: '#EAE1CD',
+  borderLight: '#F2ECDD',
+  danger: '#DC2626',
+  dangerLight: '#FDF0F1',
+  success: '#16A34A',
+  successLight: '#ECF6EE',
+  warning: '#C2690B',
+  warningLight: '#FDF2E2',
+  overlay: 'rgba(37,30,20,0.45)',
+  inputBorder: '#DBCDB3',
+  inputPlaceholder: '#A7957C',
+  inputRadius: 12,
   inputMinHeight: 48,
 } as const;
 
@@ -53,6 +83,9 @@ const darkColors = {
 } as const;
 
 export const colors = lightColors;
+
+// Static warm palette para NOE (uso fuera del hook useTheme, ej. location).
+export const noeColors = noeLightColors;
 
 export const spacing = {
   xs: 4,
@@ -136,9 +169,16 @@ export const colorThemes = {
   dark: darkColors,
 };
 
-export const getColors = (theme: AppColorTheme) => {
-  if (theme === 'dark') return darkColors;
-  return lightColors;
+export const noeColorThemes = {
+  light: noeLightColors,
+  dark: darkColors,
+};
+
+export const getColors = (palette: AppPalette, theme: AppColorTheme) => {
+  if (palette === 'noe') {
+    return theme === 'dark' ? darkColors : noeLightColors;
+  }
+  return theme === 'dark' ? darkColors : lightColors;
 };
 
 export const getShadowsForScheme = (scheme: 'light' | 'dark') => {
@@ -201,6 +241,7 @@ export interface ThemeDeps {
 export interface ThemeContextValue {
   theme: AppColorTheme;
   resolved: ThemeResolvedScheme;
+  app: AppPalette;
   colors: ThemeColors;
   shadows: ThemeShadows;
   deps: ThemeDeps;
