@@ -1,6 +1,6 @@
 # Runbook de operaciones — NOE + ARCA KIDS
 
-Última actualización: 2026-09-17.
+Última actualización: 2026-09-26.
 
 ## 1. Builds de release (firmados)
 
@@ -199,3 +199,33 @@ Verificar ausencia de crashes:
 ```
 
 > La APK de ARCA KIDS con `x86_64` solo sirve para emular — **no instalar en dispositivo real** (lose arm64 native libs).
+
+## 11. Smoke test RELEASE en dispositivo físico (2026-09-26)
+
+**APKs de hito (firma de producción, no debug):**
+| App | APK | SHA-256 del certificado |
+|---|---|---|
+| NOE | `builds/noe/NOE-1.4.0-release.apk` | `421ef0257cea004626705a58fdad15220a8a9301b9a15ea96fb3bcde7d6c8cbb` |
+| ARCA KIDS | `builds/arcakids/ARCA-KIDS-1.4.0-release.apk` | `1a7c8b640455b80ac8a07c13a6f6423c5769736be1be75225ed173633871c852` |
+
+**Dispositivo:** físico y limpio (factory reset o invitado **sin cuentas**; el Device Owner no se puede establecer con cuentas configuradas). El rol Device Owner se da vía `adb shell dpm set-device-owner com.arcakids.child/.DeviceAdminReceiver`; solo se puede quitar con reset en la mayoría de ROMs.
+
+**Veredicto del checksum de firma (análisis 2026-09-26):**
+- La vinculación estándar (QR `akv1:<family>:<code>` y código de 6 caracteres) **no embebe ni verifica ninguna firma** → debug↔release es indistinto ahí.
+- El QR DPC wizard incluye desde `4f4a1a0` `PROVISIONING_DEVICE_ADMIN_SIGNATURE_CHECKSUM` = SHA-256 hex del cert **RELEASE** de ARCA KIDS, y los extras custom viajan bajo `PROVISIONING_ADMIN_EXTRAS_BUNDLE` (el Setup Wizard solo reenvía esos).
+- Conclusión: no hay mismatch debug↔release posible en la vinculación; de mantener el resultado, no hace falta regenerar QR ni cambiar config.
+
+**Flujo E2E (ADB conectado):**
+```powershell
+$adb = "$env:USERPROFILE\Android\Sdk\platform-tools\adb.exe"
+& $adb install -r builds\arcakids\ARCA-KIDS-1.4.0-release.apk
+& $adb install -r builds\noe\NOE-1.4.0-release.apk
+& $adb shell dpm set-device-owner com.arcakids.child/.DeviceAdminReceiver
+```
+1. NOE: registrarse/ingresar → crear familia → agregar hijo → pantalla "Vincular" → escanear el QR o copiar el código.
+2. ARCA KIDS: abrir → pegar el código → onboarding (accesibilidad, uso de uso, overlay).
+3. NOE: crear regla de bloqueo (sitio "Internet Seguro" o app) → aplicar al hijo.
+4. Verificar el bloqueo contra el sitio: `& $adb shell am start -a android.intent.action.VIEW -d 'https://sitio-bloqueado.com'` (overlay "Sitio bloqueado") y contra una app: `& $adb shell monkey -p <pkg> 1`.
+5. Alarma en silencio: regla con modo silencio + hora → confirmar DND/silencio a la hora indicada.
+6. Verificación de firma instalada (opcional): `& $adb shell pm path com.arcakids.child` y comparar contra el SHA-256 release.
+7. Negativo: `& $adb logcat -d | Select-String 'FATAL EXCEPTION'` sin entradas; tags `EnforcementService`, `AccessibilityEnforcementService`, `BlockingOverlayManager` activos.

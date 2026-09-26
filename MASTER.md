@@ -36,6 +36,8 @@ npm test                # jest NOE (43) + ARCA KIDS (17)
 3. **Sentry** — decisión: fuera del piloto (telemetría de bloqueantes vía feedback en-app). Revisar post-piloto; el código y el plugin condicionante están listos y solo requieren `SENTRY_ORG`, `SENTRY_PROJECT`, `EXPO_PUBLIC_SENTRY_DSN` (y authToken para source maps).
 4. **Separar proyecto prod de dev** (hoy comparten `jvxeiexsmnoorhhphjld`).
 5. **Dominio propio / SMTP transaccional** para entregabilidad de emails.
+6. **Verificar restore de backups de Supabase (auditoría #8)** — sin pg_cron ni restore probado; comprobarlo al arranque del piloto y agendar backups periódicos (diferido 2026-09-26).
+7. **Spend cap de Supabase (auditoría #14)** — sin configurar; activar en Billing → Spend cap al arrancar el piloto (diferido 2026-09-26).
 
 ## Decisiones abiertas
 
