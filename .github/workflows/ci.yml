@@ -10,15 +10,14 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  check:
-    name: typecheck + lint + test
+  validate:
+    name: Typecheck + lint + test
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node 24
         uses: actions/setup-node@v4
         with:
           node-version: 24
