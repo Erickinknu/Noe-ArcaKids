@@ -5,7 +5,7 @@ export default function WebActivityScreen() {
     <CategoryActivityScreen
       title="Navegadores web usados"
       category="web"
-      icon="🌐"
+      icon="public"
       description="Tiempo de uso de las apps de navegación de tu hijo."
       emptyTitle="Aún no hay datos de uso de navegadores"
       emptyDescription="El tiempo de uso de las apps de navegación aparecerá aquí cuando el dispositivo de tu hijo reporte actividad."

@@ -10,13 +10,13 @@ import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { Card, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 export default function CompartirScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
 
   async function handleShare() {
     try {
@@ -53,7 +53,7 @@ export default function CompartirScreen() {
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
   screen: {
     padding: spacing.lg,
@@ -74,6 +74,7 @@ const makeStyles = (colors: ThemeColors) =>
     alignItems: 'center',
     paddingVertical: spacing.xxl,
     gap: spacing.md,
+    ...shadows.sm,
   },
   title: {
     fontSize: typography.fontSizes.title,

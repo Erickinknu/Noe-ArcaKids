@@ -8,14 +8,14 @@ import { Button } from '@/components/ui/button';
 import { billingService } from '@/features/billing/services/billing-service';
 import { PLAN_CATALOG, type PlanId } from '@/features/billing/plans';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { Card, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 export default function SuscripcionScreen() {
   const { t: tr } = useTranslation();
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [claiming, setClaiming] = useState<PlanId | null>(null);
 
   const fetchSubscription = useCallback(() => billingService.getSubscription(), []);
@@ -96,7 +96,7 @@ export default function SuscripcionScreen() {
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
   screen: {
     padding: spacing.lg,
@@ -131,6 +131,7 @@ const makeStyles = (colors: ThemeColors) =>
   },
   planCard: {
     gap: spacing.sm,
+    ...shadows.sm,
   },
   planCurrent: {
     borderColor: colors.primary,

@@ -13,13 +13,13 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { feedbackService } from '@/features/feedback/services/feedback-service';
-import { Card, errorMessage, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, errorMessage, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 export default function SugerirScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [idea, setIdea] = useState('');
   const [sending, setSending] = useState(false);
 
@@ -47,7 +47,7 @@ export default function SugerirScreen() {
         <Text style={styles.headerTitle}>Sugiere una idea</Text>
       </Pressable>
 
-      <Card>
+      <Card style={styles.card}>
         <Text style={styles.description}>
           ¿Tienes una idea para mejorar NOE? Cuéntanos y la evaluaremos para futuras
           versiones de la app.
@@ -70,12 +70,15 @@ export default function SugerirScreen() {
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
   screen: {
     padding: spacing.lg,
     backgroundColor: colors.surface,
     gap: spacing.md,
+  },
+  card: {
+    ...shadows.sm,
   },
   headerRow: {
     flexDirection: 'row',

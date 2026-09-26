@@ -9,14 +9,14 @@ import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { activityService, type ChildUsageSummary } from '@/features/activity/services/activity-service';
-import { Card, useTheme, useAsyncData, spacing, typography, radius, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, useAsyncData, spacing, typography, radius, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 export default function AppsScreen() {
   const { t: tr } = useTranslation();
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const { childId } = useLocalSearchParams<{ childId?: string }>();
   const [refreshing, setRefreshing] = useState(false);
 
@@ -97,7 +97,7 @@ export default function AppsScreen() {
         </>
       ) : (
         <EmptyState
-          icon="📱"
+          icon={<MaterialIcons name="apps" size={48} color={colors.textMuted} />}
           title="Aún no hay datos de apps"
           description="Las aplicaciones usadas aparecerán aquí cuando el dispositivo de tu hijo reporte esta información."
         />
@@ -128,7 +128,7 @@ function friendlyName(packageName: string): string {
   return map[packageName] ?? packageName.split('.').pop() ?? packageName;
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
     screen: { padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
     headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
@@ -142,10 +142,10 @@ const makeStyles = (colors: ThemeColors) =>
       flexDirection: 'row',
       alignItems: 'center',
       gap: spacing.sm,
-      backgroundColor: colors.primaryLight,
+      ...shadows.sm,
     },
     summaryText: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.primary },
-    appCard: { gap: spacing.sm },
+    appCard: { gap: spacing.sm, ...shadows.sm },
     appRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: spacing.sm },
     appName: { flex: 1, fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.medium, color: colors.text },
     appMinutes: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.bold, color: colors.text },

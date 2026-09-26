@@ -19,7 +19,7 @@ import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { Card, useTheme, radius, spacing, typography, errorMessage, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, radius, spacing, typography, errorMessage, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 import {
   appCategoryService,
   type ChildApp,
@@ -36,10 +36,10 @@ import { ageFromBirthDate, AGE_GROUPS, birthDateToAgeGroup } from '@/features/ch
 
 type Tab = 'limited' | 'blocked' | 'free';
 
-const TAB_CONFIG: { key: Tab; label: string; color: string; icon: string }[] = [
-  { key: 'limited', label: 'Con límite', color: '#D97706', icon: 'timer' },
-  { key: 'blocked', label: 'Bloqueadas', color: '#DC2626', icon: 'block' },
-  { key: 'free', label: 'Libres', color: '#059669', icon: 'check-circle' },
+const TAB_CONFIG: { key: Tab; label: string; colorKey: 'warning' | 'danger' | 'success'; icon: string }[] = [
+  { key: 'limited', label: 'Con límite', colorKey: 'warning', icon: 'timer' },
+  { key: 'blocked', label: 'Bloqueadas', colorKey: 'danger', icon: 'block' },
+  { key: 'free', label: 'Libres', colorKey: 'success', icon: 'check-circle' },
 ];
 
 function formatDuration(minutes: number): string {
@@ -55,8 +55,8 @@ export default function AppsControlScreen() {
   const router = useRouter();
   const { childId } = useLocalSearchParams<{ childId: string }>();
   const screenPadding = useScreenPadding();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
 
   const [apps, setApps] = useState<ChildApp[]>([]);
   const [loading, setLoading] = useState(true);
@@ -298,7 +298,7 @@ export default function AppsControlScreen() {
       {pendingSuggestions.length > 0 && (
         <Card style={styles.sugCard}>
           <View style={styles.sugHeader}>
-            <MaterialIcons name="lightbulb-outline" size={18} color="#D97706" />
+            <MaterialIcons name="lightbulb-outline" size={18} color={colors.warning} />
             <Text style={styles.sugTitle}>Reglas sugeridas</Text>
           </View>
           <Text style={styles.sugSubtitle}>
@@ -367,22 +367,23 @@ export default function AppsControlScreen() {
         {TAB_CONFIG.map((tab) => {
           const count = apps.filter((a) => a.category === tab.key).length;
           const isActive = activeTab === tab.key;
+          const tabColor = colors[tab.colorKey];
           return (
             <Pressable
               key={tab.key}
-              style={[styles.tab, isActive && { backgroundColor: tab.color + '18', borderColor: tab.color }]}
+              style={[styles.tab, isActive && { backgroundColor: tabColor + '18', borderColor: tabColor }]}
               onPress={() => setActiveTab(tab.key)}
             >
               <MaterialIcons
                 name={tab.icon as any}
                 size={16}
-                color={isActive ? tab.color : colors.textMuted}
+                color={isActive ? tabColor : colors.textMuted}
               />
-              <Text style={[styles.tabLabel, isActive && { color: tab.color }]}>
+              <Text style={[styles.tabLabel, isActive && { color: tabColor }]}>
                 {tab.label}
               </Text>
-              <View style={[styles.tabBadge, isActive && { backgroundColor: tab.color }]}>
-                <Text style={[styles.tabBadgeText, isActive && { color: '#FFFFFF' }]}>{count}</Text>
+              <View style={[styles.tabBadge, isActive && { backgroundColor: tabColor }]}>
+                <Text style={[styles.tabBadgeText, isActive && { color: colors.onPrimary }]}>{count}</Text>
               </View>
             </Pressable>
           );
@@ -428,8 +429,8 @@ export default function AppsControlScreen() {
                   style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
                   onPress={() => promptTimeLimit(app)}
                 >
-                  <MaterialIcons name="timer" size={14} color="#D97706" />
-                  <Text style={[styles.actionBtnText, { color: '#D97706' }]}>Ajustar tiempo</Text>
+                  <MaterialIcons name="timer" size={14} color={colors.warning} />
+                  <Text style={[styles.actionBtnText, { color: colors.warning }]}>Ajustar tiempo</Text>
                 </Pressable>
               </View>
             )}
@@ -439,15 +440,15 @@ export default function AppsControlScreen() {
                   style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
                   onPress={() => handleChangeCategory(app, 'blocked')}
                 >
-                  <MaterialIcons name="block" size={14} color="#DC2626" />
-                  <Text style={[styles.actionBtnText, { color: '#DC2626' }]}>Bloquear</Text>
+                  <MaterialIcons name="block" size={14} color={colors.danger} />
+                  <Text style={[styles.actionBtnText, { color: colors.danger }]}>Bloquear</Text>
                 </Pressable>
                 <Pressable
                   style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
                   onPress={() => promptTimeLimit(app)}
                 >
-                  <MaterialIcons name="timer" size={14} color="#D97706" />
-                  <Text style={[styles.actionBtnText, { color: '#D97706' }]}>Poner límite</Text>
+                  <MaterialIcons name="timer" size={14} color={colors.warning} />
+                  <Text style={[styles.actionBtnText, { color: colors.warning }]}>Poner límite</Text>
                 </Pressable>
               </View>
             )}
@@ -457,8 +458,8 @@ export default function AppsControlScreen() {
                   style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
                   onPress={() => handleChangeCategory(app, 'free')}
                 >
-                  <MaterialIcons name="check-circle" size={14} color="#059669" />
-                  <Text style={[styles.actionBtnText, { color: '#059669' }]}>Desbloquear</Text>
+                  <MaterialIcons name="check-circle" size={14} color={colors.success} />
+                  <Text style={[styles.actionBtnText, { color: colors.success }]}>Desbloquear</Text>
                 </Pressable>
               </View>
             )}
@@ -498,8 +499,8 @@ function TimeLimitModal({
   onSave: (app: ChildApp, minutes: number) => void;
   onRemove: (app: ChildApp) => void;
 }) {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [minutes, setMinutes] = useState(() => app?.timeLimitMinutes ?? 60);
 
   const clamp = (m: number) => Math.min(1440, Math.max(1, Math.round(m)));
@@ -595,7 +596,7 @@ function TimeLimitModal({
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
   screen: { padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
@@ -605,7 +606,7 @@ const makeStyles = (colors: ThemeColors) =>
   description: { fontSize: typography.fontSizes.body, color: colors.textMuted, lineHeight: 22 },
 
   // Sugerencias
-  sugCard: { padding: spacing.md, gap: spacing.xs },
+  sugCard: { padding: spacing.md, gap: spacing.xs, ...shadows.sm },
   sugHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   sugTitle: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.text },
   sugSubtitle: { fontSize: typography.fontSizes.caption, color: colors.textMuted, marginBottom: spacing.xs },
@@ -627,16 +628,16 @@ const makeStyles = (colors: ThemeColors) =>
   tab: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.xs, paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 1, borderColor: colors.border, backgroundColor: colors.background },
   tabLabel: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.textMuted },
   tabBadge: { minWidth: 20, height: 20, borderRadius: 10, backgroundColor: colors.textMuted, alignItems: 'center', justifyContent: 'center', paddingHorizontal: spacing.xs },
-  tabBadgeText: { fontSize: 10, fontWeight: typography.fontWeights.bold, color: '#FFFFFF' },
+  tabBadgeText: { fontSize: 10, fontWeight: typography.fontWeights.bold, color: colors.onPrimary },
 
   // App cards
-  appCard: { padding: spacing.md },
+  appCard: { padding: spacing.md, ...shadows.sm },
   appRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   appIconWrap: { width: 40, height: 40, borderRadius: radius.md, backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
   appInfo: { flex: 1, gap: 2 },
   appName: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.text },
   appPackage: { fontSize: typography.fontSizes.caption, color: colors.textMuted },
-  appLimit: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: '#D97706', marginTop: 2 },
+  appLimit: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.warning, marginTop: 2 },
   moveBtn: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center', backgroundColor: colors.background },
 
   // Actions

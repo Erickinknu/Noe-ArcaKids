@@ -12,7 +12,7 @@ import {
   webVisitsService,
   type WebVisit,
 } from '@/features/web-filter/services/web-visits-service';
-import { Card, useTheme, useAsyncData, spacing, typography, radius, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, useAsyncData, spacing, typography, radius, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 interface VisitGroup {
   dateLabel: string;
@@ -38,8 +38,8 @@ function displayHost(hostname: string): string {
 }
 
 export default function WebVisitsScreen() {
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const screenPadding = useScreenPadding();
   const { childId, childName } = useLocalSearchParams<{ childId?: string; childName?: string }>();
   const [refreshing, setRefreshing] = useState(false);
@@ -77,17 +77,20 @@ export default function WebVisitsScreen() {
       <SectionHeader title={`Sitios visitados${childName ? ` · ${childName}` : ''}`} />
       <Text style={styles.subtitle}>
         Dominios navegados por el dispositivo durante los últimos 7 días. Los sitios bloqueados por el
-        filtrado web se marcan con 🚫.
+        filtrado web se marcan con el ícono de bloqueo.
       </Text>
       {blockedCount > 0 ? (
-        <Text style={styles.summaryChip}>
-          {blockedCount} {blockedCount === 1 ? 'sitio bloqueado' : 'sitios bloqueados'}
-        </Text>
+        <View style={styles.summaryChip}>
+          <MaterialIcons name="block" size={14} color={colors.danger} />
+          <Text style={styles.summaryChipText}>
+            {blockedCount} {blockedCount === 1 ? 'sitio bloqueado' : 'sitios bloqueados'}
+          </Text>
+        </View>
       ) : null}
 
       {groups.length === 0 ? (
         <EmptyState
-          icon="🌐"
+          icon={<MaterialIcons name="public" size={48} color={colors.textMuted} />}
           title="Aún no hay sitios visitados"
           description="El historial de dominios aparecerá aquí cuando el filtrado web del dispositivo de tu hijo reporte navegación."
         />
@@ -126,24 +129,29 @@ export default function WebVisitsScreen() {
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
-    screen: { paddingTop: spacing.xxl, padding: spacing.lg, backgroundColor: colors.background, gap: spacing.md },
+    screen: { paddingTop: spacing.xxl, padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
     subtitle: { fontSize: typography.fontSizes.caption, color: colors.textMuted, lineHeight: 20 },
     summaryChip: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
       alignSelf: 'flex-start',
       backgroundColor: colors.dangerLight,
-      color: colors.danger,
       borderRadius: radius.full,
       paddingHorizontal: spacing.sm,
       paddingVertical: 4,
+      overflow: 'hidden',
+    },
+    summaryChipText: {
       fontSize: typography.fontSizes.caption,
       fontWeight: typography.fontWeights.medium,
-      overflow: 'hidden',
+      color: colors.danger,
     },
     group: { gap: spacing.xs },
     groupLabel: { fontSize: typography.fontSizes.subtitle, fontWeight: typography.fontWeights.semibold, color: colors.text, marginTop: spacing.xs },
-    card: { gap: 0 },
+    card: { gap: 0, ...shadows.sm },
     row: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, paddingVertical: spacing.sm },
     rowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
     iconWrap: { width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },

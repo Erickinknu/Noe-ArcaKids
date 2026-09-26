@@ -5,7 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { TimeInput } from '@/components/ui/time-picker';
-import { Card, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 type DaySchedule = { enabled: boolean; start: string; end: string };
 type WeekSchedule = Record<string, DaySchedule>;
@@ -43,8 +43,8 @@ const DEFAULT_SCHEDULE: WeekSchedule = {
 export default function HorariosScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [schedule, setSchedule] = useState<WeekSchedule>(DEFAULT_SCHEDULE);
   const [customSchedules, setCustomSchedules] = useState<CustomSchedule[]>([]);
 
@@ -91,7 +91,7 @@ export default function HorariosScreen() {
       {DAYS.map((day) => {
         const ds = schedule[day.key];
         return (
-          <Card key={day.key}>
+          <Card key={day.key} style={styles.card}>
             <View style={styles.dayRow}>
               <Text style={[styles.dayLabel, !ds.enabled && styles.dayDisabled]}>{day.label}</Text>
               <Switch
@@ -123,14 +123,14 @@ export default function HorariosScreen() {
 
       {/* ── Horarios personalizados: única fuente de edición ── */}
       <View style={styles.customHeader}>
-        <MaterialIcons name="event" size={22} color="#059669" />
+        <MaterialIcons name="event" size={22} color={colors.success} />
         <View style={styles.customHeaderText}>
           <Text style={styles.customTitle}>Horarios personalizados</Text>
           <Text style={styles.customDescription}>Biblia, escuela, actividades, etc.</Text>
         </View>
       </View>
 
-      <Card>
+      <Card style={styles.card}>
         {customSchedules.length === 0 ? (
           <Text style={styles.customEmpty}>Aún no hay horarios personalizados.</Text>
         ) : (
@@ -144,7 +144,7 @@ export default function HorariosScreen() {
                   <MaterialIcons
                     name={sch.enabled ? 'check-circle' : 'radio-button-unchecked'}
                     size={22}
-                    color={sch.enabled ? '#059669' : colors.textMuted}
+                    color={sch.enabled ? colors.success : colors.textMuted}
                   />
                 </Pressable>
                 <Text style={[styles.customName, !sch.enabled && { color: colors.textMuted }]}>
@@ -185,7 +185,7 @@ export default function HorariosScreen() {
         )}
 
         <Pressable style={({ pressed }) => [styles.addBtn, pressed && styles.addBtnPressed]} onPress={addCustomSchedule}>
-          <MaterialIcons name="add-circle-outline" size={20} color="#059669" />
+          <MaterialIcons name="add-circle-outline" size={20} color={colors.success} />
           <Text style={styles.addBtnText}>Agregar horario</Text>
         </Pressable>
       </Card>
@@ -193,9 +193,10 @@ export default function HorariosScreen() {
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
   screen: { padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
+  card: { ...shadows.sm },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   headerTitle: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
   description: { fontSize: typography.fontSizes.body, color: colors.textMuted, lineHeight: 22 },
@@ -219,7 +220,7 @@ const makeStyles = (colors: ThemeColors) =>
   customTop: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   customName: { flex: 1, fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.medium, color: colors.text },
   customTimes: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.md, marginTop: spacing.sm },
-  addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, borderWidth: 1.5, borderColor: '#059669', borderStyle: 'dashed', borderRadius: radius.md, padding: spacing.md, marginTop: spacing.md },
-  addBtnPressed: { backgroundColor: '#05966918' },
-  addBtnText: { fontSize: typography.fontSizes.body, color: '#059669', fontWeight: typography.fontWeights.medium },
+  addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, borderWidth: 1.5, borderColor: colors.success, borderStyle: 'dashed', borderRadius: radius.md, padding: spacing.md, marginTop: spacing.md },
+  addBtnPressed: { backgroundColor: colors.success + '18' },
+  addBtnText: { fontSize: typography.fontSizes.body, color: colors.success, fontWeight: typography.fontWeights.medium },
 });

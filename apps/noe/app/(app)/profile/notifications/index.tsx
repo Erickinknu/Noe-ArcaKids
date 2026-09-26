@@ -16,7 +16,7 @@ import {
   DEFAULT_NOTIFICATION_PREFERENCES,
   type NotificationPreferences,
 } from '@/features/notifications/repositories/notification-preferences-repository';
-import { Card, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 interface SettingToggle {
   key: keyof NotificationPreferences;
@@ -65,8 +65,8 @@ const SETTINGS: SettingToggle[] = [
 export default function NotificacionesAjustesScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [prefs, setPrefs] = useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFERENCES);
 
   useEffect(() => {
@@ -105,7 +105,7 @@ export default function NotificacionesAjustesScreen() {
         Configura cómo y cuándo recibir notificaciones de las actividades de tus hijos.
       </Text>
 
-      <Card>
+      <Card style={styles.card}>
         {SETTINGS.map((setting, i) => (
           <View
             key={setting.key}
@@ -119,7 +119,7 @@ export default function NotificacionesAjustesScreen() {
               value={prefs[setting.key]}
               onValueChange={() => toggle(setting.key)}
               trackColor={{ false: colors.border, true: colors.primary }}
-              thumbColor="#fff"
+              thumbColor={colors.onPrimary}
             />
           </View>
         ))}
@@ -128,12 +128,15 @@ export default function NotificacionesAjustesScreen() {
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
   screen: {
     padding: spacing.lg,
     backgroundColor: colors.surface,
     gap: spacing.md,
+  },
+  card: {
+    ...shadows.sm,
   },
   headerRow: {
     flexDirection: 'row',

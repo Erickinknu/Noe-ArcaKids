@@ -19,7 +19,7 @@ import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { studyModeService, type StudySchedule } from '@/features/study-mode/services/study-mode-service';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
-import { Card, useTheme, useAsyncData, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, useAsyncData, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 import type { ChildProfile } from '@noe-arcakids/types';
 
 type StudyDay = { enabled: boolean; start: string; end: string };
@@ -80,8 +80,8 @@ function fromState(enabled: boolean, state: StudyScheduleState): StudySchedule {
 export default function ModoEstudioScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -147,7 +147,7 @@ export default function ModoEstudioScreen() {
 
       {/* Child selector */}
       {(children ?? []).length > 0 && (
-        <Card>
+        <Card style={styles.card}>
           <Text style={styles.sectionLabel}>Selecciona un hijo</Text>
           {(children ?? []).map((child: ChildProfile) => (
             <Pressable
@@ -168,7 +168,7 @@ export default function ModoEstudioScreen() {
         </Card>
       )}
 
-      <Card>
+      <Card style={styles.card}>
         <View style={styles.switchRow}>
           <Text style={styles.switchLabel}>Activar modo estudio</Text>
           <Switch
@@ -183,7 +183,7 @@ export default function ModoEstudioScreen() {
       {DAYS.map((day) => {
         const ds = schedule[day.key];
         return (
-          <Card key={day.key}>
+          <Card key={day.key} style={styles.card}>
             <View style={styles.dayRow}>
               <Text style={[styles.dayLabel, !ds.enabled && styles.dayDisabled]}>{day.label}</Text>
               <Switch
@@ -210,7 +210,7 @@ export default function ModoEstudioScreen() {
       })}
 
       <Text style={styles.sectionLabel}>Apps bloqueadas en modo estudio</Text>
-      <Card>
+      <Card style={styles.card}>
         {BLOCKED_APPS.map((app, i) => (
           <View key={app} style={[styles.appRow, i < BLOCKED_APPS.length - 1 && styles.appBorder]}>
             <Text style={styles.appName}>{app}</Text>
@@ -226,9 +226,10 @@ export default function ModoEstudioScreen() {
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
   screen: { padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
+  card: { ...shadows.sm },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   headerTitle: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
   description: { fontSize: typography.fontSizes.body, color: colors.textMuted, lineHeight: 22 },

@@ -412,9 +412,16 @@ export default function ChildDetailScreen() {
             {deviceStatus.battery !== null ? (
               <Text style={styles.muted}>{tr('noe.deviceControl.battery', { value: deviceStatus.battery })}</Text>
             ) : null}
-            <Text style={[styles.badge, deviceStatus.isLocked ? styles.badgeLocked : styles.badgeUnlocked]}>
-              {deviceStatus.isLocked ? tr('noe.deviceControl.isLocked') : tr('noe.deviceControl.isUnlocked')}
-            </Text>
+            <View style={[styles.badge, deviceStatus.isLocked ? styles.badgeLocked : styles.badgeUnlocked]}>
+              <MaterialIcons
+                name={deviceStatus.isLocked ? 'lock' : 'lock-open'}
+                size={11}
+                color={deviceStatus.isLocked ? colors.danger : colors.success}
+              />
+              <Text style={[styles.badgeText, deviceStatus.isLocked ? styles.badgeLockedText : styles.badgeUnlockedText]}>
+                {deviceStatus.isLocked ? tr('noe.deviceControl.isLocked') : tr('noe.deviceControl.isUnlocked')}
+              </Text>
+            </View>
           </View>
         )}
 
@@ -557,7 +564,7 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
   screen: {
     padding: spacing.lg,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
     gap: spacing.md,
     paddingTop: spacing.xxl,
   },
@@ -627,22 +634,30 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     color: colors.text,
   },
   badge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     alignSelf: 'flex-start',
     marginTop: spacing.xs,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: radius.full,
-    fontSize: typography.fontSizes.caption,
-    fontWeight: typography.fontWeights.medium,
-    overflow: 'hidden',
   },
   badgeLocked: {
     backgroundColor: colors.danger + '20',
-    color: colors.danger,
   },
   badgeUnlocked: {
     backgroundColor: colors.success + '20',
+  },
+  badgeLockedText: {
+    color: colors.danger,
+  },
+  badgeUnlockedText: {
     color: colors.success,
+  },
+  badgeText: {
+    fontSize: typography.fontSizes.caption,
+    fontWeight: typography.fontWeights.medium,
   },
   controlGrid: {
     gap: spacing.sm,

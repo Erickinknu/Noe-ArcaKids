@@ -23,7 +23,7 @@ import { deviceControlService, type ChildLocation } from '@/features/device-cont
 import { type Geofence, type GeofenceEventRecord } from '@noe-arcakids/types';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
-import { Card, useTheme, radius, spacing, typography, useAsyncData, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, radius, spacing, typography, useAsyncData, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 type ChildOption = { id: string; displayName: string };
 
@@ -43,8 +43,8 @@ function formatEventTime(iso: string): string {
 export default function GeofencingScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [zones, setZones] = useState<Geofence[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -284,10 +284,10 @@ export default function GeofencingScreen() {
       )}
 
       {zones.length === 0 && !showForm ? (
-        <EmptyState icon="📍" title="Sin zonas definidas" description="Agrega una zona segura para comenzar" />
+        <EmptyState icon={<MaterialIcons name="location-on" size={48} color={colors.primary} />} title="Sin zonas definidas" description="Agrega una zona segura para comenzar" />
       ) : (
         zones.map((zone) => (
-          <Card key={zone.id}>
+          <Card key={zone.id} style={styles.card}>
             <View style={styles.zoneHeader}>
               <View style={styles.zoneIcon}>
                 <MaterialIcons name="location-on" size={20} color={zone.enabled ? colors.primary : colors.textMuted} />
@@ -317,7 +317,7 @@ export default function GeofencingScreen() {
       {children.length > 0 && (
         <>
           <Text style={styles.sectionLabel}>Entradas y salidas recientes</Text>
-          <Card>
+          <Card style={styles.card}>
             {eventsLoading && events.length === 0 ? (
               <Text style={styles.eventsEmpty}>Cargando movimientos...</Text>
             ) : events.length === 0 ? (
@@ -457,9 +457,10 @@ export default function GeofencingScreen() {
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
   screen: { padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
+  card: { ...shadows.sm },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   headerTitle: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
   description: { fontSize: typography.fontSizes.body, color: colors.textMuted, lineHeight: 22 },
@@ -468,6 +469,7 @@ const makeStyles = (colors: ThemeColors) =>
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: colors.border,
+    ...shadows.sm,
   },
   map: { height: 260 },
   mapHint: {
@@ -495,7 +497,7 @@ const makeStyles = (colors: ThemeColors) =>
   addBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, borderWidth: 1.5, borderColor: colors.primary, borderStyle: 'dashed', borderRadius: radius.md, padding: spacing.md },
   addBtnPressed: { backgroundColor: colors.primaryLight },
   addBtnText: { fontSize: typography.fontSizes.body, color: colors.primary, fontWeight: typography.fontWeights.medium },
-  formCard: { borderColor: colors.primary, borderWidth: 1.5 },
+  formCard: { borderColor: colors.primary, borderWidth: 1.5, ...shadows.sm },
   formTitle: { fontSize: typography.fontSizes.subtitle, fontWeight: typography.fontWeights.bold, color: colors.text, marginBottom: spacing.md },
   formLabel: { fontSize: typography.fontSizes.caption, color: colors.textMuted, marginBottom: spacing.xs, marginTop: spacing.sm },
   formInput: {

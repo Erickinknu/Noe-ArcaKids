@@ -3,6 +3,7 @@ import { Pressable, ScrollView, Share, StyleSheet, Text, View } from 'react-nati
 import QRCode from 'react-native-qrcode-svg';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { MaterialIcons } from '@expo/vector-icons';
 
 import { ROUTES } from '@/constants';
 
@@ -166,7 +167,7 @@ export default function LinkingScreen() {
         <SectionHeader title={tr('noe.linking.chooseChild')} />
         {data.children.length === 0 ? (
           <EmptyState
-            icon="👨‍👩‍👧"
+            icon={<MaterialIcons name="family-restroom" size={48} color={colors.textMuted} />}
             title={tr('noe.linking.noChildren')}
             action={{
               label: tr('noe.linking.goToChildren'),
@@ -273,7 +274,7 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   screen: {
     padding: spacing.lg,
     paddingTop: spacing.xxl,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
     gap: spacing.md,
   },
   title: {
@@ -326,7 +327,7 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   },
   childSelected: {
     borderColor: colors.primary,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.primaryLight,
   },
   childName: {
     fontSize: typography.fontSizes.body,

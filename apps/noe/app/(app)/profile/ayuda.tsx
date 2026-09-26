@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { Card, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 const FAQ = [
   {
@@ -28,8 +28,8 @@ const FAQ = [
 export default function AyudaScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
 
   return (
     <ScrollView
@@ -40,7 +40,7 @@ export default function AyudaScreen() {
         <Text style={styles.headerTitle}>Conseguir ayuda</Text>
       </Pressable>
 
-      <Card>
+      <Card style={styles.card}>
         {FAQ.map((item, i) => (
           <Pressable
             key={i}
@@ -63,12 +63,15 @@ export default function AyudaScreen() {
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
     screen: {
       padding: spacing.lg,
       backgroundColor: colors.surface,
       gap: spacing.md,
+    },
+    card: {
+      ...shadows.sm,
     },
     headerRow: {
       flexDirection: 'row',

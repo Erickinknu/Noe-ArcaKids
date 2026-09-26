@@ -5,7 +5,7 @@ export default function SocialActivityScreen() {
     <CategoryActivityScreen
       title="Redes sociales"
       category="social"
-      icon="💬"
+      icon="people"
       description="Uso de redes sociales de tu hijo en los últimos 7 días."
       emptyTitle="Aún no hay datos de redes sociales"
       emptyDescription="El uso de redes sociales aparecerá aquí cuando el dispositivo de tu hijo reporte esta información."

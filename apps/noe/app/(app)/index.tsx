@@ -283,7 +283,7 @@ export default function DashboardScreen() {
         {/* ── Header ── */}
         <View style={styles.header}>
           <View style={styles.headerLeft}>
-            <Avatar name={data.parentName} size={44} />
+            <Avatar name={data.parentName} size={46} />
             <View style={styles.headerTextGroup}>
               <Text style={styles.greeting}>
                 {tr('noe.dashboard.greeting', { name: data.parentName })}
@@ -308,30 +308,79 @@ export default function DashboardScreen() {
           </Pressable>
         </View>
 
-        {/* ── Quick actions ── */}
-        <Text style={styles.sectionTitle}>Acciones rápidas</Text>
-        <View style={styles.quickActionsRow}>
-          {[
-            { icon: 'lock' as const, label: 'Bloquear\ntodos', color: colors.danger, onPress: () => { setChildSelectAction('block'); setChildSelectVisible(true); } },
-            { icon: 'notifications-active' as const, label: 'Enviar\nalerta', color: colors.warning, onPress: () => { setChildSelectAction('alert'); setChildSelectVisible(true); } },
-            { icon: 'location-searching' as const, label: 'Ubicar\nhijos', color: colors.success, onPress: () => router.push('/location' as any) },
-            { icon: 'school' as const, label: 'Modo\nestudio', color: colors.primary, onPress: () => router.push('/rules/modo-estudio' as any) },
-          ].map((action) => (
-            <Pressable
-              key={action.label}
-              style={({ pressed }) => [
-                styles.quickActionCard,
-                pressed && styles.quickActionPressed,
-                data.children.length === 0 && styles.quickActionDisabled,
-              ]}
-              onPress={data.children.length === 0 ? undefined : action.onPress}
-            >
-              <View style={[styles.quickActionIcon, { backgroundColor: action.color + '18' }]}>
-                <MaterialIcons name={action.icon} size={22} color={action.color} />
-              </View>
-              <Text style={styles.quickActionLabel}>{action.label}</Text>
-            </Pressable>
-          ))}
+        {/* ── Resumen del día: KPIs ── */}
+        <View style={styles.kpiRow}>
+          <KpiTile
+            icon="wifi"
+            value={`${connectedCount}/${data.totalChildren}`}
+            label={tr('noe.dashboard.online')}
+            color={colors.success}
+          />
+          <KpiTile
+            icon="schedule"
+            value={formatDuration(totalMinutesToday)}
+            label={tr('noe.dashboard.totalTime')}
+            color={colors.primary}
+          />
+          <KpiTile
+            icon="warning"
+            value={String(data.alertsCount)}
+            label={tr('noe.dashboard.alerts')}
+            color={data.alertsCount > 0 ? colors.warning : colors.success}
+          />
+        </View>
+
+        {/* ── Acciones rápidas ── */}
+        <View style={styles.group}>
+          <Text style={styles.groupTitle}>Acciones rápidas</Text>
+          <View style={styles.quickActionsRow}>
+            {[
+              {
+                icon: 'lock' as const,
+                title: 'Bloquear todos',
+                sub: data.children.length === 1 ? '1 dispositivo' : `${data.children.length} dispositivos`,
+                color: colors.danger,
+                onPress: () => { setChildSelectAction('block'); setChildSelectVisible(true); },
+              },
+              {
+                icon: 'notifications-active' as const,
+                title: 'Enviar alerta',
+                sub: 'SOS o aviso sonoro',
+                color: colors.warning,
+                onPress: () => { setChildSelectAction('alert'); setChildSelectVisible(true); },
+              },
+              {
+                icon: 'location-searching' as const,
+                title: 'Ubicar hijos',
+                sub: 'Mapa en vivo',
+                color: colors.success,
+                onPress: () => router.push('/location' as any),
+              },
+              {
+                icon: 'school' as const,
+                title: 'Modo estudio',
+                sub: 'Plantilla de estudio',
+                color: colors.primary,
+                onPress: () => router.push('/rules/modo-estudio' as any),
+              },
+            ].map((action) => (
+              <Pressable
+                key={action.title}
+                style={({ pressed }) => [
+                  styles.quickActionCard,
+                  pressed && styles.quickActionPressed,
+                  data.children.length === 0 && styles.quickActionDisabled,
+                ]}
+                onPress={data.children.length === 0 ? undefined : action.onPress}
+              >
+                <View style={[styles.quickActionIcon, { backgroundColor: action.color + '18' }]}>
+                  <MaterialIcons name={action.icon} size={22} color={action.color} />
+                </View>
+                <Text style={styles.quickActionLabel}>{action.title}</Text>
+                <Text style={styles.quickActionSub}>{action.sub}</Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
 
         {/* ── Vincular dispositivo ── */}
@@ -339,7 +388,7 @@ export default function DashboardScreen() {
           accessibilityRole="button"
           style={({ pressed }) => [
             styles.linkDeviceCard,
-            pressed && styles.quickActionPressed,
+            pressed && styles.linkDeviceCardPressed,
             data.children.length === 0 && styles.linkDeviceCardDisabled,
           ]}
           onPress={
@@ -357,119 +406,74 @@ export default function DashboardScreen() {
               Genera el código y QR para conectar la app ARCA KIDS de tu hijo.
             </Text>
           </View>
-          <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
+          <MaterialIcons name="chevron-right" size={20} color={colors.primary} />
         </Pressable>
 
-        {/* ── Resumen del día ── */}
-        <Card style={styles.daySummaryCard}>
-          <View style={styles.daySummaryHeader}>
-            <MaterialIcons name="today" size={20} color={colors.primary} />
-            <Text style={styles.daySummaryTitle}>Resumen de hoy</Text>
+        {/* ── Mis hijos ── */}
+        <View style={styles.group}>
+          <View style={styles.sectionHeaderInner}>
+            <Text style={styles.groupTitle}>{tr('noe.dashboard.myChildren')}</Text>
+            <Pressable onPress={() => router.push(ROUTES.children as any)}>
+              <Text style={styles.sectionAction}>{tr('noe.dashboard.seeAll')}</Text>
+            </Pressable>
           </View>
-          <View style={styles.daySummaryGrid}>
-            <View style={styles.daySummaryItem}>
-              <Text style={styles.daySummaryValue}>{formatDuration(totalMinutesToday)}</Text>
-              <Text style={styles.daySummaryLabel}>Tiempo total</Text>
-            </View>
-            <View style={styles.daySummaryDivider} />
-            <View style={styles.daySummaryItem}>
-              <Text style={styles.daySummaryValue}>{data.children.length}</Text>
-              <Text style={styles.daySummaryLabel}>Hijos</Text>
-            </View>
-            <View style={styles.daySummaryDivider} />
-            <View style={styles.daySummaryItem}>
-              <Text style={[styles.daySummaryValue, { color: data.alertsCount > 0 ? colors.warning : colors.success }]}>
-                {data.alertsCount}
-              </Text>
-              <Text style={styles.daySummaryLabel}>Alertas</Text>
-            </View>
-          </View>
-        </Card>
+          {data.children.length === 0 ? (
+            <Card style={styles.emptyChildrenCard}>
+              <MaterialIcons name="child-care" size={32} color={colors.textMuted} />
+              <Text style={styles.emptyChildrenTitle}>{tr('noe.dashboard.empty')}</Text>
+              <Pressable
+                style={({ pressed }) => [styles.emptyChildrenBtn, pressed && styles.quickActionPressed]}
+                onPress={() => router.push(ROUTES.children as any)}
+              >
+                <Text style={styles.emptyChildrenBtnText}>{tr('noe.dashboard.addChild')}</Text>
+              </Pressable>
+            </Card>
+          ) : (
+            data.children.map((child) => (
+              <ChildRow
+                key={child.id}
+                child={child}
+                familyId={familyId}
+                onRefresh={() => fetchData(true)}
+                onQuickBlock={handleQuickBlock}
+                onSetLimit={handleSetLimit}
+              />
+            ))
+          )}
+        </View>
 
         {/* ── Para reflexionar ── */}
         {reflectVerse ? (
           <VerseBanner verse={reflectVerse} title={tr('noe.dashboard.reflect')} />
         ) : null}
 
-        {/* ── Summary cards ── */}
-        <View style={styles.summaryRow}>
-          <SummaryCard
-            icon="wifi"
-            value={`${connectedCount}/${data.totalChildren}`}
-            label={tr('noe.dashboard.online')}
-            color={colors.success}
-          />
-          <SummaryCard
-            icon="schedule"
-            value={formatDuration(totalMinutesToday)}
-            label={tr('noe.dashboard.totalTime')}
-            color={colors.primary}
-          />
-          <SummaryCard
-            icon="warning"
-            value={String(data.alertsCount)}
-            label={tr('noe.dashboard.alerts')}
-            color={colors.warning}
-          />
-        </View>
-
-        {/* ── Children section ── */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{tr('noe.dashboard.myChildren')}</Text>
-          <Pressable onPress={() => router.push(ROUTES.children as any)}>
-            <Text style={styles.sectionAction}>{tr('noe.dashboard.seeAll')}</Text>
-          </Pressable>
-        </View>
-
-        {data.children.length === 0 ? (
-          <Card style={styles.emptyChildrenCard}>
-            <MaterialIcons name="child-care" size={32} color={colors.textMuted} />
-            <Text style={styles.emptyChildrenTitle}>{tr('noe.dashboard.empty')}</Text>
-            <Pressable
-              style={({ pressed }) => [styles.emptyChildrenBtn, pressed && styles.quickActionPressed]}
-              onPress={() => router.push(ROUTES.children as any)}
-            >
-              <Text style={styles.emptyChildrenBtnText}>{tr('noe.dashboard.addChild')}</Text>
-            </Pressable>
-          </Card>
-        ) : (
-          data.children.map((child) => (
-            <ChildRow
-              key={child.id}
-              child={child}
-              familyId={familyId}
-              onRefresh={() => fetchData(true)}
-              onQuickBlock={handleQuickBlock}
-              onSetLimit={handleSetLimit}
-            />
-          ))
-        )}
-
-        {/* ── Recent activity ── */}
+        {/* ── Actividad reciente ── */}
         {hasAlerts && (
-          <>
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{tr('noe.dashboard.recentActivity')}</Text>
+          <View style={styles.group}>
+            <View style={styles.sectionHeaderInner}>
+              <Text style={styles.groupTitle}>{tr('noe.dashboard.recentActivity')}</Text>
               <Pressable onPress={() => router.push(ROUTES.activity as any)}>
                 <Text style={styles.sectionAction}>{tr('noe.dashboard.seeAll')}</Text>
               </Pressable>
             </View>
 
             {alerts.map((alert) => (
-              <Card key={alert.id} style={styles.alertCard}>
-                <View style={styles.alertRow}>
-                  <Text style={styles.alertIcon}>
-                    {alert.type === 'block' ? '🚫' : alert.type === 'time' ? '⏰' : '📍'}
-                  </Text>
-                  <View style={styles.alertInfo}>
-                    <Text style={styles.alertChild}>{alert.childName}</Text>
-                    <Text style={styles.alertMessage}>{alert.message}</Text>
-                  </View>
-                  <Text style={styles.alertTime}>{relativeTime(alert.timestamp)}</Text>
+              <View key={alert.id} style={styles.alertCard}>
+                <View style={[styles.alertIconBadge, { backgroundColor: (alert.type === 'block' ? colors.danger : alert.type === 'time' ? colors.warning : colors.primary) + '18' }]}>
+                  <MaterialIcons
+                    name={alert.type === 'block' ? 'block' : alert.type === 'time' ? 'timer' : 'location-on'}
+                    size={18}
+                    color={alert.type === 'block' ? colors.danger : alert.type === 'time' ? colors.warning : colors.primary}
+                  />
                 </View>
-              </Card>
+                <View style={styles.alertInfo}>
+                  <Text style={styles.alertChild}>{alert.childName}</Text>
+                  <Text style={styles.alertMessage}>{alert.message}</Text>
+                </View>
+                <Text style={styles.alertTime}>{relativeTime(alert.timestamp)}</Text>
+              </View>
             ))}
-          </>
+          </View>
         )}
 
       </ScrollView>
@@ -490,7 +494,7 @@ export default function DashboardScreen() {
    SUB-COMPONENTS
 ════════════════════════════════════════════════════════════════════════════════════════════════ */
 
-function SummaryCard({
+function KpiTile({
   icon,
   value,
   label,
@@ -504,12 +508,12 @@ function SummaryCard({
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
-    <View style={styles.summaryCard}>
-      <View style={[styles.summaryIconWrap, { backgroundColor: color + '18' }]}>
-        <MaterialIcons name={icon as any} size={20} color={color} />
+    <View style={styles.kpiTile}>
+      <View style={[styles.kpiIconWrap, { backgroundColor: color + '18' }]}>
+        <MaterialIcons name={icon as any} size={18} color={color} />
       </View>
-      <Text style={styles.summaryValue}>{value}</Text>
-      <Text style={styles.summaryLabel}>{label}</Text>
+      <Text style={styles.kpiValue}>{value}</Text>
+      <Text style={styles.kpiLabel}>{label}</Text>
     </View>
   );
 }
@@ -620,19 +624,25 @@ function ChildRow({
       {/* Row 2: Screen time + Progress */}
       <View style={styles.childUsage}>
         <View style={styles.usageLabel}>
+          <Text style={styles.usageValue}>
+            {child.dailyLimitMinutes != null && child.dailyLimitMinutes > 0
+              ? `${Math.min(100, Math.round(usageRatio * 100))}%`
+              : ''}
+          </Text>
           <Text style={styles.usageText}>
             {child.dailyLimitMinutes != null
-              ? `${formatDuration(child.minutesToday)} / ${formatDuration(child.dailyLimitMinutes)}`
+              ? `${formatDuration(child.minutesToday)} de ${formatDuration(child.dailyLimitMinutes)}`
               : formatDuration(child.minutesToday)}
           </Text>
           {isOverLimit && (
             <View style={styles.overLimitBadge}>
+              <MaterialIcons name="warning" size={10} color={colors.danger} />
               <Text style={styles.overLimitText}>{tr('noe.dashboard.overLimit')}</Text>
             </View>
           )}
         </View>
         {child.dailyLimitMinutes != null && (
-          <ProgressBar value={child.minutesToday} max={child.dailyLimitMinutes} height={6} />
+          <ProgressBar value={child.minutesToday} max={child.dailyLimitMinutes} height={7} />
         )}
       </View>
 
@@ -859,36 +869,59 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     color: colors.onPrimary,
   },
 
-  /* ── Summary cards ── */
-  summaryRow: {
+  /* ── Section groups (jerarquía tipo panel) ── */
+  group: {
+    gap: spacing.sm,
+  },
+  groupTitle: {
+    fontFamily: typography.fontFamily.heading,
+    fontSize: typography.fontSizes.caption,
+    fontWeight: typography.fontWeights.bold,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1.2,
+    marginBottom: 2,
+    marginLeft: 2,
+  },
+  sectionHeaderInner: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+
+  /* ── KPI tiles ── */
+  kpiRow: {
     flexDirection: 'row',
     gap: spacing.sm,
   },
-  summaryCard: {
+  kpiTile: {
     flex: 1,
     backgroundColor: colors.background,
     borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: spacing.md,
-    alignItems: 'center',
-    gap: spacing.xs,
+    gap: 4,
     ...shadows.sm,
   },
-  summaryIconWrap: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.full,
+  kpiIconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
+    marginBottom: 2,
   },
-  summaryValue: {
-    fontSize: typography.fontSizes.heading,
+  kpiValue: {
+    fontFamily: typography.fontFamily.heading,
+    fontSize: typography.fontSizes.title,
     fontWeight: typography.fontWeights.bold,
     color: colors.text,
+    letterSpacing: -0.3,
   },
-  summaryLabel: {
+  kpiLabel: {
     fontSize: typography.fontSizes.caption,
     color: colors.textMuted,
-    textAlign: 'center',
   },
 
   /* ── Section headers ── */
@@ -954,7 +987,18 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     fontWeight: typography.fontWeights.medium,
     color: colors.text,
   },
+  usageValue: {
+    fontFamily: typography.fontFamily.heading,
+    fontSize: typography.fontSizes.title,
+    fontWeight: typography.fontWeights.bold,
+    color: colors.primary,
+    letterSpacing: -0.3,
+    marginRight: 2,
+  },
   overLimitBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
     backgroundColor: colors.dangerLight,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
@@ -988,15 +1032,22 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
 
   /* ── Alert cards ── */
   alertCard: {
-    padding: spacing.md,
-  },
-  alertRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.md,
+    ...shadows.sm,
   },
-  alertIcon: {
-    fontSize: 20,
+  alertIconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   alertInfo: {
     flex: 1,
@@ -1028,13 +1079,13 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   },
   quickActionCard: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: colors.background,
     borderRadius: radius.lg,
     padding: spacing.md,
     borderWidth: 1,
     borderColor: colors.border,
-    gap: spacing.sm,
+    gap: 4,
     ...shadows.sm,
   },
   quickActionPressed: {
@@ -1048,12 +1099,15 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    backgroundColor: colors.background,
+    backgroundColor: colors.primaryLight,
     borderRadius: radius.lg,
     padding: spacing.md,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
     ...shadows.sm,
+  },
+  linkDeviceCardPressed: {
+    backgroundColor: colors.surfaceHover,
   },
   linkDeviceIcon: {
     width: 40,
@@ -1068,7 +1122,7 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   linkDeviceTitle: {
     fontSize: typography.fontSizes.body,
     fontWeight: typography.fontWeights.semibold,
-    color: colors.text,
+    color: colors.primary,
   },
   linkDeviceDesc: {
     fontSize: typography.fontSizes.caption,
@@ -1088,10 +1142,13 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   },
   quickActionLabel: {
     fontSize: typography.fontSizes.caption,
-    fontWeight: typography.fontWeights.medium,
+    fontWeight: typography.fontWeights.semibold,
     color: colors.text,
-    textAlign: 'center',
     lineHeight: 16,
+  },
+  quickActionSub: {
+    fontSize: 10.5,
+    color: colors.textMuted,
   },
   daySummaryCard: {
     padding: spacing.md,

@@ -63,10 +63,16 @@ function getBarColor(minutes: number, colors: ThemeColors): string {
   return colors.danger;
 }
 
-function getAlertIcon(type: AlertItem['type']): string {
-  if (type === 'block') return '🚫';
-  if (type === 'time') return '⏰';
-  return '📍';
+function getAlertIcon(type: AlertItem['type']): keyof typeof MaterialIcons.glyphMap {
+  if (type === 'block') return 'block';
+  if (type === 'time') return 'schedule';
+  return 'place';
+}
+
+function getAlertColor(type: AlertItem['type']): 'primary' | 'warning' | 'danger' {
+  if (type === 'block') return 'danger';
+  if (type === 'time') return 'warning';
+  return 'primary';
 }
 
 const HISTORY_CHART_HEIGHT = 100;
@@ -240,7 +246,7 @@ export default function ActivityScreen() {
       </View>
 
       {hasNoChildren ? (
-        <EmptyState icon="👶" title="Todavía no tienes hijos vinculados"
+        <EmptyState icon={<MaterialIcons name="child-care" size={48} color={colors.textMuted} />} title="Todavía no tienes hijos vinculados"
           description="Agrega o vincula un hijo en la pestaña Hijos para comenzar a monitorear su actividad." />
       ) : !selectedChild ? (
         <>
@@ -291,7 +297,7 @@ export default function ActivityScreen() {
           </View>
 
           {!hasSelectedData ? (
-            <EmptyState icon="📊" title={`Aún no hay actividad registrada para ${selectedChild.displayName}`}
+            <EmptyState icon={<MaterialIcons name="insights" size={48} color={colors.textMuted} />} title={`Aún no hay actividad registrada para ${selectedChild.displayName}`}
               description="Los datos de uso aparecerán aquí cuando el dispositivo de tu hijo reporte actividad." />
           ) : (
             <>
@@ -348,7 +354,13 @@ export default function ActivityScreen() {
                   {selectedAlerts.map((alert) => (
                     <Card key={alert.id} style={styles.card}>
                       <View style={styles.alertRow}>
-                        <Text style={styles.alertIcon}>{getAlertIcon(alert.type)}</Text>
+                        <View style={[styles.alertIconWrap, { backgroundColor: colors[getAlertColor(alert.type)] + '20' }]}>
+                          <MaterialIcons
+                            name={getAlertIcon(alert.type)}
+                            size={18}
+                            color={colors[getAlertColor(alert.type)]}
+                          />
+                        </View>
                         <View style={styles.alertInfo}>
                           <Text style={styles.alertChild}>{alert.childName}</Text>
                           <Text style={styles.alertMessage}>{alert.message}</Text>
@@ -421,13 +433,13 @@ export default function ActivityScreen() {
                             style={({ pressed }) => [styles.unlockBtn, styles.unlockApprove, pressed && styles.unlockBtnPressed]}
                             onPress={() => handleResolveRequest(req.id, 'approved')}
                           >
-                            <MaterialIcons name="check" size={18} color="#fff" />
+                            <MaterialIcons name="check" size={18} color={colors.onPrimary} />
                           </Pressable>
                           <Pressable
                             style={({ pressed }) => [styles.unlockBtn, styles.unlockDeny, pressed && styles.unlockBtnPressed]}
                             onPress={() => handleResolveRequest(req.id, 'denied')}
                           >
-                            <MaterialIcons name="close" size={18} color="#fff" />
+                            <MaterialIcons name="close" size={18} color={colors.onPrimary} />
                           </Pressable>
                         </View>
                       </View>
@@ -510,7 +522,7 @@ function UsageDetailModal({ detail, onClose }: { detail: UsageDetail | null; onC
           <Text style={styles.modalPackage} numberOfLines={1}>{detail.packageName}</Text>
 
           <Pressable style={styles.linkBtn} onPress={() => openLink(appPlayStoreUrl(detail.packageName))}>
-            <MaterialIcons name="shop" size={18} color="#fff" />
+            <MaterialIcons name="shop" size={18} color={colors.onPrimary} />
             <Text style={styles.linkBtnText}>Ver en Google Play</Text>
           </Pressable>
           <Pressable style={styles.linkBtnSecondary} onPress={() => openLink(appWebSearchUrl(name))}>
@@ -529,7 +541,7 @@ function UsageDetailModal({ detail, onClose }: { detail: UsageDetail | null; onC
 
 const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
-  screen: { paddingTop: spacing.xxl, padding: spacing.lg, backgroundColor: colors.background, gap: spacing.md },
+  screen: { paddingTop: spacing.xxl, padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   title: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
   liveBadge: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, backgroundColor: colors.successLight, paddingHorizontal: spacing.sm, paddingVertical: 4, borderRadius: radius.full },
@@ -538,11 +550,11 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   card: { ...shadows.sm },
   selectRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
   selectName: { flex: 1, fontSize: typography.fontSizes.subtitle, fontWeight: typography.fontWeights.semibold, color: colors.text },
-  childChip: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, alignSelf: 'flex-start', backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.primary, borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, marginBottom: spacing.xs },
+  childChip: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm, alignSelf: 'flex-start', backgroundColor: colors.background, borderWidth: 1, borderColor: colors.primary, borderRadius: radius.full, paddingHorizontal: spacing.md, paddingVertical: spacing.xs, marginBottom: spacing.xs, ...shadows.sm },
   childChipText: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.primary },
   mutedText: { fontSize: typography.fontSizes.caption, color: colors.textMuted, lineHeight: 20 },
   alertRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
-  alertIcon: { fontSize: 20 },
+  alertIconWrap: { width: 34, height: 34, borderRadius: 17, alignItems: 'center', justifyContent: 'center' },
   alertInfo: { flex: 1 },
   alertChild: { fontSize: typography.fontSizes.subtitle, fontWeight: typography.fontWeights.semibold, color: colors.text },
   alertMessage: { fontSize: typography.fontSizes.caption, color: colors.textMuted, marginTop: 2 },
@@ -574,14 +586,14 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   modalChipText: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.primary },
   modalPackage: { fontSize: typography.fontSizes.caption, color: colors.textMuted, maxWidth: '100%' },
   linkBtn: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: spacing.sm, marginTop: spacing.xs },
-  linkBtnText: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: '#fff' },
+  linkBtnText: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.onPrimary },
   linkBtnSecondary: { alignSelf: 'stretch', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm, borderWidth: 1, borderColor: colors.primary, borderRadius: radius.md, paddingVertical: spacing.sm },
   linkBtnSecondaryText: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.primary },
   modalClose: { paddingVertical: spacing.xs },
   modalCloseText: { fontSize: typography.fontSizes.body, color: colors.textMuted, fontWeight: typography.fontWeights.medium },
   sectionLabel: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginTop: spacing.sm },
   monitorGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  monitorCard: { width: '31%', flexGrow: 1, alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
+  monitorCard: { width: '31%', flexGrow: 1, alignItems: 'center', backgroundColor: colors.background, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border, ...shadows.sm },
   monitorCardPressed: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
   monitorIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
   monitorTitle: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.text, textAlign: 'center', lineHeight: 16 },

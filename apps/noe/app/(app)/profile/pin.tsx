@@ -14,7 +14,7 @@ import { Button } from '@/components/ui/button';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { pinService } from '@/features/pin/services/pin-service';
 import { pinSyncService } from '@/features/pin/services/pin-sync-service';
-import { Card, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 const PIN_LENGTH = 4;
 const WEAK_PINS = ['0000', '1111', '2222', '3333', '4444', '5555', '6666', '7777', '8888', '9999', '1234', '4321'];
@@ -24,8 +24,8 @@ type ScreenMode = 'loading' | 'create' | 'verify-old' | 'create-new' | 'done';
 export default function PinScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [mode, setMode] = useState<ScreenMode>('loading');
   const [pin, setPin] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -155,7 +155,7 @@ export default function PinScreen() {
         <Text style={styles.headerTitle}>Código PIN</Text>
       </Pressable>
 
-      <Card>
+      <Card style={styles.card}>
         <Text style={styles.description}>
           {mode === 'verify-old'
             ? 'Ingresa el PIN actual para poder cambiarlo.'
@@ -258,12 +258,15 @@ export default function PinScreen() {
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
   screen: {
     padding: spacing.lg,
     backgroundColor: colors.surface,
     gap: spacing.md,
+  },
+  card: {
+    ...shadows.sm,
   },
   headerRow: {
     flexDirection: 'row',
@@ -303,9 +306,9 @@ const makeStyles = (colors: ThemeColors) =>
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: spacing.sm,
-    backgroundColor: '#fffbeb',
+    backgroundColor: colors.warningLight,
     borderWidth: 1,
-    borderColor: '#fde68a',
+    borderColor: colors.warning + '40',
     borderRadius: radius.lg,
     padding: spacing.md,
     marginTop: spacing.md,
@@ -313,7 +316,7 @@ const makeStyles = (colors: ThemeColors) =>
   warningText: {
     flex: 1,
     fontSize: typography.fontSizes.caption,
-    color: '#92400e',
+    color: colors.warning,
     lineHeight: 18,
   },
   errorBox: {

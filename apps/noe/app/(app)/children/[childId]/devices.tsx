@@ -246,11 +246,13 @@ export default function DevicesScreen() {
                 </View>
                 {dev.isBlocked ? (
                   <View style={[styles.badge, styles.badgeBlocked]}>
+                    <MaterialIcons name="block" size={11} color={colors.danger} />
                     <Text style={[styles.badgeText, styles.badgeTextBlocked]}>Bloqueado</Text>
                   </View>
                 ) : null}
                 {dev.isLocked ? (
                   <View style={[styles.badge, styles.badgeLocked]}>
+                    <MaterialIcons name="lock" size={11} color={colors.warning} />
                     <Text style={[styles.badgeText, styles.badgeTextLocked]}>Bloqueo</Text>
                   </View>
                 ) : null}
@@ -329,7 +331,7 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     screen: {
       padding: spacing.lg,
       paddingTop: spacing.xxl,
-      backgroundColor: colors.background,
+      backgroundColor: colors.surface,
       gap: spacing.md,
     },
     headerRow: {
@@ -380,8 +382,11 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
       color: colors.textMuted,
     },
     badge: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 4,
       paddingHorizontal: spacing.sm,
-      paddingVertical: 2,
+      paddingVertical: 3,
       borderRadius: radius.full,
     },
     badgeBlocked: {

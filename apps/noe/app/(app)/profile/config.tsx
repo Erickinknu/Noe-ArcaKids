@@ -17,7 +17,7 @@ import { pinService } from '@/features/pin/services/pin-service';
 import { biometricService } from '@/features/security/services/biometric-service';
 import { setLanguage } from '@/i18n';
 import { APP_VERSION } from '@noe-arcakids/config';
-import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, Card, spacing, typography, useTheme, type AppColorTheme, type SupportedLanguage, type ThemeColors } from '@noe-arcakids/shared';
+import { LANGUAGE_NAMES, SUPPORTED_LANGUAGES, Card, spacing, typography, useTheme, type AppColorTheme, type SupportedLanguage, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 const THEME_OPTIONS: { key: AppColorTheme; label: string; icon: keyof typeof MaterialIcons.glyphMap }[] = [
   { key: 'light', label: 'Claro', icon: 'light-mode' },
@@ -28,8 +28,8 @@ const THEME_OPTIONS: { key: AppColorTheme; label: string; icon: keyof typeof Mat
 export default function ConfigScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const { colors, theme, setTheme } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, theme, setTheme, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const { i18n } = useTranslation();
   const [currentLanguage, setCurrentLanguage] = useState<SupportedLanguage>(
     (i18n.language as SupportedLanguage) ?? 'es'
@@ -101,7 +101,7 @@ export default function ConfigScreen() {
 
       {/* ── Theme ── */}
       <Text style={styles.sectionLabel}>Apariencia</Text>
-      <Card>
+      <Card style={styles.card}>
         {THEME_OPTIONS.map((opt, i) => (
           <Pressable
             key={opt.key}
@@ -133,7 +133,7 @@ export default function ConfigScreen() {
 
       {/* ── Language ── */}
       <Text style={styles.sectionLabel}>Idioma</Text>
-      <Card>
+      <Card style={styles.card}>
         {SUPPORTED_LANGUAGES.map((lng, i) => (
           <Pressable
             key={lng}
@@ -168,7 +168,7 @@ export default function ConfigScreen() {
 
       {/* ── Security ── */}
       <Text style={styles.sectionLabel}>Seguridad</Text>
-      <Card>
+      <Card style={styles.card}>
         <View style={styles.optionRow}>
           <MaterialIcons
             name="fingerprint"
@@ -208,7 +208,7 @@ export default function ConfigScreen() {
 
       {/* ── About ── */}
       <Text style={styles.sectionLabel}>Acerca de</Text>
-      <Card>
+      <Card style={styles.card}>
         <View style={styles.optionRow}>
           <MaterialIcons name="info" size={22} color={colors.textMuted} />
           <Text style={styles.optionText}>Versión</Text>
@@ -219,12 +219,15 @@ export default function ConfigScreen() {
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
   screen: {
     padding: spacing.lg,
     backgroundColor: colors.surface,
     gap: spacing.md,
+  },
+  card: {
+    ...shadows.sm,
   },
   headerRow: {
     flexDirection: 'row',

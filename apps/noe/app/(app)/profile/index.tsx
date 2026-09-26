@@ -17,7 +17,7 @@ import { authService } from '@/features/auth/services/auth-service';
 import { familyService } from '@/features/family/services/family-service';
 import { profileService } from '@/features/profile/services/profile-service';
 import { APP_VERSION } from '@noe-arcakids/config';
-import { useAsyncData, useRandomVerse, useTheme, VerseBanner, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { useAsyncData, useRandomVerse, useTheme, VerseBanner, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 interface MenuItem {
   icon: keyof typeof MaterialIcons.glyphMap;
@@ -41,8 +41,8 @@ export default function OtrosScreen() {
   const { t: tr } = useTranslation();
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [blockInstalls, setBlockInstalls] = useState(false);
   const footerVerse = useRandomVerse(['gratitude', 'wisdom']);
 
@@ -233,7 +233,7 @@ export default function OtrosScreen() {
                 value={toggleItem.value}
                 onValueChange={toggleItem.onValueChange}
                 trackColor={{ false: colors.border, true: colors.primary }}
-                thumbColor="#fff"
+                thumbColor={colors.onPrimary}
               />
             </View>
           ) : null}
@@ -298,7 +298,7 @@ export default function OtrosScreen() {
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
   screen: {
     flex: 1,
@@ -336,6 +336,7 @@ const makeStyles = (colors: ThemeColors) =>
     borderRadius: radius.lg,
     padding: spacing.lg,
     gap: spacing.md,
+    ...shadows.sm,
   },
   toggleLeft: {
     flexDirection: 'row',
@@ -365,6 +366,7 @@ const makeStyles = (colors: ThemeColors) =>
     borderColor: colors.border,
     borderRadius: radius.lg,
     overflow: 'hidden',
+    ...shadows.sm,
   },
   menuItem: {
     flexDirection: 'row',
@@ -405,7 +407,7 @@ const makeStyles = (colors: ThemeColors) =>
     gap: spacing.sm,
   },
   dangerButtonPressed: {
-    backgroundColor: '#fef2f2',
+    backgroundColor: colors.dangerLight,
   },
   dangerButtonText: {
     fontSize: typography.fontSizes.body,

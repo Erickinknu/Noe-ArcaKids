@@ -7,14 +7,14 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { familyInviteService } from '@/features/family-invites/services/family-invite-service';
 import { Button } from '@/components/ui/button';
-import { Card, Input, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, Input, useTheme, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 export default function UnirmeScreen() {
   const { t: tr } = useTranslation();
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const params = useLocalSearchParams<{ code?: string }>();
   const [code, setCode] = useState(() => String(params.code ?? '').trim().toUpperCase());
   const [joining, setJoining] = useState(false);
@@ -50,7 +50,7 @@ export default function UnirmeScreen() {
           <Text style={styles.headerTitle}>{tr('noe.familyInvites.unirmeTitle')}</Text>
         </Pressable>
 
-        <Card>
+        <Card style={styles.card}>
           <Text style={styles.subtitle}>{tr('noe.familyInvites.unirmeSubtitle')}</Text>
           <Text style={styles.label}>{tr('noe.familyInvites.codeLabel')}</Text>
           <Input
@@ -74,12 +74,15 @@ export default function UnirmeScreen() {
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
     screen: {
       padding: spacing.lg,
       backgroundColor: colors.surface,
       gap: spacing.md,
+    },
+    card: {
+      ...shadows.sm,
     },
     headerRow: {
       flexDirection: 'row',

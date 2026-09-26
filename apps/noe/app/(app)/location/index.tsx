@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -6,7 +6,7 @@ import { OSMMap } from '@/components/ui/osm-map';
 
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { deviceControlService, type ChildLocation } from '@/features/device-control/services/device-control-service';
-import { colors, radius, spacing, typography } from '@noe-arcakids/shared';
+import { radius, spacing, typography, useTheme, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 const DEFAULT_REGION = {
   latitude: -12.0464,   // Lima, Peru
@@ -18,6 +18,8 @@ const DEFAULT_REGION = {
 export default function LocationScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [locations, setLocations] = useState<ChildLocation[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -154,7 +156,12 @@ export default function LocationScreen() {
               <View style={styles.infoRow}>
                 <MaterialIcons name="person" size={20} color={colors.primary} />
                 <Text style={styles.infoName}>{selected.displayName}</Text>
-                <View style={[styles.onlineBadge, { backgroundColor: selected.isOnline ? colors.successLight : colors.surface }]}>
+                <View style={[styles.onlineBadge, { backgroundColor: selected.isOnline ? colors.successLight : colors.surfaceHover }]}>
+                  <MaterialIcons
+                    name={selected.isOnline ? 'check-circle' : 'cloud-off'}
+                    size={12}
+                    color={selected.isOnline ? colors.success : colors.textMuted}
+                  />
                   <Text style={[styles.onlineText, { color: selected.isOnline ? colors.success : colors.textMuted }]}>
                     {selected.isOnline ? 'En línea' : 'Desconectado'}
                   </Text>
@@ -182,7 +189,8 @@ export default function LocationScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
+  StyleSheet.create({
   screen: {
     flex: 1,
     backgroundColor: colors.surface,
@@ -313,8 +321,11 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.lg,
     marginBottom: spacing.lg,
     borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
     padding: spacing.md,
     gap: spacing.sm,
+    ...shadows.sm,
   },
   infoRow: {
     flexDirection: 'row',
@@ -328,8 +339,11 @@ const styles = StyleSheet.create({
     color: colors.text,
   },
   onlineBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: radius.sm,
   },
   onlineText: {

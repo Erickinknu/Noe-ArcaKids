@@ -17,13 +17,13 @@ import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { familyService } from '@/features/family/services/family-service';
 import { profileService } from '@/features/profile/services/profile-service';
 import type { MyFamily } from '@/features/family/repositories/family-repository';
-import { Card, Input, errorMessage, useAsyncData, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, Input, errorMessage, useAsyncData, useTheme, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 export default function CuentaScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [displayName, setDisplayName] = useState('');
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
@@ -70,7 +70,7 @@ export default function CuentaScreen() {
         <Text style={styles.email}>{data?.profile.email || '—'}</Text>
       </Card>
 
-      <Card>
+      <Card style={styles.card}>
         <Text style={styles.label}>Nombre</Text>
         <Input
           value={displayName}
@@ -79,13 +79,13 @@ export default function CuentaScreen() {
         />
       </Card>
 
-      <Card>
+      <Card style={styles.card}>
         <Text style={styles.label}>Correo electrónico</Text>
         <Text style={styles.value}>{data?.profile.email || '—'}</Text>
         <Text style={styles.hint}>El correo no se puede modificar desde aquí.</Text>
       </Card>
 
-      <Card>
+      <Card style={styles.card}>
         <Text style={styles.label}>Familia</Text>
         <Text style={styles.value}>{data?.family.name || '—'}</Text>
       </Card>
@@ -99,7 +99,7 @@ export default function CuentaScreen() {
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
   screen: {
     padding: spacing.lg,
@@ -116,9 +116,13 @@ const makeStyles = (colors: ThemeColors) =>
     fontWeight: typography.fontWeights.bold,
     color: colors.text,
   },
+  card: {
+    ...shadows.sm,
+  },
   avatarCard: {
     alignItems: 'center',
     gap: spacing.sm,
+    ...shadows.sm,
   },
   email: {
     fontSize: typography.fontSizes.body,

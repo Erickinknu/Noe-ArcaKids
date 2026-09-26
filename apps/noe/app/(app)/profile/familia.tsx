@@ -24,7 +24,7 @@ import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
 import { familyInviteService, buildInviteLink, type FamilyInvite } from '@/features/family-invites/services/family-invite-service';
 import type { MyFamily } from '@/features/family/repositories/family-repository';
-import { Card, Input, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, Input, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 interface ModeOption {
   value: FamilyMode;
@@ -43,8 +43,8 @@ export default function FamiliaScreen() {
   const router = useRouter();
   const { t: tr } = useTranslation();
   const screenPadding = useScreenPadding();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [familyName, setFamilyName] = useState('');
   const [mode, setMode] = useState<FamilyMode>('general');
   const [saving, setSaving] = useState(false);
@@ -140,7 +140,7 @@ export default function FamiliaScreen() {
       </Pressable>
 
       {/* Family name */}
-      <Card>
+      <Card style={styles.card}>
         <Text style={styles.label}>Nombre de la familia</Text>
         <Input
           value={familyName}
@@ -153,7 +153,7 @@ export default function FamiliaScreen() {
       </Card>
 
       {/* Vincular dispositivo */}
-      <Card>
+      <Card style={styles.card}>
         <View style={styles.linkRow}>
           <View style={[styles.linkIconBox, { backgroundColor: colors.primaryLight }]}>
             <MaterialIcons name="link" size={24} color={colors.primary} />
@@ -172,10 +172,10 @@ export default function FamiliaScreen() {
 
       {/* Children list */}
       <SectionHeader title="Niños" />
-      <Card>
+      <Card style={styles.card}>
         {data.children.length === 0 ? (
           <EmptyState
-            icon="👶"
+            icon={<MaterialIcons name="child-care" size={48} color={colors.textMuted} />}
             title="Aún no hay perfiles"
             description="Añade el perfil de tu hijo desde la pestaña Hijos para personalizar su control."
             action={{
@@ -207,7 +207,7 @@ export default function FamiliaScreen() {
 
       {/* Content mode */}
       <SectionHeader title={tr('noe.familyMode.title')} />
-      <Card>
+      <Card style={styles.card}>
         <Text style={styles.hint}>{tr('noe.familyMode.description')}</Text>
         {MODE_OPTIONS.map((option) => {
           const active = option.value === mode;
@@ -239,7 +239,7 @@ export default function FamiliaScreen() {
 
       {/* Adults / Caregivers */}
       <SectionHeader title="Responsables" />
-      <Card>
+      <Card style={styles.card}>
         <Text style={styles.hint}>
           Los responsables pueden administrar conjuntamente los dispositivos de los niños.
         </Text>
@@ -298,12 +298,15 @@ export default function FamiliaScreen() {
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
   screen: {
     padding: spacing.lg,
     backgroundColor: colors.surface,
     gap: spacing.md,
+  },
+  card: {
+    ...shadows.sm,
   },
   headerRow: {
     flexDirection: 'row',
@@ -388,9 +391,12 @@ const makeStyles = (colors: ThemeColors) =>
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    backgroundColor: colors.primaryLight,
+    backgroundColor: colors.background,
+    borderWidth: 1,
+    borderColor: colors.primary,
     borderRadius: radius.md,
     padding: spacing.md,
+    ...shadows.sm,
   },
   inviteCodeBoxPressed: {
     opacity: 0.7,

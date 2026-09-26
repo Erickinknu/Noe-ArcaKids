@@ -270,7 +270,7 @@ export default function RulesScreen() {
       <Text style={styles.subtitle}>Selecciona un hijo para configurar sus reglas</Text>
 
       {data.children.length === 0 ? (
-        <EmptyState icon="👶" title="Agrega un hijo primero" description="Ve a la pestaña Hijos para agregar un perfil" />
+        <EmptyState icon={<MaterialIcons name="child-care" size={48} color={colors.textMuted} />} title="Agrega un hijo primero" description="Ve a la pestaña Hijos para agregar un perfil" />
       ) : (
         <View style={styles.childList}>
           {data.children.map((child) => (
@@ -295,14 +295,14 @@ export default function RulesScreen() {
 
 const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
-  screen: { padding: spacing.lg, backgroundColor: colors.background, gap: spacing.md },
+  screen: { padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
   title: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
   subtitle: { fontSize: typography.fontSizes.body, color: colors.textMuted, lineHeight: 22 },
   card: { ...shadows.sm },
 
   // Child list
   childList: { gap: spacing.sm },
-  childCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, gap: spacing.md, borderWidth: 1, borderColor: colors.border },
+  childCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, borderRadius: radius.lg, padding: spacing.md, gap: spacing.md, borderWidth: 1, borderColor: colors.border, ...shadows.sm },
   childCardPressed: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
   childCardInfo: { flex: 1 },
   childCardName: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.text },
@@ -311,7 +311,7 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   // Back + header
   backRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   backText: { fontSize: typography.fontSizes.body, color: colors.primary, fontWeight: typography.fontWeights.medium },
-  childHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md },
+  childHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.background, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border, ...shadows.sm },
   childName: { fontSize: typography.fontSizes.title, fontWeight: typography.fontWeights.bold, color: colors.text },
   childStatus: { fontSize: typography.fontSizes.caption, color: colors.textMuted },
 
@@ -333,7 +333,7 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   // Quick grid
   sectionLabel: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
   quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  quickCard: { width: '48%', flexGrow: 1, backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border },
+  quickCard: { width: '48%', flexGrow: 1, backgroundColor: colors.background, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border, ...shadows.sm },
   quickCardPressed: { borderColor: colors.primary },
   quickIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
   quickTitle: { fontSize: typography.fontSizes.subtitle, fontWeight: typography.fontWeights.medium, color: colors.text, marginBottom: spacing.xs },

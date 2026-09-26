@@ -156,7 +156,7 @@ export default function ChildrenScreen() {
       {children ? (
         <>
           {children.length === 0 ? (
-            <EmptyState icon="👶" title={tr('noe.children.empty')} />
+            <EmptyState icon={<MaterialIcons name="child-care" size={48} color={colors.textMuted} />} title={tr('noe.children.empty')} />
           ) : (
             <>
               {children.map((child) => (
@@ -304,7 +304,7 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
   screen: {
     padding: spacing.lg,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
     gap: spacing.md,
     paddingTop: spacing.xxl,
   },

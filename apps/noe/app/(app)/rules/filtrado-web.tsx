@@ -9,14 +9,14 @@ import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { webFilterService, CATEGORIES, WebFilter } from '@/features/web-filter/services/web-filter-service';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
-import { Card, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 import type { ChildProfile } from '@noe-arcakids/types';
 
 export default function FiltradoWebScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const { colors } = useTheme();
-  const styles = useMemo(() => makeStyles(colors), [colors]);
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
 
   const fetchChildren = useCallback(async () => {
@@ -61,9 +61,9 @@ export default function FiltradoWebScreen() {
         </Pressable>
 
         {childrenLoading && <LoadingState text="Cargando hijos..." />}
-        {childrenError && <EmptyState icon="⚠️" title="Error" description={childrenError} />}
+        {childrenError && <EmptyState icon={<MaterialIcons name="warning" size={48} color={colors.danger} />} title="Error" description={childrenError} />}
         {!childrenLoading && !childrenError && children && children.length === 0 && (
-          <EmptyState icon="👶" title="Agrega un hijo primero" description="Ve a la pestaña Hijos para agregar un perfil" />
+          <EmptyState icon={<MaterialIcons name="child-care" size={48} color={colors.textMuted} />} title="Agrega un hijo primero" description="Ve a la pestaña Hijos para agregar un perfil" />
         )}
         {children && children.length > 0 && (
           <>
@@ -91,7 +91,7 @@ export default function FiltradoWebScreen() {
   }
 
   if (filtersLoading) return <LoadingState text="Cargando filtros..." />;
-  if (filtersError) return <EmptyState icon="⚠️" title="Error" description={filtersError} />;
+  if (filtersError) return <EmptyState icon={<MaterialIcons name="warning" size={48} color={colors.danger} />} title="Error" description={filtersError} />;
 
   return (
     <ScrollView contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]}>
@@ -109,7 +109,7 @@ export default function FiltradoWebScreen() {
       </Text>
 
       <Text style={styles.sectionLabel}>Categorías bloqueadas</Text>
-      <Card>
+      <Card style={styles.card}>
         {categories.map((cat, i) => (
           <View key={cat.id} style={[styles.catRow, i < categories.length - 1 && styles.catBorder]}>
             <MaterialIcons name={cat.icon} size={20} color={cat.enabled ? colors.danger : colors.textMuted} />
@@ -133,9 +133,10 @@ export default function FiltradoWebScreen() {
   );
 }
 
-const makeStyles = (colors: ThemeColors) =>
+const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   StyleSheet.create({
   screen: { padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
+  card: { ...shadows.sm },
   headerRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.sm },
   headerTitle: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
   description: { fontSize: typography.fontSizes.body, color: colors.textMuted, lineHeight: 22 },
@@ -148,7 +149,7 @@ const makeStyles = (colors: ThemeColors) =>
   backToListBtnPressed: { backgroundColor: colors.primaryLight },
   backToListText: { color: colors.primary, fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold },
   childList: { gap: spacing.sm },
-  childCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.surface, borderRadius: radius.lg, padding: spacing.md, gap: spacing.md, borderWidth: 1, borderColor: colors.border },
+  childCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, borderRadius: radius.lg, padding: spacing.md, gap: spacing.md, borderWidth: 1, borderColor: colors.border, ...shadows.sm },
   childCardPressed: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
   childCardInfo: { flex: 1 },
   childCardName: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.text },
