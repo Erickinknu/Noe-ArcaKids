@@ -117,6 +117,10 @@ Migración `20260917000000_enable_rls_api_throttle.sql` aplicada vía herramient
 - Proyecto único dev/prod: `jvxeiexsmnoorhhphjld`. **Pendiente separar un proyecto de producción** antes de lanzar.
 - Aplicar migraciones con la herramienta de migraciones de Supabase (SQL editor / `supabase db push`).
 - Seguridad: nunca usar `service_role` en las apps. Solo anon/publishable keys.
+- **Hardening aplicado (2026-09-25):**
+  - Migración `hardening_fk_indexes`: 18 índices para FKs sin cobertura (`idx_*`) + dropeado el duplicado `usage_reports_child_id_date_idx` (idéntico a `usage_reports_child_report_idx`).
+  - Migración `move_pg_net_to_extensions`: `pg_net` reinstalado en esquema `extensions` (no soporta `ALTER EXTENSION ... SET SCHEMA`).
+- **Pendiente manual (dashboard, no tiene API SQL):** activar *Leaked password protection* en Auth → seguridad (checks HaveIBeenPwned al registrar/cambiar contraseña).
 
 ## 6. CI/CD
 
