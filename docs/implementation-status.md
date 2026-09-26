@@ -114,5 +114,5 @@ Fuente de verdad de versión: `apps/<app>/app.config.ts` (`1.4.0` / versionCode 
 
 - `npm run typecheck` / `npm run lint` / `npm test`: 0 errores.
 - APKs debug de ambas apps → `builds/{noe,arcakids}/` (gitignored), con versión en el nombre.
-- Release firmado (`assembleRelease` local) usa `release.keystore` gitignored.
+- **Release firmado 1.4.0 (versionCode 12)**, solo `arm64-v8a`: `builds/noe/NOE-1.4.0-release.apk` (51,1 MB, `com.noe.parent`) y `builds/arcakids/ARCA-KIDS-1.4.0-release.apk` (57,7 MB, `com.arcakids.child`). Firmados con `release.keystore` local (gitignored, cert `CN=NOE` / `CN=ARCA KIDS`), verificados con `apksigner verify`.
 - Workspace Android Studio: abrir `android/` (composite build) → `:noe:app:assembleDebug`, `:arcakids:app:assembleRelease`.
