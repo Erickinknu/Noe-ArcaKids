@@ -22,7 +22,9 @@
  * Plus Android managed provisioning extras when provisioned as Device Owner:
  *  android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME = "com.arcakids.child/com.arcakids.child.DeviceAdminReceiver"
  *  android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_NAME   = "com.arcakids.child"
- *  android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE = { familyId, childId?, pairingCode }
+ *  android.app.extra.PROVISIONING_DEVICE_ADMIN_SIGNATURE_CHECKSUM = SHA-256 hex del certificado de firma RELEASE
+ *  android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE = { familyId, childId?, pairingCode, code, provisioningPayload }
+ *  (los extras custom van dentro del bundle para que el Setup Wizard los reenvie a la app).
  */
 
 import type { PairingCode } from '../repositories/linking-repository';
@@ -34,6 +36,14 @@ export type LinkingMode = 'family' | 'child';
 export const DEVICE_ADMIN_COMPONENT = 'com.arcakids.child/com.arcakids.child.DeviceAdminReceiver';
 export const DEVICE_ADMIN_PACKAGE = 'com.arcakids.child';
 export const DEVICE_ADMIN_COMPONENT_SHORT = 'com.arcakids.child/.DeviceAdminReceiver';
+/**
+ * SHA-256 hex del certificado de firma del APK RELEASE de ARCA KIDS
+ * (keystore `arcakids-release`, gg. 2026-09-26). El Setup Wizard de Android
+ * valida contra este checksum cuando provisina Device Owner vía QR; si cambia
+ * el keystore de firma, hay que actualizarlo junto con el bump de versión.
+ */
+export const DEVICE_ADMIN_SIGNATURE_CHECKSUM =
+  '1a7c8b640455b80ac8a07c13a6f6423c5769736be1be75225ed173633871c852';
 
 export function buildProvisioningPayload(args: {
   familyId: string;
@@ -62,9 +72,19 @@ export function buildProvisioningPayload(args: {
  * the QR for Device Owner provisioning (NFC / QR).
  */
 export function buildAndroidProvisioningExtras(payload: ProvisioningPayload): Record<string, string> {
+  const adminExtrasBundle = JSON.stringify({
+    familyId: payload.familyId,
+    childId: payload.childId ?? '',
+    pairingCode: payload.code,
+    code: payload.code,
+    provisioningPayload: JSON.stringify(payload),
+  });
   return {
     'android.app.extra.PROVISIONING_DEVICE_ADMIN_COMPONENT_NAME': DEVICE_ADMIN_COMPONENT,
     'android.app.extra.PROVISIONING_DEVICE_ADMIN_PACKAGE_NAME': DEVICE_ADMIN_PACKAGE,
+    'android.app.extra.PROVISIONING_DEVICE_ADMIN_SIGNATURE_CHECKSUM': DEVICE_ADMIN_SIGNATURE_CHECKSUM,
+    'android.app.extra.PROVISIONING_ADMIN_EXTRAS_BUNDLE': adminExtrasBundle,
+    // Compatibilidad: claves a nivel raíz (el wizard ignora las desconocidas).
     familyId: payload.familyId,
     childId: payload.childId ?? '',
     pairingCode: payload.code,
