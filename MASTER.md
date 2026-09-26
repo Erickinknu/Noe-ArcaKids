@@ -31,9 +31,9 @@ npm test                # jest NOE (43) + ARCA KIDS (17)
 
 ## Pendientes conocidos (manuales / requieren input)
 
-1. **Leaked password protection ON** — dashboard Supabase → Auth → seguridad (no tiene API SQL).
+1. **Leaked password protection ON** — dashboard Supabase → Auth → seguridad (no tiene API SQL). Adelantado al arranque del piloto (decisión 2026-09-25).
 2. **`google-services.json` de Firebase** para push remoto real en NOE (cliente y canal ya implementados).
-3. **Sentry** — el código y el plugin condicionante están listos; falta `SENTRY_ORG`, `SENTRY_PROJECT` y `EXPO_PUBLIC_SENTRY_DSN` (y authToken para subir source maps).
+3. **Sentry** — decisión: fuera del piloto (telemetría de bloqueantes vía feedback en-app). Revisar post-piloto; el código y el plugin condicionante están listos y solo requieren `SENTRY_ORG`, `SENTRY_PROJECT`, `EXPO_PUBLIC_SENTRY_DSN` (y authToken para source maps).
 4. **Separar proyecto prod de dev** (hoy comparten `jvxeiexsmnoorhhphjld`).
 5. **Dominio propio / SMTP transaccional** para entregabilidad de emails.
 

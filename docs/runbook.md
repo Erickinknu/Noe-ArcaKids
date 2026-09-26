@@ -47,7 +47,9 @@ No borrar `apps/<app>/android`: sin esa carpeta se rompen `expo prebuild`, `expo
 
 ## 2. Sentry
 
-Habilitar en producción:
+> **Decisión (2026-09-25):** NO se activa en el piloto de 20 familias. Telemetría de bloqueantes vía feedback en-app (`feedback`) + registro manual. Revisar tras el piloto.
+
+Habilitar en producción (post-piloto):
 
 1. Crear proyecto Sentry y un DSN.
 2. `apps/<app>/.env`: `EXPO_PUBLIC_SENTRY_DSN=<dsn>`.
