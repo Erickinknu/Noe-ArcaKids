@@ -1,10 +1,34 @@
 # builds/
 
-Carpeta de APKs entregables. Por defecto los binarios están gitignored; aquí se versiona este README.
+Carpeta de APKs entregables. **Los binarios están gitignored**; aquí solo se versiona este README.
 
-Excepción: los APKs de hito se versionan a pedido explícito, para que quede una copia
-instalable junto al código que los produjo. hoy están versionados los de **1.4.1**; el resto
-sigue ignorado.
+> **Los releases van a GitHub Releases, no al repo.** El APK de cada hito se publica como
+> *asset* del release de la versión correspondiente en
+> `github.com/Erickinknu/Noe-ArcaKids/releases`, y el repo guarda únicamente el código, los
+> hashes y esta documentación. Esta carpeta es el área de trabajo local: se copia el APK
+> generado, se sube como asset y se puede borrar. La regla `builds/*` de `.gitignore`
+> (línea 55) lo bloquea, y así se mantiene.
+
+## Flujo de publicación
+
+```powershell
+# 1. Generar el release firmado (ver docs/runbook.md §1)
+cd apps/noe/android;       .\gradlew.bat assembleRelease -PreactNativeArchitectures=arm64-v8a
+cd apps/arcakids/android;  .\gradlew.bat assembleRelease -PreactNativeArchitectures=arm64-v8a
+
+# 2. Copiar a builds/ con el nombre de la convención
+Copy-Item apps/noe/android/app/build/outputs/apk/release/app-release.apk       builds\noe\NOE-<version>-release.apk
+Copy-Item apps/arcakids/android/app/build/outputs/apk/release/app-release.apk builds\arcakids\ARCA-KIDS-<version>-release.apk
+
+# 3. Verificar antes de publicar
+aapt2 dump badging builds\noe\NOE-<version>-release.apk          # package, versionCode, native-code
+apksigner verify --print-certs builds\noe\NOE-<version>-release.apk
+Get-FileHash builds\noe\NOE-<version>-release.apk -Algorithm SHA256
+
+# 4. Publicar como assets del release (gh autenticado)
+gh release create v<version> --repo Erickinknu/Noe-ArcaKids --title "<version> - <resumen>" --notes-file <notas>
+gh release upload v<version> builds\noe\NOE-<version>-release.apk builds\arcakids\ARCA-KIDS-<version>-release.apk --repo Erickinknu/Noe-ArcaKids
+```
 
 Estructura:
 
@@ -32,3 +56,11 @@ Cada APK se honra en el README correspondiente de su carpeta al momento de gener
   actualiza en sitio sin desinstalar.
 - Verificados con `aapt2 dump badging` y `apksigner verify`; bundle Hermes embebido
   (`assets/index.android.bundle`).
+
+### Estado transitorio
+
+Estos dos APK llegaron a commitearse en `main` (commit `25fccbb`) y **aún siguen en el
+historial** mientras se migran al release de GitHub. Al publicar el release se borran del
+historial con `git filter-repo` (no con `git rm`, que deja los blobs) y se fuerza el push.
+Hasta que eso ocurra, esos dos paths son los únicos de `builds/` que git puede rastrear;
+cualquier otro archivo nuevo en `builds/` sigue bloqueado por `.gitignore`.
