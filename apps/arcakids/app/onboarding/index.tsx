@@ -11,9 +11,9 @@ import { linkingService } from '@/features/linking/services/linking-service';
 import { locationModule } from '@/features/location/native/location-module';
 import { onboardingService } from '@/features/onboarding/services/onboarding-service';
 import { parentalBridge } from '@/features/parental/native/parental-bridge';
-import { Card, Input, errorMessage, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Card, Input, errorMessage, useTheme, spacing, typography, type ThemeColors, SECURITY_CONFIG } from '@noe-arcakids/shared';
 
-const CODE_LENGTH = 6;
+const CODE_LENGTH = SECURITY_CONFIG.pairingCodeLength;
 
 type StepKind = 'welcome' | 'code' | 'location' | 'usage' | 'overlay' | 'admin' | 'done';
 

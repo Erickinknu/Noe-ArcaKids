@@ -17,7 +17,7 @@
  *     is treated as informational and verified after redeem.
  */
 
-import { ValidationError, checkRateLimit, t } from '@noe-arcakids/shared';
+import { ValidationError, checkRateLimit, t, SECURITY_CONFIG } from '@noe-arcakids/shared';
 import type { ProvisioningPayload } from '@noe-arcakids/types';
 
 import { identityRepository } from '../../identity/repositories/identity-repository';
@@ -25,10 +25,10 @@ import { identityService } from '../../identity/services/identity-service';
 import { linkingRepository, type RedeemResult } from '../repositories/linking-repository';
 
 const CODE_PATTERN_6 = /^[A-HJ-NP-Z2-9]{6}$/i;
-const CODE_PATTERN_6_DIGIT = /^\d{6}$/;
-// Older NOE builds generated 8-char alphanum codes; keep accepting them.
+const CODE_PATTERN_6_DIGIT = /^\d{6}$/i;
+// NOE genera códigos de SECURITY_CONFIG.pairingCodeLength; 6-char sigue aceptándose por compatibilidad.
 const CODE_PATTERN_8 = /^[A-HJ-NP-Z2-9]{8}$/i;
-const MAX_CODE_LENGTH = 8;
+const MAX_CODE_LENGTH = SECURITY_CONFIG.pairingCodeLength;
 // Compact QR form emitted by NOE: akv1:<familyId>:<code>
 const COMPACT_PREFIX = /^akv1:/i;
 

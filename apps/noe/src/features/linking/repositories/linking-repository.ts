@@ -1,12 +1,10 @@
 import type { PostgrestError } from '@supabase/supabase-js';
 import * as Crypto from 'expo-crypto';
 
-import { DatabaseError, t } from '@noe-arcakids/shared';
+import { DatabaseError, SECURITY_CONFIG, t } from '@noe-arcakids/shared';
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
 
-const CODE_LIFESPAN_MS = 10 * 60 * 1000;
 const MAX_CODE_ATTEMPTS = 5;
-const CODE_LENGTH = 6;
 const CODE_CHARSET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no 0/O/1/I
 
 export interface PairingCode {
@@ -15,11 +13,11 @@ export interface PairingCode {
 }
 
 /**
- * Cryptographically secure 6-char alphanumeric pairing code.
+ * Cryptographically secure pairing code using the length declared in SECURITY_CONFIG.
  * Uses expo-crypto (Hermes does not implement globalThis.crypto).
  */
 export function generatePairingCode(): string {
-  const bytes = Crypto.getRandomValues(new Uint8Array(CODE_LENGTH));
+  const bytes = Crypto.getRandomValues(new Uint8Array(SECURITY_CONFIG.pairingCodeLength));
   return Array.from(bytes, (b) => CODE_CHARSET[b % CODE_CHARSET.length]).join('');
 }
 
@@ -33,7 +31,7 @@ export const linkingRepository = {
     childId: string
   ): Promise<PairingCode> {
     const client = requireSupabaseClient();
-    const expiresAt = new Date(Date.now() + CODE_LIFESPAN_MS).toISOString();
+    const expiresAt = new Date(Date.now() + SECURITY_CONFIG.pairingCodeExpiry).toISOString();
 
     for (let attempt = 0; attempt < MAX_CODE_ATTEMPTS; attempt++) {
       const code = generatePairingCode();

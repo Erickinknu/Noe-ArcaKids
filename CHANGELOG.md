@@ -5,6 +5,20 @@ All notable changes to the `noe-arcakids` monorepo will be documented in this fi
 The format is based on [Keep a Changelog](https://keepachangelog.com/),
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+- **Código de vinculación alineado de nuevo con `SECURITY_CONFIG`** (`pairingCodeLength: 8`,
+  `pairingCodeExpiry: 15 min` en `packages/shared/src/security.ts`). La generación en
+  NOE tenía `6` caracteres y `10` min hardcodeados, por lo que la constante de
+  configuración nunca se aplicaba y la board de diseño documentaba valores que el
+  padre no veía. Ahora `generatePairingCode()` y `createPairingCode()` leen la
+  configuración, y la entrada manual de ARCA KIDS acepta 8 caracteres
+  (antes truncaba a 6, lo que hacía imposible escribir el código a mano).
+  ARCA KIDS sigue aceptando 6 caracteres y 6 dígitos por compatibilidad.
+  Cubierto con `linking-repository.test.ts`.
+  Revierte la decisión de legibilidad de 1.3.4 (8 → 6) en favor de la config.
+
 ## [1.3.5] - 2026-09-10
 
 ### Added

@@ -46,7 +46,7 @@ Fuente de verdad de versión: `apps/<app>/app.config.ts` (`1.4.0` / versionCode 
 | Feature | Estado | Notas |
 |---|---|---|
 | Onboarding (nombre + buddy) | `DONE` | Identidad local `features/identity`. |
-| Vinculación por código/QR | `DONE` | Código 6 char + QR `akv1:` (ECC H); `redeem_pairing_code`; extras de provisioning persistidos. |
+| Vinculación por código/QR | `DONE` | Código de `SECURITY_CONFIG.pairingCodeLength` (8) + expiración `pairingCodeExpiry` (15 min) + QR `akv1:` (ECC H); `redeem_pairing_code`; extras de provisioning persistidos. |
 | Theme + i18n | `DONE` | Claves `arcakids.*`, dark mode. |
 | Pantalla bloqueada | `DONE` | Rutas `/blocked` + redirect por estado. |
 | Internet Seguro (filtro web VPN) | `DONE` | `VpnFilterService` (DNS) + toggle en Ajustes con flujo de consentimiento VPN; reglas desde `web_filters`. |
