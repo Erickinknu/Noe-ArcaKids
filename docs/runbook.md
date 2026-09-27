@@ -200,13 +200,17 @@ Verificar ausencia de crashes:
 
 > La APK de ARCA KIDS con `x86_64` solo sirve para emular — **no instalar en dispositivo real** (lose arm64 native libs).
 
-## 11. Smoke test RELEASE en dispositivo físico (2026-09-26)
+## 11. Smoke test RELEASE en dispositivo físico (2026-09-27)
 
 **APKs de hito (firma de producción, no debug):**
-| App | APK | SHA-256 del certificado |
-|---|---|---|
-| NOE | `builds/noe/NOE-1.4.0-release.apk` | `421ef0257cea004626705a58fdad15220a8a9301b9a15ea96fb3bcde7d6c8cbb` |
-| ARCA KIDS | `builds/arcakids/ARCA-KIDS-1.4.0-release.apk` | `1a7c8b640455b80ac8a07c13a6f6423c5769736be1be75225ed173633871c852` |
+| App | APK | versionCode | SHA-256 del certificado |
+|---|---|---|---|
+| NOE | `builds/noe/NOE-1.4.1-release.apk` | 13 | `421ef0257cea004626705a58fdad15220a8a9301b9a15ea96fb3bcde7d6c8cbb` |
+| ARCA KIDS | `builds/arcakids/ARCA-KIDS-1.4.1-release.apk` | 13 | `1a7c8b640455b80ac8a07c13a6f6423c5769736be1be75225ed173633871c852` |
+| NOE | `builds/noe/NOE-1.4.0-release.apk` | 12 | `421ef0257cea004626705a58fdad15220a8a9301b9a15ea96fb3bcde7d6c8cbb` |
+| ARCA KIDS | `builds/arcakids/ARCA-KIDS-1.4.0-release.apk` | 12 | `1a7c8b640455b80ac8a07c13a6f6423c5769736be1be75225ed173633871c852` |
+
+Los SHA-256 de certificado **no cambian** entre 1.4.0 y 1.4.1: son propiedad del `release.keystore`, así que `adb install -r` actualiza en sitio sin desinstalar (solo sube el versionCode 12 → 13).
 
 **Dispositivo:** físico y limpio (factory reset o invitado **sin cuentas**; el Device Owner no se puede establecer con cuentas configuradas). El rol Device Owner se da vía `adb shell dpm set-device-owner com.arcakids.child/.DeviceAdminReceiver`; solo se puede quitar con reset en la mayoría de ROMs.
 
@@ -218,8 +222,8 @@ Verificar ausencia de crashes:
 **Flujo E2E (ADB conectado):**
 ```powershell
 $adb = "$env:USERPROFILE\Android\Sdk\platform-tools\adb.exe"
-& $adb install -r builds\arcakids\ARCA-KIDS-1.4.0-release.apk
-& $adb install -r builds\noe\NOE-1.4.0-release.apk
+& $adb install -r builds\arcakids\ARCA-KIDS-1.4.1-release.apk
+& $adb install -r builds\noe\NOE-1.4.1-release.apk
 & $adb shell dpm set-device-owner com.arcakids.child/.DeviceAdminReceiver
 ```
 1. NOE: registrarse/ingresar → crear familia → agregar hijo → pantalla "Vincular" → escanear el QR o copiar el código.

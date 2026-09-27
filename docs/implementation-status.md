@@ -1,6 +1,6 @@
 # Estado de Implementación — NOE + ARCA KIDS
 
-**Actualizado:** 2026-09-25 (cierre de tanda: paleta cálida NOE activada, dashboard con KPIs, privacidad/términos completos y cliente push en NOE; versión 1.4.0 / versionCode 12)
+**Actualizado:** 2026-09-27 (Fase 3 de motion en Hijos: skeleton de carga, press en cards y entrada escalonada; `ProgressBar` vuelve a ser estático por defecto con prop opt-in `animated`; versión 1.4.1 / versionCode 13)
 
 Leyenda de estados:
 - `DONE` — implementado, compila y verificado en código.
@@ -10,7 +10,7 @@ Leyenda de estados:
 - `MOCK` — placeholder/stub: devuelve datos falsos o no hace nada real.
 - `MISSING` — no existe.
 
-Fuente de verdad de versión: `apps/<app>/app.config.ts` (`1.4.0` / versionCode `12`). El `android/app/build.gradle` se sincroniza con esa fuente (prebuild o edición directa); nunca al revés.
+Fuente de verdad de versión: `apps/<app>/app.config.ts` (`1.4.1` / versionCode `13`). El `android/app/build.gradle` se sincroniza con esa fuente (prebuild o edición directa); nunca al revés.
 
 ---
 
@@ -114,5 +114,6 @@ Fuente de verdad de versión: `apps/<app>/app.config.ts` (`1.4.0` / versionCode 
 
 - `npm run typecheck` / `npm run lint` / `npm test`: 0 errores.
 - APKs debug de ambas apps → `builds/{noe,arcakids}/` (gitignored), con versión en el nombre.
-- **Release firmado 1.4.0 (versionCode 12)**, solo `arm64-v8a`: `builds/noe/NOE-1.4.0-release.apk` (51,1 MB, `com.noe.parent`) y `builds/arcakids/ARCA-KIDS-1.4.0-release.apk` (57,7 MB, `com.arcakids.child`). Firmados con `release.keystore` local (gitignored, cert `CN=NOE` / `CN=ARCA KIDS`), verificados con `apksigner verify`.
+- **Release firmado 1.4.1 (versionCode 13)**, solo `arm64-v8a`: `builds/noe/NOE-1.4.1-release.apk` (51,1 MB, `com.noe.parent`) y `builds/arcakids/ARCA-KIDS-1.4.1-release.apk` (57,7 MB, `com.arcakids.child`). Firmados con `release.keystore` local (gitignored, cert `CN=NOE` / `CN=ARCA KIDS`), verificados con `apksigner verify`; los SHA-256 de certificado son los mismos que en 1.4.0, así que actualizan en sitio sin desinstalar. Bundle Hermes embebido (`assets/index.android.bundle`, 6,6 MB / 4,7 MB).
+- Release anterior 1.4.0 (versionCode 12): `builds/noe/NOE-1.4.0-release.apk` y `builds/arcakids/ARCA-KIDS-1.4.0-release.apk`.
 - Workspace Android Studio: abrir `android/` (composite build) → `:noe:app:assembleDebug`, `:arcakids:app:assembleRelease`.

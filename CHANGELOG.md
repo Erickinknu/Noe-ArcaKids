@@ -7,6 +7,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-09-27
+
+### Added
+- **Fase 3 de motion en la pantalla Hijos** (`apps/noe/app/(app)/children/index.tsx`),
+  acotada a esa pantalla:
+  - `Skeleton` / `SkeletonList` (`apps/noe/src/components/ui/skeleton.tsx`) reemplazan el
+    spinner de carga: pulso de opacidad 0.55→1 en 900 ms, reutilizando `surfaceHover` de la
+    paleta cálida. 3 filas de 96 px, el mismo alto que las cards reales, y `accessibilityElementsHidden`
+    para que el placeholder no se anuncie.
+  - `usePressAnimation` escala a 0.98 y baja opacidad a 0.85 (120 ms / 180 ms) en cada card.
+  - `useEnterAnimation` hace la entrada escalonada de la lista: opacidad 0→1 y `translateY`
+    16→0 px en 220 ms con `Easing.out(Easing.cubic)` y 40 ms de stagger por índice.
+  - Tokens centralizados en `apps/noe/src/features/children/motion/children-motion.ts` para que
+    la pantalla no lleve números sueltos, y 8 tests nuevos para `skeletonPulse` y `progressWidth`.
+  - `ChildCard` se extrae del componente de pantalla: mismo marcado, misma navegación a
+    `/children/[childId]`, ahora con capa de motion y `accessibilityRole`/`accessibilityLabel`.
+
+### Changed
+- **`ProgressBar` vuelve a ser estático por defecto.** La animación de la barra (600 ms,
+  `Easing.out(Easing.cubic)`) quedó detrás de la prop opcional `animated`, con default `false`.
+  Motivo: `ProgressBar` es un primitivo compartido y su único consumidor es el Dashboard
+  (`app/(app)/index.tsx`), no Hijos — Hijos no tiene barra de progreso. Con el default en `false`
+  el Dashboard conserva exactamente el comportamiento previo y la capacidad animada queda
+  disponible sin filtrarse a otras pantallas. Una sola rama en el render, sin duplicar componente.
+- **Versión 1.4.1 (versionCode 13)** en NOE y ARCA KIDS: `package.json`, `app.config.ts`
+  (fuente de verdad) y `android/app/build.gradle` sincronizado.
+
 ### Fixed
 - **Código de vinculación alineado de nuevo con `SECURITY_CONFIG`** (`pairingCodeLength: 8`,
   `pairingCodeExpiry: 15 min` en `packages/shared/src/security.ts`). La generación en

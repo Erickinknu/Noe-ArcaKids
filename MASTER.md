@@ -2,7 +2,7 @@
 
 Repo: `github.com/Erickinknu/Noe-ArcaKids` · Ramas: `main`. Monorepo npm workspaces: `apps/{noe,arcakids}`, `packages/shared`.
 
-**Versión actual:** 1.4.0 (versionCode 12) en ambas apps, release firmado arm64-v8a.
+**Versión actual:** 1.4.1 (versionCode 13) en ambas apps, release firmado arm64-v8a.
 **Estado:** piloto de 20 familias (MVP gratis, APK directo) — ver `docs/mvp.md`.
 
 ## Mapas de docs

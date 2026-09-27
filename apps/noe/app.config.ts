@@ -25,7 +25,7 @@ const sentryPlugins: NonNullable<ExpoConfig['plugins']> = sentryOrg && sentryPro
 const config: ExpoConfig = {
   name: 'NOE',
   slug: 'noe',
-  version: '1.4.0',
+  version: '1.4.1',
   orientation: 'portrait',
   icon: './assets/images/noe-icon.png',
   scheme: 'noe',
@@ -37,7 +37,7 @@ const config: ExpoConfig = {
   },
   android: {
     package: 'com.noe.parent',
-    versionCode: 12,
+    versionCode: 13,
     allowBackup: false,
     ...(googleServicesAvailable ? { googleServicesFile: './google-services.json' } : {}),
     adaptiveIcon: {

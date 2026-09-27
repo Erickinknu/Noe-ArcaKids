@@ -3,14 +3,20 @@ import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'r
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
+import Animated from 'react-native-reanimated';
+import type { ChildProfile } from '@noe-arcakids/types';
 
 import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
-import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
+import { SkeletonList } from '@/components/ui/skeleton';
 import { childService } from '@/features/children/services/child-service';
+import {
+  useEnterAnimation,
+  usePressAnimation,
+} from '@/features/children/motion/use-children-motion';
 import { ageFromBirthDate, birthDateForAge } from '@/features/children/utils/child-age';
 import { familyService } from '@/features/family/services/family-service';
 import { parentalService } from '@/features/parental/services/parental-service';
@@ -19,6 +25,57 @@ import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { Card, Input, PlanLimitError, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 const AVATARS = ['🐻', '🐰', '🐱', '🐶', '🦊', '🐼', '🦁', '🐸', '🐵', '🦋', '🌟', '🚀'];
+
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
+interface ChildCardProps {
+  child: ChildProfile;
+  index: number;
+}
+
+/**
+ * Tarjeta de la lista de hijos: entra con 16px / 220ms escalonada y responde al
+ * toque con scale 0.98 + opacity 0.85 (120ms in, 180ms out).
+ */
+function ChildCard({ child, index }: ChildCardProps) {
+  const { t: tr } = useTranslation();
+  const router = useRouter();
+  const { colors, shadows } = useTheme();
+  const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+  const press = usePressAnimation();
+  const enter = useEnterAnimation(index);
+
+  return (
+    <Animated.View style={enter.style}>
+      <AnimatedPressable
+        accessibilityRole="button"
+        accessibilityLabel={child.displayName}
+        onPress={() =>
+          router.push({ pathname: '/children/[childId]', params: { childId: child.id } })
+        }
+        onPressIn={press.onPressIn}
+        onPressOut={press.onPressOut}
+        style={press.style}
+      >
+        <Card style={styles.childCard}>
+          <View style={styles.childRow}>
+            <Avatar name={child.displayName} emoji={child.avatarUrl ?? undefined} size={48} />
+            <View style={styles.childInfo}>
+              <Text style={styles.childName}>{child.displayName}</Text>
+              <Text style={styles.childMeta}>
+                {tr('noe.children.memberSince', {
+                  date: new Date(child.createdAt).toLocaleDateString(),
+                })}
+                {child.birthDate ? ` · ${ageFromBirthDate(child.birthDate) ?? '—'} años` : ''}
+              </Text>
+            </View>
+            <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
+          </View>
+        </Card>
+      </AnimatedPressable>
+    </Animated.View>
+  );
+}
 
 export default function ChildrenScreen() {
   const { t: tr } = useTranslation();
@@ -136,8 +193,8 @@ export default function ChildrenScreen() {
 
   if (loading) {
     return (
-      <View style={styles.screen}>
-        <LoadingState text={tr('noe.children.loading')} />
+      <View style={[styles.screen, { paddingTop: screenPadding.paddingTop }]}>
+        <SkeletonList count={3} rowHeight={96} />
       </View>
     );
   }
@@ -159,26 +216,8 @@ export default function ChildrenScreen() {
             <EmptyState icon={<MaterialIcons name="child-care" size={48} color={colors.textMuted} />} title={tr('noe.children.empty')} />
           ) : (
             <>
-              {children.map((child) => (
-                <Pressable key={child.id} onPress={() => router.push({ pathname: '/children/[childId]', params: { childId: child.id } })}>
-                  <Card style={styles.childCard}>
-                    <View style={styles.childRow}>
-                      <Avatar name={child.displayName} emoji={child.avatarUrl ?? undefined} size={48} />
-                      <View style={styles.childInfo}>
-                        <Text style={styles.childName}>{child.displayName}</Text>
-                        <Text style={styles.childMeta}>
-                          {tr('noe.children.memberSince', {
-                            date: new Date(child.createdAt).toLocaleDateString(),
-                          })}
-                          {child.birthDate
-                            ? ` · ${ageFromBirthDate(child.birthDate) ?? '—'} años`
-                            : ''}
-                        </Text>
-                      </View>
-                      <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
-                    </View>
-                  </Card>
-                </Pressable>
+              {children.map((child, index) => (
+                <ChildCard key={child.id} child={child} index={index} />
               ))}
 
               {/* ── Recompensas ── */}
