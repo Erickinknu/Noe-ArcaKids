@@ -57,10 +57,21 @@ Cada APK se honra en el README correspondiente de su carpeta al momento de gener
 - Verificados con `aapt2 dump badging` y `apksigner verify`; bundle Hermes embebido
   (`assets/index.android.bundle`).
 
-### Estado transitorio
+### Dónde están estos APK
 
-Estos dos APK llegaron a commitearse en `main` (commit `25fccbb`) y **aún siguen en el
-historial** mientras se migran al release de GitHub. Al publicar el release se borran del
-historial con `git filter-repo` (no con `git rm`, que deja los blobs) y se fuerza el push.
-Hasta que eso ocurra, esos dos paths son los únicos de `builds/` que git puede rastrear;
-cualquier otro archivo nuevo en `builds/` sigue bloqueado por `.gitignore`.
+Estos dos APK se publicaron como assets del release
+[`v1.4.1`](https://github.com/Erickinknu/Noe-ArcaKids/releases/tag/v1.4.1). **No están en el
+historial de git**: llegaron a commitearse por error en `25fccbb` y se eliminaron del
+historial con `git filter-repo` (no con `git rm`, que deja los blobs) tras publicarse el
+release, con force-push de `main`, del tag `v1.4.1` y de las tres ramas `dependabot/*` que
+habían heredado ese commit.
+
+Consecuencias prácticas:
+
+- `main` y `v1.4.1` apuntan a `205be58`; el historial conserva los 143 commits con sus
+  mensajes, autores y fechas intactos, y 0 ficheros con contenido modificado.
+- Un clon del repo pesa 10,3 MB, no 68,3 MB.
+- La única copia local de cada APK es la salida de Gradle
+  (`apps/<app>/android/app/build/outputs/apk/release/app-release.apk`), que además está
+  gitignored.
+- Cualquier APK nuevo que se deje en `builds/` sigue bloqueado por `.gitignore` (línea 55).
