@@ -61,3 +61,7 @@ app.json
 # Penpot MCP secrets
 secrets/
 build.pid
+
+# Skills de agente instaladas localmente (171 ficheros de terceros, 530 KB).
+# Se versiona solo skills-lock.json, que fija las versiones exactas del equipo.
+.agents/
