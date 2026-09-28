@@ -33,11 +33,11 @@
     "jest-expo": "~57.0.0",
     "react": "19.2.3",
     "react-doctor": "^0.9.13",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.8"
   },
   "overrides": {
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.8"
   },
   "dependencies": {
     "expo": "~57.0.20",
