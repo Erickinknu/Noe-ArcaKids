@@ -21,7 +21,7 @@
     "@noe-arcakids/storage": "*",
     "@noe-arcakids/supabase": "*",
     "@noe-arcakids/types": "*",
-    "@sentry/react-native": "~7.11.0",
+    "@sentry/react-native": "~8.25.0",
     "@supabase/supabase-js": "^2.112.4",
     "expo": "~57.0.20",
     "expo-constants": "~57.0.17",
