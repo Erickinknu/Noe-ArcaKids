@@ -1,0 +1,1 @@
+export default function UsersPage(){return <div className='p-6'><h1 className='text-xl font-semibold'>Usuarios / Padres</h1><p className='text-sm text-gray-600 mt-2'>Listado + detalle. Familia, hijos, tutores, dispositivos ARCA KIDS, última conexión.</p></div>}

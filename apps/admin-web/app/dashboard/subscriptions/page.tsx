@@ -1,0 +1,1 @@
+export default function SubscriptionsPage(){return <div className='p-6'><h1 className='text-xl font-semibold'>Suscripciones y planes</h1><p className='text-sm text-gray-600 mt-2'>Listado por estado, plan, vencimiento, método. Verificación de pagos + webhooks Stripe.</p></div>}

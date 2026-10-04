@@ -1,0 +1,1 @@
+export default function FamiliesPage(){return <div className='p-6'><h1 className='text-xl font-semibold'>Familias y conexiones padre-hijo</h1><p className='text-sm text-gray-600 mt-2'>Vista interactiva: familia ? tutores ? hijos ? dispositivos + estado (online/offline) + reglas activas.</p></div>}

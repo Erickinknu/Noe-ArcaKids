@@ -1,0 +1,1 @@
+export default function SupportPage(){return <div className='p-6'><h1 className='text-xl font-semibold'>Soporte</h1><p className='text-sm text-gray-600 mt-2'>Sistema de tickets: crear, asignar, responder, cerrar. Conversación tipo chat.</p></div>}
