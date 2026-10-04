@@ -48,4 +48,6 @@ printed by `supabase start` (or the `demo` key in `config.toml`).
 
 ## App metadata
 
-`packages/config/src/app-info.ts` owns `APP_VERSION` and `APP_NAMES` (single source of truth).
+`packages/config/src/app-info.ts` owns `APP_VERSION` and `APP_NAMES` (single source of truth for the version shown in the UI).
+
+La versión de build por app vive en `apps/<app>/app.config.ts` (y su `android/app/build.gradle` sincronizado). Ambas deben coincidir con `APP_VERSION`; `npm run check:versions` lo verifica junto con la raíz y los `package.json`, y corre en `npm run validate` y CI.

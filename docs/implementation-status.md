@@ -1,6 +1,6 @@
 # Estado de Implementación — NOE + ARCA KIDS
 
-**Actualizado:** 2026-09-27 (Fase 3 de motion en Hijos: skeleton de carga, press en cards y entrada escalonada; `ProgressBar` vuelve a ser estático por defecto con prop opt-in `animated`; versión 1.4.1 / versionCode 13)
+**Actualizado:** 2026-10-03 (Fase 3 centro de notificaciones y Fase 4 dashboard en NOE; Fase 2 modo estudio nativo en ARCA KIDS; versión 1.4.3 / versionCode 15)
 
 Leyenda de estados:
 - `DONE` — implementado, compila y verificado en código.
@@ -10,7 +10,7 @@ Leyenda de estados:
 - `MOCK` — placeholder/stub: devuelve datos falsos o no hace nada real.
 - `MISSING` — no existe.
 
-Fuente de verdad de versión: `apps/<app>/app.config.ts` (`1.4.1` / versionCode `13`). El `android/app/build.gradle` se sincroniza con esa fuente (prebuild o edición directa); nunca al revés.
+Fuente de verdad de versión por app: `apps/<app>/app.config.ts` (`1.4.3` / versionCode `15`); `android/app/build.gradle` se sincroniza con esa fuente. `APP_VERSION` (`packages/config/src/app-info.ts`) alimenta la versión visible en NOE y debe coincidir. `npm run check:versions` valida la consistencia de todas las fuentes (raíz, app-info, package.json, app.config.ts y build.gradle) y corre en `npm run validate` y CI.
 
 ---
 
@@ -29,10 +29,12 @@ Fuente de verdad de versión: `apps/<app>/app.config.ts` (`1.4.1` / versionCode 
 | Reglas — apps | `DONE` | Categorías/límites (`upsert_app_category`, `app_categories`). |
 | Reglas — filtrado web | `DONE` | CRUD de `web_filters`. |
 | Reglas — zonas seguras | `DONE` | CRUD de `geofences`. |
-| Reglas — modo estudio | `UI_ONLY` | Persistencia local; sin enforcement nativo aún. |
+| Reglas — modo estudio | `DONE` | Persistencia en NOE + enforcement nativo en ARCA KIDS (`StudyModeState`). |
 | Solicitudes de desbloqueo | `DONE` | `unlock_request_service` + resolución. |
 | Notificaciones — preferencias | `DONE` | `notification_preferences`. |
 | Notificaciones — cliente push | `DONE` | `push-notification-service`: token Expo registrado en `push_tokens` al autenticar y borrado al salir (`_layout.tsx`), canal Android y handlers foreground/response. Push remoto real en APK release requiere `google-services.json` de Firebase. |
+| Notificaciones — centro (Fase 3) | `DONE` | Tabla `notifications` + RLS/RPCs/triggers, Realtime, pantalla `/notifications` y campana con contador de no leídas en el Dashboard. |
+| Estado de dispositivo — ringer mode (Fase 2) | `DONE` | `DeviceStatus.ringerMode` + RPC `report_device_status`. |
 | Feedback | `DONE` | `feedback` repo+service+pantalla. |
 | PIN parental + bloqueo de apertura | `DONE` | SHA-256 + sal, lockout, lock-on-open. |
 | Alertas (block/time/geofence) | `DONE` | `getRecentAlerts` desde `device_alerts`. |
@@ -60,7 +62,8 @@ Fuente de verdad de versión: `apps/<app>/app.config.ts` (`1.4.1` / versionCode 
 | `DeviceOwnerModule` | `DONE` | `getName()="DeviceOwner"` ✓ conectado con `NativeModules.DeviceOwner`. DPM: suspender paquetes, restrictions, wipe, lock, provisioning extras. Verificación de permisos (overlay). |
 | `ParentalUsageModule` | `DONE` | `getName()="ParentalUsage"` ✓. UsageStats del día, apps instaladas, `launchApp`, `updateEnforcementState`, `updateBlockedPackages`, `updateDeviceState`, `start/stopEnforcement`, `configureUsageReporter` (para el FGS en background). |
 | `ParentalLocationModule` | `DONE` | `getName()="ParentalLocation"` ✓. Tracking, geofences (HAVERSINE), monitoreo. |
-| `EnforcementService` (FGS) | `DONE` | START_STICKY, canal de notificación, persistencia, re-aplica en `onStartCommand`. Dependía del poller JS para refrescar reglas; se añade fetch de política remota (RPC anónimo) para autonomía. |
+| `EnforcementService` (FGS) | `DONE` | START_STICKY, canal de notificación, persistencia, re-aplica en `onStartCommand`. Dependía del poller JS para refrescar reglas; se añade fetch de política remota (RPC anónimo) para autonomía y bloqueo por modo estudio. |
+| `StudyModeState` | `DONE` | Evalúa las ventanas de modo estudio (días/horas) y `EnforcementService` las aplica; con tests JVM (`StudyModeStateTest`). |
 | `BlockingOverlayManager` | `PARTIAL` | Overlay fallback (detección de foreground por UsageEvents/`runningAppProcesses`). Se sustituye como fallback primario por el `AccessibilityService` real. |
 | `AccessibilityEnforcementService` | `DONE` | Accesibilidad real: cuando una app bloqueada pasa a primer plano, ejecuta acción global de retorno + notifica. Prominent disclosure y consentimiento explícito en onboarding. |
 | `VpnFilterService` (VPN web filter) | `DONE` | `VpnService` DNS (UDP 53): filtra por categorías `web_filters` + sitios manuales y reporta `web_visits`; consentimiento VPN (autoconcedido en device owner u on-demand). |
@@ -93,6 +96,7 @@ Fuente de verdad de versión: `apps/<app>/app.config.ts` (`1.4.1` / versionCode 
 | `offline_actions` | `MISSING` | Sync engine desde cero (P8). |
 | `web_filtering` enforcement | `DONE` | VPN DNS (UDP 53) en ARCA KIDS; reglas desde `web_filters` (RPC `get_web_filter_rules_for_device`) y reporte de visitas a `web_visits` (`report_web_visit`). |
 | `achievements` consumidos | `BACKEND_ONLY` | Tabla + RPCs listos; sin consumo en la app. |
+| `notifications` (centro) | `DONE` | Tabla + RLS por familia, RPCs y triggers (unlock/geofence/SOS) publicados en Realtime. |
 | **Deuda de seguridad aceptada** | `INFO/WARN` | `rls_enabled_no_policy` en `api_throttle` (intencionado: solo SECURITY DEFINER/service_role leen); `pg_net` en `public`; RPCs SECURITY DEFINER por diseño (parametrizados por `device_uuid`); leaked-password protection deshabilitada (conectar HaveIBeenPwned antes de producción). |
 
 ## Mapa de nombres — prompt Fase 1 ↔ implementación real
@@ -114,6 +118,7 @@ Fuente de verdad de versión: `apps/<app>/app.config.ts` (`1.4.1` / versionCode 
 
 - `npm run typecheck` / `npm run lint` / `npm test`: 0 errores.
 - APKs debug de ambas apps → `builds/{noe,arcakids}/` (gitignored), con versión en el nombre.
-- **Release firmado 1.4.1 (versionCode 13)**, solo `arm64-v8a`: `builds/noe/NOE-1.4.1-release.apk` (51,1 MB, `com.noe.parent`) y `builds/arcakids/ARCA-KIDS-1.4.1-release.apk` (57,7 MB, `com.arcakids.child`). Firmados con `release.keystore` local (gitignored, cert `CN=NOE` / `CN=ARCA KIDS`), verificados con `apksigner verify`; los SHA-256 de certificado son los mismos que en 1.4.0, así que actualizan en sitio sin desinstalar. Bundle Hermes embebido (`assets/index.android.bundle`, 6,6 MB / 4,7 MB).
+- **Release firmado 1.4.3 (versionCode 15)**, solo `arm64-v8a`: copias en `C:\Users\Usuario\Documents\APKs_para_instalar\{NOE,ARCAKIDS}-1.4.3-release.apk`. Firmados con `release.keystore` local (gitignored, cert `CN=NOE` / `CN=ARCA KIDS`), verificados con `apksigner verify`; los SHA-256 de certificado son los mismos que en releases previos, así que actualizan en sitio sin desinstalar.
+- Release firmado 1.4.1 (versionCode 13): `builds/noe/NOE-1.4.1-release.apk` (51,1 MB, `com.noe.parent`) y `builds/arcakids/ARCA-KIDS-1.4.1-release.apk` (57,7 MB, `com.arcakids.child`).
 - Release anterior 1.4.0 (versionCode 12): `builds/noe/NOE-1.4.0-release.apk` y `builds/arcakids/ARCA-KIDS-1.4.0-release.apk`.
 - Workspace Android Studio: abrir `android/` (composite build) → `:noe:app:assembleDebug`, `:arcakids:app:assembleRelease`.

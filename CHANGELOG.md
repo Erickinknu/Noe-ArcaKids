@@ -7,6 +7,42 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [1.4.3] - 2026-10-03
+
+### Added
+- **Centro de notificaciones en NOE (Fase 3)**: tabla `notifications` con RLS por
+  familia, RPCs (`create_notification`, `mark_notification_read`,
+  `mark_all_notifications_read`, `get_unread_notification_count`) y triggers para
+  solicitudes de desbloqueo, geofence y SOS; publicacion en Realtime y hardening de las
+  funciones de trigger. Cliente con repositorio, servicio (realtime), hook
+  `use-notifications`, pantalla `/notifications` y campana con contador en el Dashboard.
+- **Estado de dispositivo en NOE (Fase 2)**: `DeviceStatus.ringerMode` y migracion
+  `device_status_ringer_mode` (`report_device_status`).
+- **Guard anti-drift de version**: `npm run check:versions` (script
+  `scripts/check-versions.mjs`) valida que raiz, `app-info.ts`, `package.json`,
+  `app.config.ts` y `android/app/build.gradle` de ambas apps coincidan; se ejecuta en
+  `npm run validate` y en CI.
+
+### Changed
+- **Dashboard de NOE (Fase 4)**: tab bar de 54px con 5 pestanas (etiqueta solo en
+  inactivas), nombre del padre con acceso a Perfil y KPIs En linea/Tiempo/Alertas
+  navegables a Hijos/Actividad/Notificaciones.
+- **ARCA KIDS: modo estudio nativo (Fase 2)**: `StudyModeState.kt` con evaluacion de
+  ventanas de estudio, aplicado por `EnforcementService`; API expuesta por
+  `ParentalUsageModule`/`parental-bridge` y sincronizada por `use-device-poller`.
+- **Version 1.4.3 (versionCode 15)** unificada en NOE y ARCA KIDS: `package.json`
+  (raiz y apps), `app.config.ts`, `android/app/build.gradle` (fuente de verdad) y
+  `APP_VERSION` del monorepo.
+- **Hardening de motion, sesion, vinculacion y modo estudio en NOE**: directiva
+  `'worklet'` en `children-motion`, tests de guardas de reanimated, y cobertura de
+  `auth-store`, `linking-service` y `study-mode-service`.
+
+### Fixed
+- **NOE mostraba la version 1.3.6 en Perfil/Ajustes**: `APP_VERSION`
+  (`packages/config/src/app-info.ts`) habia quedado congelado mientras `app.config.ts`
+  y `build.gradle` avanzaban. Ahora las tres fuentes se mantienen en 1.4.3 y el guard
+  `check:versions` evita que vuelva a divergir.
+
 ## [1.4.1] - 2026-09-27
 
 ### Added
