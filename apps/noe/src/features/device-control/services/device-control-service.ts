@@ -126,14 +126,14 @@ export const deviceControlService = {
     });
   },
 
-  // Live location updates via Supabase Realtime (devices table, RLS-scoped).
+  // Live location updates via Supabase Realtime (device_status table, RLS-scoped).
   subscribeToLocationUpdates(callback: () => void): () => void {
     const client = requireSupabaseClient();
     const channel = client
       .channel('children-locations-live')
       .on(
         'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'devices' },
+        { event: '*', schema: 'public', table: 'device_status' },
         () => callback()
       )
       .subscribe();
@@ -335,6 +335,7 @@ export const deviceControlService = {
       latitude: (r.latitude as number | null) ?? null,
       longitude: (r.longitude as number | null) ?? null,
       currentApp: (r.current_app as string | null) ?? null,
+      ringerMode: (r.ringer_mode as 'normal' | 'vibrate' | 'silent' | null) ?? null,
       isLocked: Boolean(r.is_locked),
       apps: Array.isArray(r.apps) ? (r.apps as InstalledApp[]) : null,
     };

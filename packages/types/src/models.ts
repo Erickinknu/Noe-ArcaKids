@@ -138,6 +138,7 @@ export interface DeviceStatus {
   latitude: number | null;
   longitude: number | null;
   currentApp: string | null;
+  ringerMode: 'normal' | 'vibrate' | 'silent' | null;
   isLocked: boolean;
   apps?: InstalledApp[] | null;
 }
@@ -222,4 +223,27 @@ export interface UnlockRequest {
   status: 'pending' | 'approved' | 'denied';
   createdAt: string;
   resolvedAt: string | null;
+}
+
+// ── Notification center (FASE 3) ──
+
+export type NotificationType =
+  | 'unlock_request'
+  | 'geofence'
+  | 'sos'
+  | 'offline'
+  | 'time_goal'
+  | 'system';
+
+export interface Notification {
+  id: string;
+  familyId: string;
+  childId: string | null;
+  userId: string | null;
+  type: NotificationType;
+  title: string;
+  body: string;
+  data: Record<string, unknown>;
+  isRead: boolean;
+  createdAt: string;
 }

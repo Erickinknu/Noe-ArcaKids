@@ -12,4 +12,5 @@ export const ROUTES = {
   activity: '/activity',
   profile: '/profile',
   profileNotifications: '/profile/notifications',
+  notifications: '/notifications',
 } as const;
