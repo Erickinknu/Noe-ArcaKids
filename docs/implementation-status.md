@@ -122,3 +122,15 @@ Fuente de verdad de versiÃ³n por app: `apps/<app>/app.config.ts` (`1.4.3` / vers
 - Release firmado 1.4.1 (versionCode 13): `builds/noe/NOE-1.4.1-release.apk` (51,1 MB, `com.noe.parent`) y `builds/arcakids/ARCA-KIDS-1.4.1-release.apk` (57,7 MB, `com.arcakids.child`).
 - Release anterior 1.4.0 (versionCode 12): `builds/noe/NOE-1.4.0-release.apk` y `builds/arcakids/ARCA-KIDS-1.4.0-release.apk`.
 - Workspace Android Studio: abrir `android/` (composite build) â†’ `:noe:app:assembleDebug`, `:arcakids:app:assembleRelease`.
+
+
+## Pendientes diferidos (post-release 1.4.3)
+
+| Ítem | Estado | Notas |
+|---|---|---|
+| Edge Function `send-push` + Webhook (Fase 3) | `PENDIENTE` | No implementado aún. Requiere secretos (`supabase secrets set`) y validación con device tokens reales. Expo Push Service (no requiere FCM obligatorio). |
+| Triggers Fase 3 (offline / logro de tiempo) | `PENDIENTE` | Especificados. Despliegue/verificación end-to-end diferidos. |
+| Seguridad: revocar PAT `SUPABASE_ACCESS_TOKEN` | `PENDIENTE (manual)` | Comprometido. Acción obligatoria vía Dashboard. Evidencia en `docs/security-audit-log.md`. |
+| Seguridad: eliminar `jwt-secret-probe` (HTTP 410) | `BLOQUEADO (herramienta)` | Eliminación bloqueada por herramienta. Acción manual obligatoria + evidencia en `docs/security-audit-log.md`. |
+
+**Cierre de validación 1.4.3:** typecheck/lint, Jest (NOE 15/125, ARCA 3/17), `StudyModeStateTest` (25/25), builds release ambos APKs, verificación de firmas/SHA256, guard `check:versions` + `check:bundle` OK. Commits temáticos completos + docs de builds.

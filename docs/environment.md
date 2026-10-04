@@ -51,3 +51,22 @@ printed by `supabase start` (or the `demo` key in `config.toml`).
 `packages/config/src/app-info.ts` owns `APP_VERSION` and `APP_NAMES` (single source of truth for the version shown in the UI).
 
 La versiÃ³n de build por app vive en `apps/<app>/app.config.ts` (y su `android/app/build.gradle` sincronizado). Ambas deben coincidir con `APP_VERSION`; `npm run check:versions` lo verifica junto con la raÃ­z y los `package.json`, y corre en `npm run validate` y CI.
+
+
+## Seguridad (acciones pendientes obligatorias)
+
+### 1) Revocar PAT comprometido
+- **Token afectado:** `SUPABASE_ACCESS_TOKEN` (ver `docs/auditoria-resumen.md`).
+- **Estado:** **COMPROMETIDO** — pendiente de revocación.
+- **Acción manual (no automatizable):**
+  1. Ir a Supabase ? Project Settings > API (o gestión del PAT utilizado).
+  2. Revocar/eliminar ese PAT inmediatamente.
+  3. Generar uno nuevo solo si es necesario y rotarlo en CI/local donde corresponda.
+  4. Nunca commitear tokens. Registrar evidencia en `docs/security-audit-log.md`.
+
+### 2) `jwt-secret-probe` (HTTP 410)
+- **Estado:** Detectado (HTTP 410). **Eliminación bloqueada por herramienta** en esta sesión.
+- **Acción manual:**
+  1. Localizar y eliminar/inhabilitar el recurso asociado vía Supabase Dashboard o CLI con permisos suficientes.
+  2. Verificar que deja de responder.
+  3. Registrar evidencia en `docs/security-audit-log.md`.

@@ -235,3 +235,23 @@ $adb = "$env:USERPROFILE\Android\Sdk\platform-tools\adb.exe"
 5. Alarma en silencio: regla con modo silencio + hora â†’ confirmar DND/silencio a la hora indicada.
 6. VerificaciÃ³n de firma instalada (opcional): `& $adb shell pm path com.arcakids.child` y comparar contra el SHA-256 release.
 7. Negativo: `& $adb logcat -d | Select-String 'FATAL EXCEPTION'` sin entradas; tags `EnforcementService`, `AccessibilityEnforcementService`, `BlockingOverlayManager` activos.
+
+
+## 12. Pendientes diferidos (no bloquean release 1.4.3)
+
+Los siguientes ítems quedan **diferidos** tras cerrar validación y builds 1.4.3:
+
+### Push remoto (Fase 3)
+- **Edge Function `send-push`:** no existe aún en `supabase/functions/` (pendiente de implementación/entrega según especificación Fase 3).
+- **Webhook + secretos:** requiere `supabase secrets set` (p.ej. URL de webhook, configuración Expo) y validación con tokens de dispositivo reales.
+- **Nota Expo Push:** se usa Expo Push Service (`https://exp.host/--/api/v2/push/send`), por lo que **no requiere `google-services.json` obligatorio** para push remoto vía Expo. Si se migrara a FCM directo sí sería necesario.
+- **Verificación:** end-to-end únicamente posible con device token real (no verificable en este entorno).
+
+### Triggers (Fase 3)
+- `trg_notify_offline` / logro de tiempo u otros triggers derivados: definidos en especificación, pendientes de despliegue/verificación end-to-end con datos reales.
+
+### Seguridad (obligatorio, manual)
+- **PAT `SUPABASE_ACCESS_TOKEN` comprometido:** revocar manualmente (ver `docs/environment.md#seguridad-acciones-pendientes-obligatorias` y registrar evidencia en `docs/security-audit-log.md`).
+- **`jwt-secret-probe` (HTTP 410):** eliminación bloqueada por herramienta. Inhabilitar manualmente y registrar evidencia en `docs/security-audit-log.md`.
+
+> Estos diferidos **no bloquean** los APKs release 1.4.3 firmados y verificados.
