@@ -198,19 +198,21 @@ Verificar ausencia de crashes:
 & $adb shell ls /data/tombstones 2>$null | Measure-Object -Line
 ```
 
-> La APK de ARCA KIDS con `x86_64` solo sirve para emular — **no instalar en dispositivo real** (lose arm64 native libs).
+> Los APKs universales actuales (1.4.3) incluyen `arm64-v8a` real: NOE trae las 4 ABIs y ARCA KIDS `arm64-v8a` + `x86_64`, así que ambos instalan tanto en dispositivo físico como en emulador. Si en el futuro se generan APKs por ABI, las variantes solo-`x86_64` son para emular y **no** deben instalarse en dispositivo real (sin libs `arm64`).
 
 ## 11. Smoke test RELEASE en dispositivo físico (2026-09-27)
 
 **APKs de hito (firma de producción, no debug):**
 | App | APK | versionCode | SHA-256 del certificado |
 |---|---|---|---|
+| NOE | `APKs_para_instalar/NOE-1.4.3-release.apk` | 15 | `421ef0257cea004626705a58fdad15220a8a9301b9a15ea96fb3bcde7d6c8cbb` |
+| ARCA KIDS | `APKs_para_instalar/ARCAKIDS-1.4.3-release.apk` | 15 | `1a7c8b640455b80ac8a07c13a6f6423c5769736be1be75225ed173633871c852` |
 | NOE | `builds/noe/NOE-1.4.1-release.apk` | 13 | `421ef0257cea004626705a58fdad15220a8a9301b9a15ea96fb3bcde7d6c8cbb` |
 | ARCA KIDS | `builds/arcakids/ARCA-KIDS-1.4.1-release.apk` | 13 | `1a7c8b640455b80ac8a07c13a6f6423c5769736be1be75225ed173633871c852` |
 | NOE | `builds/noe/NOE-1.4.0-release.apk` | 12 | `421ef0257cea004626705a58fdad15220a8a9301b9a15ea96fb3bcde7d6c8cbb` |
 | ARCA KIDS | `builds/arcakids/ARCA-KIDS-1.4.0-release.apk` | 12 | `1a7c8b640455b80ac8a07c13a6f6423c5769736be1be75225ed173633871c852` |
 
-Los SHA-256 de certificado **no cambian** entre 1.4.0 y 1.4.1: son propiedad del `release.keystore`, así que `adb install -r` actualiza en sitio sin desinstalar (solo sube el versionCode 12 → 13).
+Los SHA-256 de certificado **no cambian** entre 1.4.0 y 1.4.3: son propiedad del `release.keystore`, así que `adb install -r` actualiza en sitio sin desinstalar (solo sube el versionCode 12 → 13 → 15).
 
 **Dispositivo:** físico y limpio (factory reset o invitado **sin cuentas**; el Device Owner no se puede establecer con cuentas configuradas). El rol Device Owner se da vía `adb shell dpm set-device-owner com.arcakids.child/.DeviceAdminReceiver`; solo se puede quitar con reset en la mayoría de ROMs.
 

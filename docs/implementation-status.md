@@ -118,7 +118,7 @@ Fuente de verdad de versión por app: `apps/<app>/app.config.ts` (`1.4.3` / vers
 
 - `npm run typecheck` / `npm run lint` / `npm test`: 0 errores.
 - APKs debug de ambas apps → `builds/{noe,arcakids}/` (gitignored), con versión en el nombre.
-- **Release firmado 1.4.3 (versionCode 15)**, solo `arm64-v8a`: copias en `C:\Users\Usuario\Documents\APKs_para_instalar\{NOE,ARCAKIDS}-1.4.3-release.apk`. Firmados con `release.keystore` local (gitignored, cert `CN=NOE` / `CN=ARCA KIDS`), verificados con `apksigner verify`; los SHA-256 de certificado son los mismos que en releases previos, así que actualizan en sitio sin desinstalar.
+- **Release firmado 1.4.3 (versionCode 15)** — copias en `C:\Users\Usuario\Documents\APKs_para_instalar\{NOE,ARCAKIDS}-1.4.3-release.apk`. NOE 117,1 MB (ABIs `arm64-v8a, armeabi-v7a, x86, x86_64`), archivo SHA-256 `037817ec6edeb2f546fd7b667f6d97fb56b901b2b7938bcb6fe25a1f4671427f`; ARCA KIDS 88,3 MB (`arm64-v8a, x86_64`), archivo SHA-256 `babef0de519eddf6cc813b79b6a80e1a67eed7941030cedce2f4d1e9a1552c9e`. Firmados con `release.keystore` local (gitignored, cert `CN=NOE` / `CN=ARCA KIDS`), verificados con `apksigner verify`; los SHA-256 de certificado son los mismos que en releases previos, así que actualizan en sitio sin desinstalar.
 - Release firmado 1.4.1 (versionCode 13): `builds/noe/NOE-1.4.1-release.apk` (51,1 MB, `com.noe.parent`) y `builds/arcakids/ARCA-KIDS-1.4.1-release.apk` (57,7 MB, `com.arcakids.child`).
 - Release anterior 1.4.0 (versionCode 12): `builds/noe/NOE-1.4.0-release.apk` y `builds/arcakids/ARCA-KIDS-1.4.0-release.apk`.
 - Workspace Android Studio: abrir `android/` (composite build) → `:noe:app:assembleDebug`, `:arcakids:app:assembleRelease`.
