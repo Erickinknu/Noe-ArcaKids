@@ -75,6 +75,22 @@ export const unlockRequestService = {
     }
   },
 
+  // Inoperativo hasta que exista credencial de dispositivo (A2).
+  //
+  // El child app no tiene sesion Supabase: usa la anon key, y `unlock_requests`
+  // revocó todos los privilegios a `anon` en 20260830000000_security_hardening.sql
+  // (SELECT/INSERT devuelven 401). Por eso la suscripcion postgres_changes nunca
+  // llega a entregar eventos: no es un fallo de configuracion del canal, es que
+  // la tabla no es legible para este rol.
+  //
+  // Await: `postgres_changes` requiere que la tabla este en la publication
+  // `supabase_realtime` y que el rol tenga SELECT sobre la tabla. Cuando A2 de
+  // al child una identidad (auth.uid() mapeado a device_uuid), esta funcion deja
+  // de necesitar cambios: RLS sobre `unlock_requests` ya es
+  // `for all to authenticated using (is_family_member(family_id))`.
+  //
+  // No se "arregla" granting SELECT a `anon`: eso reabriria la fuga de
+  // exposicion de datos de familia que 20260930000000 acaba de cerrar.
   subscribeToRequestUpdates(
     childId: string,
     callback: (request: UnlockRequest) => void

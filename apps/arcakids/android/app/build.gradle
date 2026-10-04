@@ -95,8 +95,8 @@ android {
         applicationId 'com.arcakids.child'
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 13
-        versionName "1.4.1"
+        versionCode 14
+        versionName "1.4.2"
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
@@ -144,7 +144,7 @@ android {
         }
     }
     androidResources {
-        ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picasa.ini:!*~'
+        ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:!CVS:!thumbs.db:!picaso.ini:!*~'
     }
 }
 
@@ -195,6 +195,11 @@ dependencies {
     } else {
         implementation jscFlavor
     }
+
+    // Unit tests for the native enforcement logic (study mode windows).
+    // The real org.json artifact shadows the stubbed android.jar copy.
+    testImplementation "junit:junit:4.13.2"
+    testImplementation "org.json:json:20231013"
 }
 
 // --- Clean nativo robusto (workaround AGP) ----------------------------------

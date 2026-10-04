@@ -1,7 +1,10 @@
 package com.arcakids.child
 
+import android.app.usage.UsageEvents
 import android.app.usage.UsageStatsManager
 import android.content.Context
+import android.media.AudioManager
+import android.os.BatteryManager
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.ActivityNotFoundException
@@ -239,6 +242,20 @@ class ParentalUsageModule(private val reactContext: ReactApplicationContext) :
         }
     }
 
+    /**
+     * Asks the native service to refetch and re-apply right away. Used when a
+     * realtime event signals that the parent changed a rule or a study schedule.
+     */
+    @ReactMethod
+    fun refreshEnforcement(promise: Promise) {
+        try {
+            EnforcementService.refresh(reactContext)
+            promise.resolve(null)
+        } catch (e: Exception) {
+            promise.reject("ERR_REFRESH_ENFORCEMENT", e.message, e)
+        }
+    }
+
     /** Persists Supabase endpoint + linked device so the FGS can report usage in background. */
     @ReactMethod
     fun configureUsageReporter(supabaseUrl: String, supabaseAnonKey: String, deviceUuid: String, promise: Promise) {
@@ -377,6 +394,55 @@ class ParentalUsageModule(private val reactContext: ReactApplicationContext) :
             promise.resolve(null)
         } catch (e: Exception) {
             promise.reject("ERR_ENFORCEMENT_STATE", e.message, e)
+        }
+    }
+
+    // ── Fase 2: telemetría real del dispositivo (batería, app en primer plano,
+    //    modo de sonido) para el heartbeat de device_status ────────────────
+
+    @ReactMethod
+    fun getDeviceTelemetry(promise: Promise) {
+        try {
+            val map = Arguments.createMap()
+
+            val batteryManager = reactContext.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+            val battery = batteryManager?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
+            if (battery in 0..100) map.putInt("battery", battery) else map.putNull("battery")
+
+            val audioManager = reactContext.getSystemService(Context.AUDIO_SERVICE) as? AudioManager
+            when (audioManager?.ringerMode) {
+                AudioManager.RINGER_MODE_SILENT -> map.putString("ringerMode", "silent")
+                AudioManager.RINGER_MODE_VIBRATE -> map.putString("ringerMode", "vibrate")
+                AudioManager.RINGER_MODE_NORMAL -> map.putString("ringerMode", "normal")
+                else -> map.putNull("ringerMode")
+            }
+
+            val foreground = currentForegroundApp()
+            if (foreground != null) map.putString("currentApp", foreground) else map.putNull("currentApp")
+
+            promise.resolve(map)
+        } catch (e: Exception) {
+            promise.reject("ERR_TELEMETRY", e.message, e)
+        }
+    }
+
+    private fun currentForegroundApp(): String? {
+        return try {
+            val usm = reactContext.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
+            val end = System.currentTimeMillis()
+            val begin = end - 60_000L
+            val events = usm.queryEvents(begin, end)
+            val event = UsageEvents.Event()
+            var lastPackage: String? = null
+            while (events.hasNextEvent()) {
+                events.getNextEvent(event)
+                if (event.eventType == UsageEvents.Event.ACTIVITY_RESUMED) {
+                    lastPackage = event.packageName
+                }
+            }
+            if (lastPackage == reactContext.packageName) null else lastPackage
+        } catch (e: Exception) {
+            null
         }
     }
 }

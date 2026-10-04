@@ -5,6 +5,14 @@ export interface LaunchableApp {
   label: string;
 }
 
+export type RingerMode = 'normal' | 'vibrate' | 'silent';
+
+export interface DeviceTelemetry {
+  battery: number | null;
+  currentApp: string | null;
+  ringerMode: RingerMode | null;
+}
+
 export interface EnforcementState {
   enforce: boolean;
   bedtimeEnabled: boolean;
@@ -33,11 +41,13 @@ interface NativeParentalUsage {
   updateDeviceState(deviceStateJson: string): Promise<null>;
   startEnforcement(): Promise<null>;
   stopEnforcement(): Promise<null>;
+  refreshEnforcement(): Promise<null>;
   configureUsageReporter(
     supabaseUrl: string,
     supabaseAnonKey: string,
     deviceUuid: string
   ): Promise<null>;
+  getDeviceTelemetry(): Promise<DeviceTelemetry>;
   isWebFilterConsented(): Promise<boolean>;
   requestWebFilterConsent(): Promise<boolean>;
   configureWebFilter(enabled: boolean): Promise<null>;
@@ -139,6 +149,11 @@ export const parentalBridge = {
     await native!.stopEnforcement();
   },
 
+  async refreshEnforcement(): Promise<void> {
+    assertNative('refreshEnforcement');
+    await native!.refreshEnforcement();
+  },
+
   async configureUsageReporter(params: {
     supabaseUrl: string;
     supabaseAnonKey: string;
@@ -150,6 +165,11 @@ export const parentalBridge = {
       params.supabaseAnonKey,
       params.deviceUuid
     );
+  },
+
+  async getDeviceTelemetry(): Promise<DeviceTelemetry> {
+    if (!native) return { battery: null, currentApp: null, ringerMode: null };
+    return native.getDeviceTelemetry();
   },
 
   async isWebFilterConsented(): Promise<boolean> {

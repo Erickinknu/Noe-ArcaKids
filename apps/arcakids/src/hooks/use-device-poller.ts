@@ -2,9 +2,12 @@ import { useEffect, useState, useCallback } from 'react';
 import { env } from '@noe-arcakids/config';
 import { parentalService } from '@/features/parental/services/parental-service';
 import { parentalRepository } from '@/features/parental/repositories/parental-repository';
-import { parentalBridge } from '@/features/parental/native/parental-bridge';
+import { parentalBridge, type DeviceTelemetry } from '@/features/parental/native/parental-bridge';
 import { deviceControlService } from '@/features/device-control/services/device-control-service';
-import { subscribeToPolicy } from '@/features/device-control/realtime/command-subscription';
+import {
+  subscribeToPolicy,
+  subscribeToStudyMode,
+} from '@/features/device-control/realtime/command-subscription';
 import { identityService } from '@/features/identity/services/identity-service';
 
 interface DeviceState {
@@ -14,6 +17,8 @@ interface DeviceState {
 }
 
 const POLL_INTERVAL = 15000; // 15 seconds
+const APPS_REPORT_INTERVAL = 15 * 60 * 1000; // refresh app catalogue every 15 min
+let lastAppsReportMs = 0;
 
 export function useDevicePoller() {
   const [state, setState] = useState<DeviceState | null>(null);
@@ -83,13 +88,41 @@ export function useDevicePoller() {
       }
 
       // 2) Heartbeat: report device_status so NOE sees the device online and
-      //    device_status.last_seen stays fresh. Runs even if other branches fail.
+      //    device_status.last_seen stays fresh. Includes real telemetry
+      //    (battery, foreground app, ringer mode). Runs even if other
+      //    branches fail.
+      let telemetry: DeviceTelemetry = {
+        battery: null,
+        currentApp: null,
+        ringerMode: null,
+      };
+      try {
+        telemetry = await parentalBridge.getDeviceTelemetry();
+      } catch (e) {
+        console.warn('Device telemetry error:', e);
+      }
+
       try {
         await deviceControlService.reportHeartbeat(deviceUuid, {
           isLocked: currentState.isBlocked,
+          battery: telemetry.battery,
+          currentApp: telemetry.currentApp,
+          ringerMode: telemetry.ringerMode,
         });
       } catch (e) {
         console.warn('Device heartbeat error:', e);
+      }
+
+      // The installed-app catalogue changes rarely; refresh it periodically so
+      // the parent app shows real app names without a per-poll cost.
+      const now = Date.now();
+      if (now - lastAppsReportMs >= APPS_REPORT_INTERVAL) {
+        try {
+          await deviceControlService.reportInstalledApps(deviceUuid);
+          lastAppsReportMs = now;
+        } catch (e) {
+          console.warn('Installed apps report error:', e);
+        }
       }
 
       // 3) Teach the native FGS the Supabase endpoint + linked device so it can
@@ -153,6 +186,30 @@ export function useDevicePoller() {
       sub?.unsubscribe();
     };
   }, [syncRulesEnforcement]);
+
+  // Realtime study mode updates: the native service owns the schedule, so a
+  // signal only needs to trigger a refetch + re-apply there.
+  useEffect(() => {
+    let sub: { unsubscribe: () => void } | undefined;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const device = await identityService.getLocalDevice();
+        if (cancelled) return;
+        sub = subscribeToStudyMode(device.deviceUuid, () => {
+          void parentalBridge
+            .refreshEnforcement()
+            .catch((e) => console.warn('Study mode refresh error:', e));
+        });
+      } catch {
+        // Not provisioned yet: the poller will retry on its own.
+      }
+    })();
+    return () => {
+      cancelled = true;
+      sub?.unsubscribe();
+    };
+  }, []);
 
   const dismissAlert = useCallback(async () => {
     try {

@@ -212,10 +212,17 @@ export const deviceControlService = {
       latitude?: number | null;
       longitude?: number | null;
       currentApp?: string | null;
+      ringerMode?: 'normal' | 'vibrate' | 'silent' | null;
       isLocked?: boolean;
     }
   ): Promise<void> {
     await deviceControlRepository.reportStatus(deviceUuid, info);
+  },
+
+  async reportInstalledApps(deviceUuid: string): Promise<void> {
+    const apps = await parentalBridge.getLaunchableApps();
+    if (apps.length === 0) return;
+    await deviceControlRepository.reportApps(deviceUuid, apps);
   },
 
   async syncPendingCommands(deviceUuid: string): Promise<DeviceCommand[]> {

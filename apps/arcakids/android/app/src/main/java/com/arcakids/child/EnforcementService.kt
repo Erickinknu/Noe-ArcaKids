@@ -15,6 +15,7 @@ import android.os.Build
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import org.json.JSONArray
 import org.json.JSONObject
@@ -29,9 +30,15 @@ class EnforcementService : Service() {
     companion object {
         private const val CHANNEL_ID = "arcakids_enforcement"
         private const val NOTIFICATION_ID = 1002
-        private const val PREFS = "arcakids_enforcement"
-        private const val KEY_STATE = "enforcement_state"
-        private const val ACTION_STOP = "com.arcakids.child.action.STOP_ENFORCEMENT"
+    private const val PREFS = "arcakids_enforcement"
+    private const val KEY_STATE = "enforcement_state"
+    private const val ACTION_STOP = "com.arcakids.child.action.STOP_ENFORCEMENT"
+    // Study mode lives in its own preference file: it is fetched from a
+    // different RPC than the enforcement state and must never be clobbered when
+    // the rules payload is rewritten.
+    private const val PREFS_STUDY = "arcakids_study_mode"
+    private const val KEY_STUDY = "study_mode_state"
+    private const val ACTION_REFRESH = "com.arcakids.child.action.REFRESH_ENFORCEMENT"
         private const val POLL_NORMAL_MS = 60_000L
         private const val POLL_ACTIVE_MS = 20_000L
         private const val USAGE_REPORT_INTERVAL_MS = 5 * 60_000L
@@ -55,6 +62,23 @@ class EnforcementService : Service() {
         fun loadState(context: Context): EnforcementState? {
             val raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).getString(KEY_STATE, null) ?: return null
             return try { EnforcementState.fromJson(JSONObject(raw)) } catch (e: Exception) { null }
+        }
+
+        fun saveStudyMode(context: Context, stateJson: String) {
+            context.getSharedPreferences(PREFS_STUDY, Context.MODE_PRIVATE).edit().putString(KEY_STUDY, stateJson).apply()
+        }
+
+        fun loadStudyMode(context: Context): StudyModeState {
+            val raw = context.getSharedPreferences(PREFS_STUDY, Context.MODE_PRIVATE).getString(KEY_STUDY, null)
+                ?: return StudyModeState()
+            return try { StudyModeState.fromJson(JSONObject(raw)) } catch (e: Exception) { StudyModeState() }
+        }
+
+        /** Asks the running service to refetch and re-apply, used by realtime. */
+        fun refresh(context: Context) {
+            context.startService(
+                Intent(context, EnforcementService::class.java).setAction(ACTION_REFRESH)
+            )
         }
     }
 
@@ -94,6 +118,15 @@ class EnforcementService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
+        if (intent?.action == ACTION_REFRESH) {
+            // Realtime notification: refetch immediately instead of waiting for
+            // the next scheduled poll, then re-apply.
+            lastPolicyFetch = 0L
+            ioExecutor.execute {
+                try { fetchRemotePolicy() } catch (t: Throwable) { }
+            }
+            return START_STICKY
+        }
         startForeground(NOTIFICATION_ID, buildNotification())
         applyEnforcement()
         startReactiveLoop()
@@ -121,10 +154,17 @@ class EnforcementService : Service() {
         val state = EnforcementService.loadState(this) ?: return POLL_ACTIVE_MS
         val cal = Calendar.getInstance()
         val dayMinutes = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+        val dayKey = StudyModeState.dayKeyFor(cal.get(Calendar.DAY_OF_WEEK))
+        val studyMode = EnforcementService.loadStudyMode(this)
         val active = state.enforce && (
             state.isBedtimeActive(dayMinutes) ||
             (state.dailyLimitMinutes != null && usageToday() >= (state.dailyLimitMinutes!! - 30)) ||
-            !state.appLimits.isNullOrEmpty()
+            !state.appLimits.isNullOrEmpty() ||
+            // A window that is about to open or close also needs the fast cadence
+            // so the child is not left blocked, or left unblocked, on a boundary.
+            studyMode.isActiveAt(dayKey, dayMinutes) ||
+            studyMode.opensWithinMinutes(dayKey, dayMinutes, 10) ||
+            studyMode.closesWithinMinutes(dayKey, dayMinutes, 10)
         )
         return if (active) POLL_ACTIVE_MS else POLL_NORMAL_MS
     }
@@ -141,6 +181,7 @@ class EnforcementService : Service() {
         }
         val cal = Calendar.getInstance()
         val dayMinutes = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+        val dayKey = StudyModeState.dayKeyFor(cal.get(Calendar.DAY_OF_WEEK))
         val withinBedtime = state.isBedtimeActive(dayMinutes)
         val dailyLimitReached = state.dailyLimitMinutes != null && usageToday() >= state.dailyLimitMinutes!!
         val shouldBlockAll = state.enforce && (withinBedtime || dailyLimitReached)
@@ -150,6 +191,13 @@ class EnforcementService : Service() {
         state.appLimits?.let { limits ->
             val today = usageTodayMap()
             for ((pkg, limit) in limits) { if ((today[pkg] ?: 0) >= limit) blocked.add(pkg) }
+        }
+
+        // Study mode blocks only during the child's class window, and never
+        // overrides a full lock or a manual device block.
+        val studyMode = EnforcementService.loadStudyMode(this)
+        if (state.enforce) {
+            blocked.addAll(studyMode.blockedPackagesNow(dayKey, dayMinutes))
         }
 
         val isOwner = enforcer?.isDeviceOwner == true
@@ -228,6 +276,14 @@ class EnforcementService : Service() {
                 for (i in 0 until arr.length()) blocked.put(arr.getString(i))
             }
 
+            // Per-app limits are owned by the parent's app categories, exactly as
+            // they are in use-device-poller.ts. Writing JSONObject.NULL here wiped
+            // them on every 60s refresh, so the native loop and the JS poller were
+            // fighting over the same key. Rebuild them from the same RPC and, if
+            // that call fails, keep whatever is already stored rather than
+            // destroying the parent's configuration on a transient error.
+            val appLimits = fetchAppLimits(url, anonKey, deviceUuid)
+
             val stateJson = JSONObject()
                 .put("enforce", true)
                 .put("bedtimeEnabled", row.optBoolean("bedtime_enabled", false))
@@ -237,7 +293,7 @@ class EnforcementService : Service() {
                 .put("bonusMinutes", 0)
                 .put("pausedUntil", JSONObject.NULL)
                 .put("blockedPackages", blocked)
-                .put("appLimits", JSONObject.NULL)
+                .put("appLimits", appLimits)
 
             val stateRows = rpc(url, anonKey, "get_device_state_for_device", JSONObject().put("p_device_uuid", deviceUuid))
             val isBlocked = stateRows.length() > 0 && stateRows.getJSONObject(0).optBoolean("is_blocked", false)
@@ -246,9 +302,52 @@ class EnforcementService : Service() {
             getSharedPreferences("arcakids_device", Context.MODE_PRIVATE)
                 .edit().putBoolean("is_blocked", isBlocked).apply()
 
+            // Study mode is keyed by device, so the anonymous child app can read
+            // its own schedule with the same anon key it already holds.
+            try {
+                val studyRows = rpc(url, anonKey, "get_study_mode_schedule_for_device",
+                    JSONObject().put("p_device_uuid", deviceUuid))
+                if (studyRows.length() > 0) {
+                    val studyJson = studyRows.optJSONObject(0) ?: JSONObject()
+                    getSharedPreferences(PREFS_STUDY, Context.MODE_PRIVATE)
+                        .edit().putString(KEY_STUDY, studyJson.toString()).apply()
+                }
+            } catch (t: Throwable) {
+                // Keep the last known study schedule rather than dropping to
+                // an inert one and unblocking the child mid-lesson.
+            }
+
             looperHandler.post { applyEnforcement() }
         } catch (t: Throwable) {
             // Transient network error: retry on next cycle.
+        }
+    }
+
+    /**
+     * Builds the per-app daily limit map from the parent's app categories.
+     * Mirrors parentalService.getLimitedApps(): only apps categorised as
+     * "limited" with a non-null limit are enforced.
+     */
+    private fun fetchAppLimits(url: String, anonKey: String, deviceUuid: String): JSONObject {
+        return try {
+            val rows = rpc(url, anonKey, "get_app_categories_for_device",
+                JSONObject().put("p_device_uuid", deviceUuid))
+            val limits = JSONObject()
+            for (i in 0 until rows.length()) {
+                val r = rows.getJSONObject(i)
+                if (!r.optString("category").equals("limited", ignoreCase = true)) continue
+                if (r.isNull("time_limit_minutes")) continue
+                val pkg = r.optString("package_name")
+                val minutes = r.optInt("time_limit_minutes", 0)
+                if (pkg.isNotBlank() && minutes > 0) limits.put(pkg, minutes)
+            }
+            limits
+        } catch (t: Throwable) {
+            // Keep the limits the parent configured instead of clearing them.
+            val existing = loadState(this)?.appLimits
+            val preserved = JSONObject()
+            existing?.forEach { (pkg, minutes) -> preserved.put(pkg, minutes) }
+            preserved
         }
     }
 
@@ -263,6 +362,12 @@ class EnforcementService : Service() {
             connection.connectTimeout = 8000
             connection.readTimeout = 8000
             OutputStreamWriter(connection.outputStream, Charsets.UTF_8).use { it.write(params.toString()) }
+            val code = connection.responseCode
+            if (code !in 200..299) {
+                val err = connection.errorStream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                Log.w("ArcaEnforcement", "rpc $fn -> HTTP $code: ${err?.take(200)}")
+                throw java.io.IOException("rpc $fn HTTP $code")
+            }
             val input = connection.inputStream
             val text = input.bufferedReader(Charsets.UTF_8).use { it.readText() }
             if (text.isBlank()) return JSONArray()
@@ -326,6 +431,26 @@ class EnforcementService : Service() {
         }
         val body = JSONObject().put("p_device_uuid", deviceUuid).put("p_report_date", reportDate).put("p_entries", entries)
 
+        // Retry with backoff: a single transient failure used to silently drop a
+        // full reporting window. Give it three tries before letting the caller
+        // keep last_report for the next cycle.
+        var lastError: Throwable? = null
+        for (attempt in 1..3) {
+            try {
+                postUsageOnce(url, anonKey, body)
+                return
+            } catch (t: Throwable) {
+                lastError = t
+                Log.w("ArcaEnforcement", "report_usage_for_device attempt $attempt failed: ${t.message}")
+                if (attempt < 3) {
+                    try { Thread.sleep(1000L * attempt) } catch (ie: InterruptedException) { Thread.currentThread().interrupt() }
+                }
+            }
+        }
+        throw (lastError ?: java.io.IOException("report_usage_for_device failed"))
+    }
+
+    private fun postUsageOnce(url: String, anonKey: String, body: JSONObject) {
         val connection = URL("${url.trimEnd('/')}/rest/v1/rpc/report_usage_for_device").openConnection() as HttpURLConnection
         try {
             connection.requestMethod = "POST"
@@ -336,6 +461,12 @@ class EnforcementService : Service() {
             connection.connectTimeout = 8000
             connection.readTimeout = 8000
             OutputStreamWriter(connection.outputStream, Charsets.UTF_8).use { it.write(body.toString()) }
+            val code = connection.responseCode
+            if (code !in 200..299) {
+                val err = connection.errorStream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                Log.w("ArcaEnforcement", "report_usage_for_device -> HTTP $code: ${err?.take(200)}")
+                throw java.io.IOException("report_usage_for_device HTTP $code")
+            }
             connection.inputStream.close() // drain
         } finally {
             connection.disconnect()

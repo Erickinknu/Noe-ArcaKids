@@ -59,6 +59,7 @@ export const deviceControlRepository = {
       latitude?: number | null;
       longitude?: number | null;
       currentApp?: string | null;
+      ringerMode?: 'normal' | 'vibrate' | 'silent' | null;
       isLocked?: boolean;
     }
   ): Promise<void> {

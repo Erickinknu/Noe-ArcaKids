@@ -4,11 +4,16 @@ import type { DeviceCommand } from '@noe-arcakids/types';
 /**
  * Realtime command subscription for the child device.
  *
- * Listens to `device_command_events`, a broadcast-only table fed by a trigger
- * on `device_commands`. The source table keeps RLS closed to `anon`; the
- * broadcast table is grant-only (SELECT to anon) so `postgres_changes` can
- * deliver INSERT events to the child app filtered by `device_uuid=eq.<uuid>`.
- * Fallback: `getPendingCommands` RPC polling (see remote-control-runner).
+ * INOPERATIVO desde 20260930000000_close_open_select_grants.sql: las tres tablas
+ * de eventos ya no conceden SELECT a `anon`, porque `SELECT using(true)` exponia
+ * todos los device_uuid a cualquier cliente con la anon key publica. Con el
+ * SELECT revocado, `postgres_changes` no entrega nada.
+ *
+ * No se revierte el revoke. El polling de `remote-control-runner`
+ * (`get_device_commands_for_device` cada SYNC_INTERVAL_MS) cubre el hueco, de
+ * forma aceptada durante el piloto. Cuando A2 de al child una identidad, estas
+ * tres funciones se reemplazan por canales Broadcast privados autorizados por
+ * claim, y vuelven a ser push.
  *
  * Handled commands: LOCK, UNLOCK, BLOCK_APPS, UNBLOCK_APPS, SET_POLICY,
  * REQUEST_LOCATION, LOCK_TASK, UNLOCK_TASK, SCREEN_CAPTURE, CAMERA,
@@ -67,15 +72,49 @@ export function subscribeToCommands(
   };
 }
 
+export function subscribeToStudyMode(
+  deviceUuid: string,
+  onChange: () => void
+): { unsubscribe: () => void } {
+  const client = requireSupabaseClient();
+  // Inoperativo: `study_mode_events` ya no concede SELECT a `anon`
+  // (20260930000000). Cubierto por el polling de `use-device-poller`, que
+  // sincroniza reglas cada 15s. Reemplazar por Broadcast privado con A2.
+  // Cuando vuelva a funcionar: la fila es una señal por dispositivo sin
+  // payload por diseño, asi que el handler debe refetch del schedule por RPC.
+  const channel = client
+    .channel(`study_mode_events:${deviceUuid}`)
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'study_mode_events',
+        filter: `device_uuid=eq.${deviceUuid}`,
+      },
+      () => {
+        onChange();
+      }
+    )
+    .subscribe();
+
+  return {
+    unsubscribe() {
+      void client.removeChannel(channel);
+    },
+  };
+}
+
 export function subscribeToPolicy(
   deviceUuid: string,
   onPolicy: (policy: Record<string, unknown>) => void
 ): { unsubscribe: () => void } {
   const client = requireSupabaseClient();
-  // The child app authenticates as `anon`, and `device_policies` only grants
-  // SELECT to `authenticated`. Policy changes therefore flow through the
-  // `device_policy_events` broadcast table (same pattern as commands); the full
-  // row is delivered in `payload`.
+  // Inoperativo: `device_policy_events` ya no concede SELECT a `anon`
+  // (20260930000000), y su `SELECT using(true)` exponia device_uuid, family_id,
+  // child_id y payload de cualquier familia. Cubierto por `syncRulesEnforcement`
+  // cada 15s. Reemplazar por Broadcast privado con A2.
+  // Cuando vuelva a funcionar: la fila completa llega en `payload`.
   const channel = client
     .channel(`device_policy_events:${deviceUuid}`)
     .on(
