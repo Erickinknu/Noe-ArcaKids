@@ -45,6 +45,7 @@ import { familyService } from '@/features/family/services/family-service';
 import { parentalService } from '@/features/parental/services/parental-service';
 import { deviceControlService } from '@/features/device-control/services/device-control-service';
 import { pinSyncService } from '@/features/pin/services/pin-sync-service';
+import { useUnreadNotificationCount } from '@/features/notifications/hooks/use-notifications';
 import { ROUTES } from '@/constants';
 
 const FETCH_TIMEOUT_MS = 10_000;
@@ -57,6 +58,7 @@ export default function DashboardScreen() {
   const screenPadding = useScreenPadding();
   const { isOnline } = useNetworkStatus();
   const reflectVerse = useVerseOfDay();
+  const unreadNotifications = useUnreadNotificationCount();
 
   const [data, setData] = useState<FamilySummary | null>(null);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
@@ -163,21 +165,33 @@ export default function DashboardScreen() {
       if (childSelectAction === 'block') {
         try {
           await deviceControlService.blockChild(childId);
-          Alert.alert('Dispositivo bloqueado', 'El dispositivo del hijo ha sido bloqueado exitosamente.');
+          Alert.alert(
+            tr('noe.dashboard.deviceBlockedTitle'),
+            tr('noe.dashboard.deviceBlockedMessage')
+          );
         } catch {
-          Alert.alert('Error', 'No se pudo bloquear el dispositivo. Intenta de nuevo.');
+          Alert.alert(
+            tr('noe.dashboard.errorTitle'),
+            tr('noe.dashboard.blockFailedMessage')
+          );
         }
       } else if (childSelectAction === 'alert') {
         try {
           await deviceControlService.triggerAlert(childId);
-          Alert.alert('Alerta sonora activada', 'Sonará por 5 minutos.');
+          Alert.alert(
+            tr('noe.dashboard.alertActivatedTitle'),
+            tr('noe.dashboard.alertActivatedMessage')
+          );
         } catch {
-          Alert.alert('Error', 'No se pudo activar la alerta. Intenta de nuevo.');
+          Alert.alert(
+            tr('noe.dashboard.errorTitle'),
+            tr('noe.dashboard.alertFailedMessage')
+          );
         }
       }
       setChildSelectAction(null);
     },
-    [childSelectAction]
+    [childSelectAction, tr]
   );
 
   const handleSetLimit = useCallback(
@@ -282,7 +296,12 @@ export default function DashboardScreen() {
 
         {/* ── Header ── */}
         <View style={styles.header}>
-          <View style={styles.headerLeft}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={tr('noe.dashboard.openProfile')}
+            style={({ pressed }) => [styles.headerLeft, pressed && styles.headerLeftPressed]}
+            onPress={() => router.push(ROUTES.profile as any)}
+          >
             <Avatar name={data.parentName} size={46} />
             <View style={styles.headerTextGroup}>
               <Text style={styles.greeting}>
@@ -294,15 +313,16 @@ export default function DashboardScreen() {
                   : tr('noe.dashboard.noChildrenOnline')}
               </Text>
             </View>
-          </View>
+            <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
+          </Pressable>
           <Pressable
             style={styles.notificationBell}
-            onPress={() => router.push({ pathname: ROUTES.profileNotifications } as any)}
+            onPress={() => router.push(ROUTES.notifications as any)}
           >
             <MaterialIcons name="notifications" size={22} color={colors.text} />
-            {data.alertsCount > 0 && (
+            {unreadNotifications > 0 && (
               <View style={styles.badge}>
-                <Text style={styles.badgeText}>{data.alertsCount}</Text>
+                <Text style={styles.badgeText}>{unreadNotifications}</Text>
               </View>
             )}
           </Pressable>
@@ -315,51 +335,54 @@ export default function DashboardScreen() {
             value={`${connectedCount}/${data.totalChildren}`}
             label={tr('noe.dashboard.online')}
             color={colors.success}
+            onPress={() => router.push(ROUTES.children as any)}
           />
           <KpiTile
             icon="schedule"
             value={formatDuration(totalMinutesToday)}
             label={tr('noe.dashboard.totalTime')}
             color={colors.primary}
+            onPress={() => router.push(ROUTES.activity as any)}
           />
           <KpiTile
             icon="warning"
             value={String(data.alertsCount)}
             label={tr('noe.dashboard.alerts')}
             color={data.alertsCount > 0 ? colors.warning : colors.success}
+            onPress={() => router.push(ROUTES.notifications as any)}
           />
         </View>
 
         {/* ── Acciones rápidas ── */}
         <View style={styles.group}>
-          <Text style={styles.groupTitle}>Acciones rápidas</Text>
+          <Text style={styles.groupTitle}>{tr('noe.dashboard.quickActions')}</Text>
           <View style={styles.quickActionsRow}>
             {[
               {
                 icon: 'lock' as const,
-                title: 'Bloquear todos',
-                sub: data.children.length === 1 ? '1 dispositivo' : `${data.children.length} dispositivos`,
+                title: tr('noe.dashboard.actionBlock'),
+                sub: tr('noe.dashboard.actionBlockHint'),
                 color: colors.danger,
                 onPress: () => { setChildSelectAction('block'); setChildSelectVisible(true); },
               },
               {
                 icon: 'notifications-active' as const,
-                title: 'Enviar alerta',
-                sub: 'SOS o aviso sonoro',
+                title: tr('noe.dashboard.actionAlert'),
+                sub: tr('noe.dashboard.actionAlertHint'),
                 color: colors.warning,
                 onPress: () => { setChildSelectAction('alert'); setChildSelectVisible(true); },
               },
               {
                 icon: 'location-searching' as const,
-                title: 'Ubicar hijos',
-                sub: 'Mapa en vivo',
+                title: tr('noe.dashboard.actionLocate'),
+                sub: tr('noe.dashboard.actionLocateHint'),
                 color: colors.success,
                 onPress: () => router.push('/location' as any),
               },
               {
                 icon: 'school' as const,
-                title: 'Modo estudio',
-                sub: 'Plantilla de estudio',
+                title: tr('noe.dashboard.actionStudy'),
+                sub: tr('noe.dashboard.actionStudyHint'),
                 color: colors.primary,
                 onPress: () => router.push('/rules/modo-estudio' as any),
               },
@@ -401,10 +424,8 @@ export default function DashboardScreen() {
             <MaterialIcons name="link" size={20} color={colors.primary} />
           </View>
           <View style={styles.linkDeviceInfo}>
-            <Text style={styles.linkDeviceTitle}>Vincular un dispositivo</Text>
-            <Text style={styles.linkDeviceDesc}>
-              Genera el código y QR para conectar la app ARCA KIDS de tu hijo.
-            </Text>
+            <Text style={styles.linkDeviceTitle}>{tr('noe.dashboard.linkDevice')}</Text>
+            <Text style={styles.linkDeviceDesc}>{tr('noe.dashboard.linkDeviceDesc')}</Text>
           </View>
           <MaterialIcons name="chevron-right" size={20} color={colors.primary} />
         </Pressable>
@@ -499,22 +520,28 @@ function KpiTile({
   value,
   label,
   color,
+  onPress,
 }: {
   icon: string;
   value: string;
   label: string;
   color: string;
+  onPress?: () => void;
 }) {
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   return (
-    <View style={styles.kpiTile}>
+    <Pressable
+      accessibilityRole={onPress ? 'button' : undefined}
+      style={({ pressed }) => [styles.kpiTile, pressed && onPress ? styles.kpiTilePressed : null]}
+      onPress={onPress}
+    >
       <View style={[styles.kpiIconWrap, { backgroundColor: color + '18' }]}>
         <MaterialIcons name={icon as any} size={18} color={color} />
       </View>
       <Text style={styles.kpiValue}>{value}</Text>
       <Text style={styles.kpiLabel}>{label}</Text>
-    </View>
+    </Pressable>
   );
 }
 
@@ -752,7 +779,7 @@ function DailyLimitModal({
               keyboardType="number-pad"
               maxLength={4}
             />
-            <Text style={styles.limitInputSuffix}>min / día</Text>
+            <Text style={styles.limitInputSuffix}>{tr('noe.dashboard.minPerDay')}</Text>
           </View>
 
           <View style={styles.limitActions}>
@@ -827,6 +854,9 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     alignItems: 'center',
     gap: spacing.md,
     flex: 1,
+  },
+  headerLeftPressed: {
+    opacity: 0.7,
   },
   headerTextGroup: {
     gap: 2,
@@ -903,6 +933,10 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     padding: spacing.md,
     gap: 4,
     ...shadows.sm,
+  },
+  kpiTilePressed: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
   },
   kpiIconWrap: {
     width: 30,

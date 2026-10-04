@@ -11,7 +11,7 @@ import { ROUTES } from '@/constants';
 import { pinService } from '@/features/pin/services/pin-service';
 import { biometricService } from '@/features/security/services/biometric-service';
 
-const TAB_BAR_BASE_HEIGHT = 56;
+const TAB_BAR_BASE_HEIGHT = 54;
 const PIN_LENGTH = 4;
 
 export default function AppLayout() {
@@ -138,18 +138,21 @@ export default function AppLayout() {
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
-      tabBarInactiveTintColor: colors.textMuted,
-      tabBarStyle: {
-        backgroundColor: colors.background,
-        borderTopColor: colors.borderLight,
-        borderTopWidth: 1,
-        height: TAB_BAR_BASE_HEIGHT + insets.bottom,
-        paddingBottom: insets.bottom,
-        paddingTop: spacing.xs,
-      },
-      tabBarLabelStyle: styles.tabBarLabel,
-    }}
-  >
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarStyle: {
+          backgroundColor: colors.background,
+          borderTopColor: colors.borderLight,
+          borderTopWidth: 1,
+          height: TAB_BAR_BASE_HEIGHT + insets.bottom,
+          paddingBottom: insets.bottom,
+          paddingTop: spacing.xs,
+        },
+        tabBarLabel: ({ focused, color, children }) =>
+          focused ? null : (
+            <Text style={[styles.tabBarLabel, { color }]}>{children}</Text>
+          ),
+      }}
+    >
       {/* ── Tab order: Hijos, Control, Inicio (center), Actividad, Otros ── */}
       <Tabs.Screen
         name="children"
@@ -174,13 +177,7 @@ export default function AppLayout() {
         options={{
           title: tr('noe.tabs.home'),
           tabBarIcon: ({ color, focused }) => (
-            <View style={[styles.homeIconWrap, focused && styles.homeIconWrapActive]}>
-              <MaterialIcons
-                name="home"
-                size={24}
-                color={focused ? colors.onPrimary : color}
-              />
-            </View>
+            <TabIcon name="home" color={color} focused={focused} styles={styles} />
           ),
         }}
       />
@@ -204,6 +201,7 @@ export default function AppLayout() {
       />
 
       <Tabs.Screen name="linking" options={{ href: null }} />
+      <Tabs.Screen name="notifications" options={{ href: null }} />
       <Tabs.Screen name="children/[childId]" options={{ href: null }} />
       <Tabs.Screen name="children/[childId]/devices" options={{ href: null }} />
       {/* Control sub-screens */}
@@ -270,17 +268,6 @@ const makeStyles = (colors: ThemeColors) =>
   },
   iconActive: {
     opacity: 1,
-  },
-  homeIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.borderLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  homeIconWrapActive: {
-    backgroundColor: colors.primary,
   },
   pinGateWrap: {
     flex: 1,
