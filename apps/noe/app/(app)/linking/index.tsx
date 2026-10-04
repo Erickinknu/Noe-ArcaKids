@@ -18,7 +18,6 @@ import {
   buildAndroidProvisioningExtras,
   buildCompactQrValue,
   linkingService,
-  type LinkingMode,
   DEVICE_ADMIN_COMPONENT_SHORT,
 } from '@/features/linking/services/linking-service';
 import { buildPairingLink } from '@/features/linking/services/pairing-link';
@@ -39,7 +38,6 @@ export default function LinkingScreen() {
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const { childId: requestedChildId } = useLocalSearchParams<{ childId?: string }>();
   const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
-  const [mode, setMode] = useState<LinkingMode>('child');
   const [payload, setPayload] = useState<ProvisioningPayload | null>(null);
   const [expiresAt, setExpiresAt] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
@@ -69,18 +67,9 @@ export default function LinkingScreen() {
     return data.children.find((c) => c.id === requestedChildId) ?? null;
   }, [selectedChild, data, requestedChildId]);
 
-  function handleModeChange(next: LinkingMode) {
-    setMode(next);
-    setPayload(null);
-    setExpiresAt(null);
-    setActionError(null);
-  }
-
   async function handleGenerate() {
     if (!data) return;
-    // For family mode we still need a child row to bind the code against (DB constraint).
-    const childForCode = activeChild ?? data.children[0];
-    if (!childForCode) {
+    if (!activeChild) {
       setActionError(tr('noe.linking.noChildren'));
       return;
     }
@@ -89,8 +78,7 @@ export default function LinkingScreen() {
     try {
       const result = await linkingService.createProvisioningPayload({
         familyId: data.familyId,
-        childId: childForCode.id,
-        mode,
+        childId: activeChild.id,
       });
       setPayload(result.payload);
       setExpiresAt(result.code.expiresAt);
@@ -113,8 +101,6 @@ export default function LinkingScreen() {
     if (!pairingLink) return;
     Share.share({ message: pairingLink });
   }, [pairingLink]);
-  const displayChildName =
-    mode === 'family' ? tr('noe.linking.modeFamily') : (activeChild?.displayName ?? '');
 
   if (loading) {
     return (
@@ -144,25 +130,6 @@ export default function LinkingScreen() {
         <VerseBanner verse={covenantVerse} title={tr('common.verseOfDay')} />
       ) : null}
 
-      {/* Mode toggle */}
-      <View style={styles.modeRow}>
-        <Pressable
-          onPress={() => handleModeChange('family')}
-          style={[styles.modeChip, mode === 'family' && styles.modeChipActive]}
-        >
-          <Text style={[styles.modeText, mode === 'family' && styles.modeTextActive]}>{tr('noe.linking.modeFamily')}</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => handleModeChange('child')}
-          style={[styles.modeChip, mode === 'child' && styles.modeChipActive]}
-        >
-          <Text style={[styles.modeText, mode === 'child' && styles.modeTextActive]}>{tr('noe.linking.modeChild')}</Text>
-        </Pressable>
-      </View>
-      <Text style={styles.muted}>
-        {mode === 'family' ? tr('noe.linking.modeHintFamily') : tr('noe.linking.modeHintChild')}
-      </Text>
-
       <Card style={styles.card}>
         <SectionHeader title={tr('noe.linking.chooseChild')} />
         {data.children.length === 0 ? (
@@ -187,19 +154,11 @@ export default function LinkingScreen() {
             ))}
           </View>
         )}
-        {mode === 'child' && !activeChild ? (
-          <Text style={styles.hint}>{tr('noe.linking.chooseChild')}</Text>
-        ) : null}
+        <Text style={styles.hint}>{tr('noe.linking.codeHint')}</Text>
       </Card>
 
-      <Button
-        onPress={handleGenerate}
-        loading={generating}
-        disabled={mode === 'child' ? !activeChild : data.children.length === 0}
-      >
-        {mode === 'child' && activeChild
-          ? tr('noe.linking.generateCode', { name: activeChild.displayName })
-          : tr('noe.linking.generateCode', { name: displayChildName || data.children[0]?.displayName || 'familia' })}
+      <Button onPress={handleGenerate} loading={generating} disabled={!activeChild}>
+        {tr('noe.linking.generateCode', { name: activeChild?.displayName ?? '' })}
       </Button>
 
       {actionError ? <Text style={styles.error}>{actionError}</Text> : null}
@@ -207,9 +166,7 @@ export default function LinkingScreen() {
       {payload && expiresAt ? (
         <Card style={[styles.pairingCard, shadows.sm]}>
           <Text style={styles.pairingLabel}>
-            {mode === 'child' && activeChild
-              ? tr('noe.linking.codeFor', { name: activeChild.displayName })
-              : tr('noe.linking.codeFor', { name: tr('noe.linking.modeFamily') })}
+            {tr('noe.linking.codeFor', { name: activeChild?.displayName ?? '' })}
           </Text>
           <Text style={styles.code}>{payload.code}</Text>
           <View style={styles.qrModeRow}>
@@ -286,10 +243,6 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     fontSize: typography.fontSizes.body,
     color: colors.textMuted,
     lineHeight: 24,
-  },
-  modeRow: {
-    flexDirection: 'row',
-    gap: spacing.sm,
   },
   modeChip: {
     flex: 1,

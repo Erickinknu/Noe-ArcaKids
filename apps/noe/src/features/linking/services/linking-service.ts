@@ -1,10 +1,8 @@
 /**
  * Linking service — parent side: generate pairing codes + Device Owner QR payloads.
  *
- * Two modes:
- *  - "Por hijo"  → code bound to a specific child (familyId + childId). QR JSON includes childId.
- *  - "Por familia" → code still bound to a child row (DB constraint) but QR JSON omits childId
- *    to signal Device Owner provisioning is family-scoped. The child can be reassigned after linking.
+ * The pairing code is bound to a specific child (familyId + childId); the QR
+ * JSON includes childId so ARCA KIDS links the device to that child.
  *
  * QR provisioning JSON (scanned by ARCA KIDS or typed manually):
  *  {
@@ -30,8 +28,6 @@
 import type { PairingCode } from '../repositories/linking-repository';
 import { linkingRepository } from '../repositories/linking-repository';
 import type { ProvisioningPayload } from '@noe-arcakids/types';
-
-export type LinkingMode = 'family' | 'child';
 
 export const DEVICE_ADMIN_COMPONENT = 'com.arcakids.child/com.arcakids.child.DeviceAdminReceiver';
 export const DEVICE_ADMIN_PACKAGE = 'com.arcakids.child';
@@ -110,23 +106,17 @@ export const linkingService = {
   },
 
   /**
-   * Generate a full provisioning payload (QR JSON) in either mode.
-   * For "family" mode, childId may be null — the code is still generated against a concrete child row
-   * (first child in family) to satisfy DB constraint, but the QR payload omits it.
+   * Generate a full provisioning payload (QR JSON) bound to a specific child.
    */
   async createProvisioningPayload(args: {
     familyId: string;
-    childId: string | null;
-    mode: LinkingMode;
+    childId: string;
     devicePolicy?: ProvisioningPayload['devicePolicy'];
   }): Promise<{ code: PairingCode; payload: ProvisioningPayload }> {
-    if (!args.childId) {
-      throw new Error('A child is required to generate the pairing code (pick one for family provisioning).');
-    }
     const code = await linkingRepository.createPairingCode(args.familyId, args.childId);
     const payload = buildProvisioningPayload({
       familyId: args.familyId,
-      childId: args.mode === 'child' ? args.childId : null,
+      childId: args.childId,
       code: code.code,
       devicePolicy: args.devicePolicy,
     });

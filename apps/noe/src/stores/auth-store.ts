@@ -12,7 +12,13 @@ interface AuthState {
   initialized: boolean;
   session: SupabaseSession | null;
   user: User | null;
+  /**
+   * Ultimo fallo al resolver la sesion. Es distinto de "no hay sesion": si esta
+   * presente, la app debe esperar y reintentar, nunca redirigir al login.
+   */
+  initializationError: Error | null;
   initialize: () => Promise<void>;
+  retryInitialization: () => void;
 }
 
 function toDomainUser(user: SupabaseUser | undefined): User | null {
@@ -41,6 +47,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   initialized: false,
   session: null,
   user: null,
+  initializationError: null,
+  retryInitialization: () => {
+    set({ initializationError: null });
+    void useAuthStore.getState().initialize();
+  },
   initialize: async () => {
     if (unsubscribeAuth) {
       return;
@@ -53,9 +64,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       unsubscribeAuth = authHelpers.onAuthStateChange((_event, session) => {
         applySession(session);
       }).data.subscription.unsubscribe;
+      set({ initializationError: null });
     } catch (error) {
+      // Una red lenta o caida NO significa "sin sesion". Dejamos el estado en
+      // 'initializing' para que la app espere y reintente, en lugar de enviar
+      // al usuario al login como si nunca hubiera iniciado sesion.
       logger.warn('Auth initialization failed', error);
-      set({ status: 'unauthenticated', session: null, user: null });
+      set({
+        initializationError: error instanceof Error ? error : new Error(String(error)),
+      });
     } finally {
       set({ initialized: true });
     }

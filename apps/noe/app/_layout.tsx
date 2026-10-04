@@ -12,7 +12,11 @@ import { ThemeProvider, useTheme, networkService, ErrorBoundary, sentryService }
 SplashScreen.preventAutoHideAsync().catch(() => {});
 sentryService.init();
 
-function LoadingScreen() {
+/** Espera antes de cada reintento de autenticacion, en ms. El ultimo valor se
+ *  repite para no crecer sin limite mientras la red sigue caida. */
+const AUTH_RETRY_DELAYS_MS = [1000, 2000, 4000, 8000, 15000] as const;
+
+function LoadingScreen({ message }: { message?: string }) {
   const { colors } = useTheme();
   return (
     <View
@@ -30,6 +34,19 @@ function LoadingScreen() {
         Parental Control
       </Text>
       <ActivityIndicator size="large" color={colors.primary} style={{ marginTop: 20 }} />
+      {message ? (
+        <Text
+          style={{
+            fontSize: 13,
+            color: colors.textMuted,
+            marginTop: 14,
+            textAlign: 'center',
+            paddingHorizontal: 32,
+          }}
+        >
+          {message}
+        </Text>
+      ) : null}
     </View>
   );
 }
@@ -38,36 +55,40 @@ function RootNavigator() {
   const { colors, resolved } = useTheme();
 
   const initialize = useAuthStore((state) => state.initialize);
-  const [ready, setReady] = useState(false);
+  const retryInitialization = useAuthStore((state) => state.retryInitialization);
+  const status = useAuthStore((state) => state.status);
+  const initializationError = useAuthStore((state) => state.initializationError);
+
+  // Solo se navega cuando el estado de sesion es definitivo. Mientras Supabase
+  // no responda seguimos en carga: una red lenta jamas se trata como ausencia
+  // de sesion.
+  const ready = status === 'authenticated' || status === 'unauthenticated';
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
-    let mounted = true;
-    console.log('[RootLayout] Starting init...');
-
     networkService.start();
 
-    // Always become ready after 3 seconds no matter what
-    const timeoutId = setTimeout(() => {
-      console.log('[RootLayout] Timeout fired, setting ready');
-      if (mounted) setReady(true);
-    }, 3000);
-
-    // Try init, but don't block on it
-    Promise.all([
-      initI18n().catch((e) => console.warn('[RootLayout] i18n error:', e?.message)),
-      initialize().catch((e) => console.warn('[RootLayout] auth error:', e?.message)),
-    ]).finally(() => {
-      console.log('[RootLayout] Init complete, setting ready');
-      clearTimeout(timeoutId);
-      if (mounted) setReady(true);
-    });
+    initI18n().catch((e) => console.warn('[RootLayout] i18n error:', e?.message));
+    initialize().catch((e) => console.warn('[RootLayout] auth error:', e?.message));
 
     return () => {
-      mounted = false;
       networkService.stop();
-      clearTimeout(timeoutId);
     };
   }, [initialize]);
+
+  // Reintentos con backoff, solo mientras la sesion siga sin resolverse.
+  useEffect(() => {
+    if (ready) {
+      return;
+    }
+    const delay = AUTH_RETRY_DELAYS_MS[Math.min(attempt, AUTH_RETRY_DELAYS_MS.length - 1)];
+    const id = setTimeout(() => {
+      console.log('[RootLayout] Session unresolved, retrying auth init');
+      retryInitialization();
+      setAttempt((n) => n + 1);
+    }, delay);
+    return () => clearTimeout(id);
+  }, [ready, attempt, retryInitialization]);
 
   useEffect(() => {
     let active = true;
@@ -112,7 +133,11 @@ function RootNavigator() {
   }, [ready]);
 
   if (!ready) {
-    return <LoadingScreen />;
+    return (
+      <LoadingScreen
+        message={initializationError ? 'Sin conexión. Reintentando…' : 'Conectando…'}
+      />
+    );
   }
 
   return (

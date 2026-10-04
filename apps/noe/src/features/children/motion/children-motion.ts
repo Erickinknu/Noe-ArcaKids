@@ -27,6 +27,7 @@ export const CHILDREN_MOTION = {
 
 /** Opacidad pulsante del skeleton: triangular entre skeletonMin y skeletonMax. */
 export function skeletonPulse(progress: number): number {
+  'worklet';
   const { skeletonMin, skeletonMax } = CHILDREN_MOTION;
   const phase = progress * 2;
   const tri = phase <= 1 ? phase : 2 - phase;

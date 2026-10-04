@@ -26,8 +26,6 @@ import { Card, Input, PlanLimitError, errorMessage, useAsyncData, useTheme, radi
 
 const AVATARS = ['🐻', '🐰', '🐱', '🐶', '🦊', '🐼', '🦁', '🐸', '🐵', '🦋', '🌟', '🚀'];
 
-const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
-
 interface ChildCardProps {
   child: ChildProfile;
   index: number;
@@ -47,32 +45,33 @@ function ChildCard({ child, index }: ChildCardProps) {
 
   return (
     <Animated.View style={enter.style}>
-      <AnimatedPressable
-        accessibilityRole="button"
-        accessibilityLabel={child.displayName}
-        onPress={() =>
-          router.push({ pathname: '/children/[childId]', params: { childId: child.id } })
-        }
-        onPressIn={press.onPressIn}
-        onPressOut={press.onPressOut}
-        style={press.style}
-      >
-        <Card style={styles.childCard}>
-          <View style={styles.childRow}>
-            <Avatar name={child.displayName} emoji={child.avatarUrl ?? undefined} size={48} />
-            <View style={styles.childInfo}>
-              <Text style={styles.childName}>{child.displayName}</Text>
-              <Text style={styles.childMeta}>
-                {tr('noe.children.memberSince', {
-                  date: new Date(child.createdAt).toLocaleDateString(),
-                })}
-                {child.birthDate ? ` · ${ageFromBirthDate(child.birthDate) ?? '—'} años` : ''}
-              </Text>
+      <Animated.View style={press.style}>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={child.displayName}
+          onPress={() =>
+            router.push({ pathname: '/children/[childId]', params: { childId: child.id } })
+          }
+          onPressIn={press.onPressIn}
+          onPressOut={press.onPressOut}
+        >
+          <Card style={styles.childCard}>
+            <View style={styles.childRow}>
+              <Avatar name={child.displayName} emoji={child.avatarUrl ?? undefined} size={48} />
+              <View style={styles.childInfo}>
+                <Text style={styles.childName}>{child.displayName}</Text>
+                <Text style={styles.childMeta}>
+                  {tr('noe.children.memberSince', {
+                    date: new Date(child.createdAt).toLocaleDateString(),
+                  })}
+                  {child.birthDate ? ` · ${ageFromBirthDate(child.birthDate) ?? '—'} años` : ''}
+                </Text>
+              </View>
+              <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
             </View>
-            <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
-          </View>
-        </Card>
-      </AnimatedPressable>
+          </Card>
+        </Pressable>
+      </Animated.View>
     </Animated.View>
   );
 }
