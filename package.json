@@ -1,51 +1,52 @@
 {
-  "name": "noe-arcakids",
-  "version": "1.4.3",
-  "private": true,
-  "description": "NOE + ARCA KIDS - parental control system (monorepo)",
-  "workspaces": [
-    "apps/*",
-    "packages/*"
-  ],
-  "scripts": {
-    "typecheck": "npm run typecheck --workspaces --if-present",
-    "lint": "npm run lint --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present",
-    "check:versions": "node scripts/check-versions.mjs",
-    "validate": "npm run check:versions && npm run typecheck && npm run lint",
-    "doctor": "npm run doctor --workspaces --if-present",
-    "doctor:react": "npm run doctor:react --workspaces --if-present",
-    "build:noe": "npm run build:android --workspace @noe-arcakids/noe",
-    "build:arcakids": "npm run build:android --workspace @noe-arcakids/arcakids",
-    "prebuild:noe": "npm run prebuild --workspace @noe-arcakids/noe",
-    "prebuild:arcakids": "npm run prebuild --workspace @noe-arcakids/arcakids"
-  },
-  "engines": {
-    "node": ">=20"
-  },
-  "devDependencies": {
-    "@eslint-community/eslint-utils": "^4.10.1",
-    "@react-native/assets-registry": "0.86.3",
-    "@react-native/jest-preset": "^0.86.3",
-    "@types/jest": "^30.0.0",
-    "@types/node": "^26.2.0",
-    "expo-doctor": "^1.18.0",
-    "jest": "^30.5.1",
-    "jest-expo": "~57.0.0",
-    "react": "19.2.3",
-    "react-doctor": "^0.9.13",
-    "react-dom": "19.2.3"
-  },
-  "overrides": {
-    "react": "19.2.3",
-    "react-dom": "19.2.3"
-  },
-  "dependencies": {
-    "expo": "~57.0.20",
-    "react": "19.2.3",
-    "react-native": "0.86.3"
-  },
-  "allowScripts": {
-    "@react-native/jest-preset@0.86.3": true
-  }
+    "name":  "noe-arcakids",
+    "version":  "1.4.3",
+    "private":  true,
+    "description":  "NOE + ARCA KIDS - parental control system (monorepo)",
+    "workspaces":  [
+                       "apps/*",
+                       "packages/*"
+                   ],
+    "scripts":  {
+                    "typecheck":  "npm run typecheck --workspaces --if-present",
+                    "lint":  "npm run lint --workspaces --if-present",
+                    "test":  "npm run test --workspaces --if-present",
+                    "check:versions":  "node scripts/check-versions.mjs",
+                    "validate":  "npm run typecheck \u0026\u0026 npm run lint \u0026\u0026 npm run test \u0026\u0026 npm run check:versions \u0026\u0026 npm run check:bundle",
+                    "doctor":  "npm run doctor --workspaces --if-present",
+                    "doctor:react":  "npm run doctor:react --workspaces --if-present",
+                    "build:noe":  "npm run build:android --workspace @noe-arcakids/noe",
+                    "build:arcakids":  "npm run build:android --workspace @noe-arcakids/arcakids",
+                    "prebuild:noe":  "npm run prebuild --workspace @noe-arcakids/noe",
+                    "prebuild:arcakids":  "npm run prebuild --workspace @noe-arcakids/arcakids",
+                    "check:bundle":  "node scripts/check-bundle.mjs"
+                },
+    "engines":  {
+                    "node":  "\u003e=20"
+                },
+    "devDependencies":  {
+                            "@eslint-community/eslint-utils":  "^4.10.1",
+                            "@react-native/assets-registry":  "0.86.3",
+                            "@react-native/jest-preset":  "^0.86.3",
+                            "@types/jest":  "^30.0.0",
+                            "@types/node":  "^26.2.0",
+                            "expo-doctor":  "^1.18.0",
+                            "jest":  "^30.5.1",
+                            "jest-expo":  "~57.0.0",
+                            "react":  "19.2.3",
+                            "react-doctor":  "^0.9.13",
+                            "react-dom":  "19.2.3"
+                        },
+    "overrides":  {
+                      "react":  "19.2.3",
+                      "react-dom":  "19.2.3"
+                  },
+    "dependencies":  {
+                         "expo":  "~57.0.20",
+                         "react":  "19.2.3",
+                         "react-native":  "0.86.3"
+                     },
+    "allowScripts":  {
+                         "@react-native/jest-preset@0.86.3":  true
+                     }
 }

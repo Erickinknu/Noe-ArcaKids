@@ -1,67 +1,53 @@
-# Dependencies
-node_modules/
-
-# Expo
-.expo/
-dist/
-web-build/
-expo-env.d.ts
-*.orig.*
-*.p8
+# builds
+builds/*
+!builds/**/README.md
+*.apk
+*.aab
+# local keystores
+*.keystore
+*.jks
+# secrets
 *.p12
-*.key
-*.mobileprovision
-
-# Environment (real values never committed)
+google-services.json
+GoogleService-Info.plist
 .env
 .env.*
 !.env.example
-
-# Android / Gradle
-android/.gradle/
-android/.kotlin/
-android/app/build/
-android/build/
-android/local.properties
-android/.cxx/
-*.keystore
-*.jks
-
-# iOS
-ios/Pods/
-ios/build/
-*.ipa
-
-# Logs
-*.log
-npm-debug.log*
-
-# OS
+# IDE
+.idea/
+.vscode/
+*.swp
 .DS_Store
-Thumbs.db
-
-# Supabase local
-supabase/.branches/
-supabase/.temp/
-supabase/.env
-supabase/.db-secret
-
-# Build artifacts
-build/
+# node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+# expo
+.expo/
+.expo-shared/
 dist/
-APK/
-
-# Deliverable APKs (keep the README, ignore the binaries)
-builds/*
-!builds/README.md
-
-# Root android/ = workspace composite de Android Studio (agrupa apps/*/android).
-# Se versiona a propósito; sus salidas se ignoran arriba. app.json suelto de prebuild sí se ignora.
-app.json
-# Penpot MCP secrets
-secrets/
-build.pid
-
-# Skills de agente instaladas localmente (171 ficheros de terceros, 530 KB).
-# Se versiona solo skills-lock.json, que fija las versiones exactas del equipo.
+web-build/
+# android
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+# ios
+Pods/
+DerivedData/
+*.xcworkspace/xcuserdata
+*.xcodeproj/xcuserdata
+# caches
+.cache/
+tmp/
+*.log
+# test
+coverage/
+# supabase (local)
+.supabase/
+# ecc/agents local
 .agents/
+.claude/
+.openhands/
