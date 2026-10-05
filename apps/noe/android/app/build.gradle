@@ -14,9 +14,6 @@ react {
     hermesCommand = new File(["node", "--print", "require.resolve('hermes-compiler/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsolutePath() + "/hermesc/%OS-BIN%/hermesc"
     codegenDir = new File(["node", "--print", "require.resolve('@react-native/codegen/package.json', { paths: [require.resolve('react-native/package.json')] })"].execute(null, rootDir).text.trim()).getParentFile().getAbsoluteFile()
 
-    // Embed the JS bundle in debug builds too, so the APK is installable/testable offline (no Metro needed).
-    debuggableVariants = []
-
     enableBundleCompression = (findProperty('android.enableBundleCompression') ?: false).toBoolean()
     // Use Expo CLI to bundle the app, this ensures the Metro config
     // works correctly with Expo projects.
@@ -100,11 +97,6 @@ android {
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
-    def keystorePropertiesFile = rootProject.file('app/keystore.properties')
-    def keystoreProperties = new Properties()
-    if (keystorePropertiesFile.exists()) {
-        keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
-    }
     signingConfigs {
         debug {
             storeFile file('debug.keystore')
@@ -112,23 +104,15 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
-        release {
-            if (keystorePropertiesFile.exists()) {
-                storeFile file(keystoreProperties['storeFile'])
-                storePassword keystoreProperties['storePassword']
-                keyAlias keystoreProperties['keyAlias']
-                keyPassword keystoreProperties['keyPassword']
-            }
-        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Uses the release keystore when keystore.properties exists;
-            // otherwise falls back to debug signing so local/CI dev builds still work.
-            signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
+            // Caution! In production, you need to generate your own keystore file.
+            // see https://reactnative.dev/docs/signed-apk-android.
+            signingConfig signingConfigs.debug
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds
@@ -195,22 +179,4 @@ dependencies {
     } else {
         implementation jscFlavor
     }
-}
-
-// --- Clean nativo robusto (workaround AGP) ----------------------------------
-// Las tareas externalNativeBuildClean* ejecutan `ninja clean`, que reconfigura
-// CMake y falla cuando faltan los artefactos de codegen de las librerias (p.ej.
-// tras un `clean` global/composite que borra node_modules/<lib>/android/build),
-// ademas de dejar arboles .cxx obsoletos. Se desactivan esas tareas y se limpia
-// .cxx directamente; el siguiente build reconfigura CMake desde cero.
-def cleanNativeCxx = tasks.register("cleanNativeCxx", Delete) {
-    delete project.file(".cxx")
-}
-tasks.configureEach { t ->
-    if (t.name.startsWith("externalNativeBuildClean")) {
-        t.enabled = false
-    }
-}
-tasks.matching { it.name == "clean" }.configureEach {
-    dependsOn cleanNativeCxx
 }
