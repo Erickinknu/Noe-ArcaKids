@@ -1,0 +1,1 @@
+﻿APKs: ARCAKIDS-1.4.3-release.apk (SÍ). NOE-1.4.3-release.apk (NO – build assembleRelease aún en proceso o necesita entorno más tiempo). Implementación DEUNA+invitaciones+theme+componentes completa, versiones 1.4.3/15 OK. Solo falta NOE release.
