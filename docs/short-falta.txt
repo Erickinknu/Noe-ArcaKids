@@ -1,0 +1,9 @@
+﻿RESUMEN BREVE DE FALTA:
+
+1) Supabase: db push migraciones + deploy send-push/stripe-webhook + secrets + triggers send-push
+2) NOE+ARCAKIDS: theme nuevo, corregir Atrás sistema, avatares 3D, datepicker, generar código tutor, límites plan, contratos
+3) admin-web: auth guard rol + conectar Supabase
+4) NOE pagos: Stripe Checkout/Portal + entitlements
+5) Seguridad manual: PAT + jwt-secret-probe + evidencias
+
+Código listo localmente.
