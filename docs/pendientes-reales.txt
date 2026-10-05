@@ -1,0 +1,9 @@
+﻿PENDIENTES REALES:
+1. send-push: CREADA local, NO DESPLEGADA. Secrets + deploy.
+2. stripe-webhook: CREADA local, NO DESPLEGADA. Secrets STRIPE_*.
+3. Migraciones 20261004010000/10: CREADAS, NO APLICADAS a BD remota.
+4. Triggers automáticos para llamar send-push (notificaciones offline/logro tiempo).
+5. Seguridad manual (PAT + jwt-secret-probe) → registrar evidencia.
+6. UI: tema/colors, navegación Atrás, avatares 3D, calendario fecha nacimiento, generar código invitación tutor, límites por plan UI.
+7. admin-web: auth/guard por rol, conectar Supabase.
+8. Stripe Checkout/Portal + entitlements en NOE.

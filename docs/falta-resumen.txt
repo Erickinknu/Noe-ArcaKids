@@ -1,0 +1,23 @@
+﻿## FALTA (resumen)
+
+**Backend deployable (bloquea push+pagos):**
+- Desplegar send-push + stripe-webhook (CLI Supabase vinculado)
+- Aplicar migraciones (db push)
+- Añadir triggers para llamar send-push en notificaciones (A4)
+- Configurar secrets Supabase
+
+**UI/UX (reorganización + colores + navegación):**
+- Aplicar tema nuevo a theme.ts
+- Corregir botón Atrás sistema (NOE + ARCAKIDS)
+- Pantallas: avatares 3D, date picker, generar/aceptar invitación tutor
+- Límites por plan en UI + consumo RPCs
+- Actualizar contratos
+
+**Admin + Pagos:**
+- Admin-web auth/guard rol (admin/support), conectar Supabase
+- Stripe Checkout/Portal + entitlements NOE
+- Soporte tickets básico
+
+**Seguridad manual:** PAT + jwt-secret-probe (evidencias)
+
+Todo código/migraciones existen localmente. Falta desplegar/aplicar + aplicar cambios UI.
