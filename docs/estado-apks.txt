@@ -1,0 +1,9 @@
+﻿ESTADO ACTUAL:
+
+- Versiones: 1.4.3 / versionCode 15 OK (check-versions OK)
+- Implementación: DEUNA (sin Stripe), invitaciones tutor, navegación Atrás, avatares 3D + datepicker, migraciones (DEUNA + trigger send-push), admin-web-static, theme nuevo (commits 3dce94e+)
+- APKs_instalar: ARCAKIDS-1.4.3-release.apk SÍ (88,3 MB). NOE-1.4.3-release.apk NO generado todavía (build Gradle largo en proceso). 
+- NOE bundle: staleness esperado (se corrige al copiar bundle tras export o al generar release con prebuilt correcto). 
+- Backend: migraciones + send-push listos localmente (pendiente db push + functions deploy + secrets).
+
+Para tener AMBAS APKs listas: esperar/relanzar assembleRelease NOE (o generar bundle + assemble). ARCAKIDS listo.
