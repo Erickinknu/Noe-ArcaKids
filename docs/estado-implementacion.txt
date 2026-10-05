@@ -1,0 +1,1 @@
+﻿ARCAKIDS-1.4.3-release.apk generado. NOE release APK queda pendiente de assembleRelease (build pesado) — lo dejamos para ejecutar cuando se requiera sin bloquear la implementación. Estructura DEUNA, invitaciones, back guard, componentes y admin-static listos. Migraciones y trigger send-push preparados para db push + functions deploy.
