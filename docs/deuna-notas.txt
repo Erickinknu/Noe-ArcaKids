@@ -1,0 +1,5 @@
+NOTAS DEUNA (ECUADOR)
+- Usaremos sistema de cobros DEUNA (código QR propio ya existente).
+- No usar Stripe.
+- Mantener estructura para integrar datos reales posteriormente.
+- Web admin puede iniciar como HTML estático (index.html) para migrar a Lovable después.
