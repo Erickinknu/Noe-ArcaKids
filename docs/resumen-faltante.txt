@@ -1,0 +1,27 @@
+﻿FALTA REAL:
+
+1) DEPLOY BACKEND (Supabase)
+- db push: 20261004010000 + 20261004010010
+- functions deploy send-push (no-verify-jwt) + stripe-webhook
+- secrets: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET
+- Añadir triggers para invocar send-push al insertar notificaciones (unlock/geofence/SOS/offline)
+
+2) UI/UX NOE+ARCAKIDS
+- theme.ts nuevo (azul rey + verde esmeralda + cálidos)
+- navegación: botón Atrás sistema (history correcto, evitar salir app)
+- alta hijo: avatares 3D + calendario fecha nacimiento
+- unirse: generar/aceptar código invitación tutor (usar RPCs)
+- suscripciones: límites por plan UI + entitlements
+- contratos actualizados
+
+3) ADMIN-WEB
+- auth guard rol admin/support + conectar Supabase
+- dashboard conexiones padre-hijo + soporte tickets
+
+4) PAGOS
+- Stripe Checkout/Portal en NOE + webhook validado
+
+5) SEGURIDAD MANUAL
+- revocar PAT + eliminar jwt-secret-probe + evidencias
+
+Todo código local listo. Solo falta aplicar/desplegar + UI.
