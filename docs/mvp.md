@@ -32,6 +32,7 @@
 | Ítem | Estado real | Justificación |
 |---|---|---|
 | Pasarela de pago real (Stripe/Play Billing/RevenueCat) | No implementado | El piloto es **gratis**. Billing actual = `claim_subscription` manual (camino temporal). |
+| RPC `create_deuna_order` (mejora futura, deuda aceptada) | No existe | Hoy `deuna_orders.INSERT` queda abierto a `authenticated`, gobernado por `WITH CHECK (status='pending' + verified_* null + USD + is_family_parent)` + trigger que valida el monto contra el catálogo (`validate_deuna_order`) + índice único de un pending por familia+plan. UPDATE/DELETE/TRUNCATE revocados a nivel GRANT (solo `service_role` verifica). A futuro, cerrar también el INSERT tras un RPC `create_deuna_order` (SECURITY DEFINER) y migrar `deuna-service.ts` a usarlo. |
 | Dominio propio / correo transaccional propio | No (SMTP por defecto de Supabase) | No bloquea el piloto; la entregabilidad de correos se puede mitigar pero se aborda post-piloto. |
 | Staging / separación de proyecto prod | Dev/prod comparten `jvxeiexsmnoorhhphjld` | Riesgo aceptado para 20 familias; separar antes de escala. |
 | Play Store / formularios Play (Data Safety, permisos) | Sin publicar | Distribución por **APK directo**; los formularios quedan en espera. |
@@ -41,6 +42,7 @@
 | Modo estudio con enforcement real | `UI_ONLY` | Solo persistencia local; no se ofrece como promesa en el piloto. |
 | Sync engine offline (`offline_actions`) | `MISSING` (Fase 8) | Requiere red para operar; aceptable en piloto. |
 | Pruebas de carga / backups verificados | No existen | No crítico a esta escala; documentado como deuda. |
+| Soporte multi-familia por tutor | No (1 familia por tutor) | Limitación de modelo de datos: `profiles.user_id` es UNIQUE. `redeem_family_invite` rechaza con `already_member_other_family` si el tutor ya pertenece a otra familia (antes lo cambiaba en silencio). Sistema unificado en `family_invites` + `create/redeem_family_invite` (se retiró el duplicado `family_invitations`). Multi-familia real queda para fase futura si se detecta necesidad en el piloto. |
 
 ---
 

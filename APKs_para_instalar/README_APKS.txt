@@ -1,0 +1,8 @@
+﻿APKs listas: 2/2 (firmadas con mismo keystore, sin conflicto de paquete)
+- NOE-1.4.3-release.apk (117,1 MB) SHA256 4F5526707B0855F7FE8B9F6D6393BCC435E72508F01C3C5E57E57803E3718268 | Cert SHA256 1a7c8b640455b80ac8a07c13a6f6423c5769736be1be75225ed173633871c852
+- ARCAKIDS-1.4.3-release.apk (88,3 MB) SHA256 BABEF0DE519EDDF6CC813B79B6A80E1A67EED7941030CEDCE2F4D1E9A1552C9E | Cert SHA256 1a7c8b640455b80ac8a07c13a6f6423c5769736be1be75225ed173633871c852
+Versiones 1.4.3/15 OK. Implementación completa (DEUNA, invitaciones, back guard, avatares+datepicker, trigger push, admin-static, theme). Ambas APKs firmadas con mismo keystore → sin conflicto de instalación/actualización.
+
+1.4.4/16 (build gated: typecheck 0 + lint 0 + tests 126+12 OK; registro E2E OK; seguridad endurecida):
+- NOE-1.4.4-release.apk (69,5 MB) SHA256 4BA93582C632ECEAB359AFD00E28B8C001C510A2500E06E1A4A03D24489ED557 | Cert SHA256 1a7c8b640455b80ac8a07c13a6f6423c5769736be1be75225ed173633871c852 | arm64-v8a+armeabi-v7a
+- ARCAKIDS-1.4.4-release.apk (62,4 MB) SHA256 308AD38EE4AF5A68117322C92F115598A8A0E2527C7881E30BA3C7D9038FDAD3 | Cert SHA256 1a7c8b640455b80ac8a07c13a6f6423c5769736be1be75225ed173633871c852 | arm64-v8a

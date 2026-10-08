@@ -18,18 +18,20 @@ if (!APP || !DEFAULT_ARCH[APP]) {
 const ARCH = args.arch || DEFAULT_ARCH[APP];
 const WS = `@noe-arcakids/${APP === 'noe' ? 'noe' : 'arcakids'}`;
 
+const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 function run(cmd, runArgs, opts = {}) {
   console.log(`\n### ${cmd} ${runArgs.join(' ')}`);
-  const r = spawnSync(cmd, runArgs, { stdio: 'inherit', shell: false, ...opts });
+  const shell = opts.shell ?? (process.platform === 'win32' && cmd !== 'cmd.exe');
+  const r = spawnSync(cmd, runArgs, { stdio: 'inherit', shell, ...opts });
   if (r.status !== 0) {
     console.error(`FALLO (${r.status}): ${cmd} ${runArgs.join(' ')} — build detenido.`);
     process.exit(r.status ?? 1);
   }
 }
 
-run('npm', ['run', 'typecheck', '--workspace', WS]);
-run('npm', ['run', 'lint', '--workspace', WS]);
-run('npm', ['run', 'test', '--workspace', WS]);
+run(NPM, ['run', 'typecheck', '--workspace', WS]);
+run(NPM, ['run', 'lint', '--workspace', WS]);
+run(NPM, ['run', 'test', '--workspace', WS]);
 
 const env = {
   ...process.env,
@@ -40,7 +42,9 @@ const env = {
 };
 run(
   'cmd.exe',
-  ['/d', '/s', '/c', `gradlew.bat assembleRelease "-PreactNativeArchitectures=${ARCH}" --console=plain`],
-  { cwd: `apps/${APP}/android`, env },
+  ['/d', '/s', '/c', `gradlew.bat assembleRelease -PreactNativeArchitectures=${ARCH} --console=plain`],
+  { cwd: `apps/${APP}/android`, env, shell: false },
 );
+// Post-chequeo anti trampa up-to-date de Gradle: el bundle debe ser fresco y con la version.
+run(NPM, ['run', 'check:bundle', '--', `--app=${APP}`], { shell: process.platform !== 'win32' ? false : true });
 console.log(`\nOK release ${APP} (${ARCH}). Verifica con apksigner antes de distribuir.`);

@@ -1,6 +1,6 @@
 {
     "name":  "noe-arcakids",
-    "version":  "1.4.3",
+    "version":  "1.4.4",
     "private":  true,
     "description":  "NOE + ARCA KIDS - parental control system (monorepo)",
     "workspaces":  [
@@ -19,7 +19,8 @@
                     "build:arcakids":  "npm run build:android --workspace @noe-arcakids/arcakids",
                     "prebuild:noe":  "npm run prebuild --workspace @noe-arcakids/noe",
                     "prebuild:arcakids":  "npm run prebuild --workspace @noe-arcakids/arcakids",
-                    "check:bundle":  "node scripts/check-bundle.mjs"
+                    "check:bundle":  "node scripts/check-bundle.mjs",
+                    "test:contract":  "node scripts/contract-signup.mjs"
                 },
     "engines":  {
                     "node":  "\u003e=20"

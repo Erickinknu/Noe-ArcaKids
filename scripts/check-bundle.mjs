@@ -19,10 +19,11 @@ function walk(d){
   }
 }
 sources.forEach(walk);
+const only = (process.argv.find((a) => a.startsWith("--app=")) || "").slice(6).toUpperCase();
 const bundles = [
   ["NOE","apps/noe/android/app/build/generated/assets/react/release/index.android.bundle"],
   ["ARCA","apps/arcakids/android/app/build/generated/assets/react/release/index.android.bundle"]
-];
+].filter(([n]) => !only || n === only || (only === "ARCAKIDS" && n === "ARCA"));
 const version = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8")).version;
 let ok=true;
 for(const [n,b] of bundles){
