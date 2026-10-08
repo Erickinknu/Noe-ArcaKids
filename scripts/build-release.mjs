@@ -47,4 +47,31 @@ run(
 );
 // Post-chequeo anti trampa up-to-date de Gradle: el bundle debe ser fresco y con la version.
 run(NPM, ['run', 'check:bundle', '--', `--app=${APP}`], { shell: process.platform !== 'win32' ? false : true });
+// Post-chequeo de firma: la huella del certificado debe coincidir con la
+// esperada POR APP (scripts/release-certs.json). Detecta keystore cruzado.
+{
+  const { readFileSync } = await import('node:fs');
+  const { execFileSync } = await import('node:child_process');
+  const expected = JSON.parse(readFileSync('scripts/release-certs.json', 'utf8'))[APP];
+  if (!expected) {
+    console.error(`Sin huella esperada para app=${APP} en scripts/release-certs.json — build detenido.`);
+    process.exit(1);
+  }
+  const signer =
+    'C:\\Users\\Usuario\\Android\\Sdk\\build-tools\\35.0.0\\apksigner.bat';
+  let out;
+  try {
+    out = execFileSync(signer, ['verify', '--print-certs', `apps/${APP}/android/app/build/outputs/apk/release/app-release.apk`], { encoding: 'utf8' });
+  } catch (e) {
+    console.error(`apksigner verify fallo para ${APP} — build detenido.`);
+    process.exit(1);
+  }
+  const m = out.match(/SHA-256 digest:\s*([0-9A-Fa-f:]+)/);
+  const got = m ? m[1].replace(/:/g, '').toLowerCase() : '';
+  console.log(`Huella cert ${APP}: ${got}`);
+  if (got !== expected.toLowerCase()) {
+    console.error(`HUELLA INCORRECTA en ${APP}: esperada ${expected}, obtenida ${got} — build detenido. Revisa keystore.properties.`);
+    process.exit(1);
+  }
+}
 console.log(`\nOK release ${APP} (${ARCH}). Verifica con apksigner antes de distribuir.`);
