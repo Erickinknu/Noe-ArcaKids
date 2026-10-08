@@ -23,13 +23,14 @@ const bundles = [
   ["NOE","apps/noe/android/app/build/generated/assets/react/release/index.android.bundle"],
   ["ARCA","apps/arcakids/android/app/build/generated/assets/react/release/index.android.bundle"]
 ];
+const version = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8")).version;
 let ok=true;
 for(const [n,b] of bundles){
   const bp = path.join(root,b);
   if(!existsSync(bp)){console.error("MISS",n);ok=false;continue;}
   const m = statSync(bp).mtimeMs;
   const s = readFileSync(bp).toString("latin1");
-  if(!(s.includes("1.4.3"))||s.includes("1.3.6")){console.error("BADSTR",n);ok=false;}
+  if(!s.includes(version)){console.error("BADSTR",n,"(bundle sin "+version+")");ok=false;}
   if(newest>m+3000){console.error("STALE",n,Math.round((newest-m)/1000)+"s");ok=false;}
 }
 console.log(ok?"BUNDLE OK":"BUNDLE FAIL");
