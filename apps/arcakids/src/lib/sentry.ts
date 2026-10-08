@@ -26,14 +26,6 @@ export function captureMessage(message: string, level: Sentry.SeverityLevel = 'i
   Sentry.captureMessage(message, level);
 }
 
-export function setUserContext(user: { id: string; email?: string; name?: string }) {
-  Sentry.setUser(user);
-}
-
-export function clearUserContext() {
-  Sentry.setUser(null);
-}
-
 export function addBreadcrumb(breadcrumb: Sentry.Breadcrumb) {
   Sentry.addBreadcrumb(breadcrumb);
 }

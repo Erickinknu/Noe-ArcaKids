@@ -14,48 +14,6 @@ function useTimePickerSize() {
   };
 }
 
-interface TimeFieldProps {
-  value: number;
-  onChange: (val: number) => void;
-  min?: number;
-  max?: number;
-  step?: number;
-  label: string;
-  suffix?: string;
-}
-
-export function TimeField({ value, onChange, min = 0, max = 23, step = 1, label, suffix = '' }: TimeFieldProps) {
-  const { colors } = useTheme();
-  const fieldStyles = makeFieldStyles(colors);
-  const { btnSize, valueMinWidth, fontSize } = useTimePickerSize();
-  const increment = () => {
-    const next = value + step;
-    onChange(next > max ? min : next);
-  };
-  const decrement = () => {
-    const next = value - step;
-    onChange(next < min ? max : next);
-  };
-
-  return (
-    <View style={fieldStyles.container}>
-      <Text style={fieldStyles.label}>{label}</Text>
-      <View style={fieldStyles.row}>
-        <Pressable style={({ pressed }) => [fieldStyles.btn, { width: btnSize, height: btnSize, borderRadius: btnSize / 2 }, pressed && fieldStyles.btnPressed]} onPress={decrement}>
-          <MaterialIcons name="remove" size={20} color={colors.primary} />
-        </Pressable>
-        <View style={[fieldStyles.valueBox, { minWidth: valueMinWidth }]}>
-          <Text style={[fieldStyles.value, { fontSize }]}>{String(value).padStart(2, '0')}</Text>
-          {suffix ? <Text style={fieldStyles.suffix}>{suffix}</Text> : null}
-        </View>
-        <Pressable style={({ pressed }) => [fieldStyles.btn, { width: btnSize, height: btnSize, borderRadius: btnSize / 2 }, pressed && fieldStyles.btnPressed]} onPress={increment}>
-          <MaterialIcons name="add" size={20} color={colors.primary} />
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
 interface DurationFieldProps {
   totalMinutes: number;
   onChange: (totalMinutes: number) => void;

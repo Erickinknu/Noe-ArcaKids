@@ -63,7 +63,3 @@ export const billingService = {
     }
   },
 };
-
-export function isPaidPlan(plan: PlanId): boolean {
-  return plan !== 'free';
-}
