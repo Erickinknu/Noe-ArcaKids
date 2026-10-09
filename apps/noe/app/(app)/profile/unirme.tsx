@@ -69,6 +69,18 @@ export default function UnirmeScreen() {
             {tr('noe.familyInvites.unirmeButton')}
           </Button>
         </Card>
+
+        <Card style={styles.card}>
+          <Text style={styles.subtitle}>{tr('noe.familyInvites.generateTitle')}</Text>
+          <Text style={styles.label}>{tr('noe.familyInvites.generateDesc')}</Text>
+          <Button
+            variant="secondary"
+            onPress={() => router.push('/(app)/profile/familia')}
+            style={{ marginTop: spacing.sm }}
+          >
+            {tr('noe.familyInvites.generateButton')}
+          </Button>
+        </Card>
       </ScrollView>
     </KeyboardAvoidingView>
   );

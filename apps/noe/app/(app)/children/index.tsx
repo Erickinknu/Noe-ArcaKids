@@ -6,7 +6,6 @@ import { MaterialIcons } from '@expo/vector-icons';
 import Animated from 'react-native-reanimated';
 import type { ChildProfile } from '@noe-arcakids/types';
 
-import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
@@ -18,13 +17,23 @@ import {
   usePressAnimation,
 } from '@/features/children/motion/use-children-motion';
 import { ageFromBirthDate, birthDateForAge } from '@/features/children/utils/child-age';
+
+/** Rango permitido: 3 a 17 años. */
+function maxChildBirthDate(): Date {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 3);
+  return d;
+}
+function minChildBirthDate(): Date {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 18);
+  return d;
+}
 import { familyService } from '@/features/family/services/family-service';
 import { parentalService } from '@/features/parental/services/parental-service';
 import { deviceControlService } from '@/features/device-control/services/device-control-service';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { Card, Input, PlanLimitError, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
-
-const AVATARS = ['🐻', '🐰', '🐱', '🐶', '🦊', '🐼', '🦁', '🐸', '🐵', '🦋', '🌟', '🚀'];
+import { Avatar3D, AVATAR_IDS, CalendarPicker, Card, Input, PlanLimitError, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 interface ChildCardProps {
   child: ChildProfile;
@@ -57,7 +66,7 @@ function ChildCard({ child, index }: ChildCardProps) {
         >
           <Card style={styles.childCard}>
             <View style={styles.childRow}>
-              <Avatar name={child.displayName} emoji={child.avatarUrl ?? undefined} size={48} />
+              <Avatar3D id={child.avatarUrl ?? undefined} size={48} />
               <View style={styles.childInfo}>
                 <Text style={styles.childName}>{child.displayName}</Text>
                 <Text style={styles.childMeta}>
@@ -84,7 +93,8 @@ export default function ChildrenScreen() {
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [displayName, setDisplayName] = useState('');
   const [birthDate, setBirthDate] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
+  const [selectedAvatar, setSelectedAvatar] = useState(AVATAR_IDS[0]);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [adding, setAdding] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [showUpgrade, setShowUpgrade] = useState(false);
@@ -178,7 +188,7 @@ export default function ChildrenScreen() {
       await childService.addChild(family.id, displayName, selectedAvatar, validated);
       setDisplayName('');
       setBirthDate('');
-      setSelectedAvatar(AVATARS[0]);
+      setSelectedAvatar(AVATAR_IDS[0]);
       await reload();
     } catch (cause) {
       setActionError(errorMessage(cause));
@@ -226,8 +236,8 @@ export default function ChildrenScreen() {
                   Otorga tiempo extra a tus hijos como recompensa por buen comportamiento.
                 </Text>
                 {children.map((child) => (
-                  <View key={child.id} style={styles.rewardRow}>
-                    <Avatar name={child.displayName} emoji={child.avatarUrl ?? undefined} size={32} />
+                    <View key={child.id} style={styles.rewardRow}>
+                      <Avatar3D id={child.avatarUrl ?? undefined} size={32} />
                     <Text style={styles.rewardName}>{child.displayName}</Text>
                     <Pressable
                       style={({ pressed }) => [styles.rewardBtn, pressed && styles.rewardBtnPressed]}
@@ -273,13 +283,24 @@ export default function ChildrenScreen() {
               onChangeText={setDisplayName}
               placeholder={tr('noe.children.namePlaceholder')}
             />
-            <Input
-              label="Fecha de nacimiento (AAAA-MM-DD)"
-              value={birthDate}
-              onChangeText={setBirthDate}
-              placeholder="ej: 2018-04-12"
-              autoCapitalize="none"
-              autoCorrect={false}
+            <Text style={styles.avatarLabel}>{tr('noe.children.birthDateLabel', 'Fecha de nacimiento')}</Text>
+            <Pressable
+              style={styles.dateField}
+              onPress={() => setShowCalendar(true)}
+              accessibilityRole="button"
+            >
+              <MaterialIcons name="calendar-month" size={20} color={colors.primary} />
+              <Text style={[styles.dateFieldText, !birthDate && styles.dateFieldPlaceholder]}>
+                {birthDate || tr('noe.children.birthDatePlaceholder', 'Toca para elegir en el calendario')}
+              </Text>
+            </Pressable>
+            <CalendarPicker
+              visible={showCalendar}
+              value={birthDate || null}
+              minDate={minChildBirthDate()}
+              maxDate={maxChildBirthDate()}
+              onSelect={setBirthDate}
+              onClose={() => setShowCalendar(false)}
             />
             <View style={styles.ageChips}>
               {[4, 8, 12, 15].map((age) => (
@@ -303,18 +324,20 @@ export default function ChildrenScreen() {
               ))}
             </View>
             <Text style={styles.avatarLabel}>{tr('noe.children.pickAvatar')}</Text>
+            <View style={styles.avatarPreviewRow}>
+              <Avatar3D id={selectedAvatar} size={72} />
+              <Text style={styles.avatarPreviewText}>
+                {displayName.trim() || tr('noe.children.namePlaceholder')}
+              </Text>
+            </View>
             <View style={styles.avatarGrid}>
-              {AVATARS.map((emoji) => (
+              {AVATAR_IDS.map((id) => (
                 <Pressable
-                  key={emoji}
-                  onPress={() => setSelectedAvatar(emoji)}
-                  style={[styles.avatarWrapper, emoji === selectedAvatar && styles.avatarSelected]}
+                  key={id}
+                  onPress={() => setSelectedAvatar(id)}
+                  style={[styles.avatarWrapper, id === selectedAvatar && styles.avatarSelected]}
                 >
-                  <Avatar
-                    name={emoji}
-                    emoji={emoji}
-                    size={40}
-                  />
+                  <Avatar3D id={id} size={44} />
                 </Pressable>
               ))}
             </View>
@@ -380,6 +403,40 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   ageChipSelected: { backgroundColor: colors.primary, borderColor: colors.primary },
   ageChipText: { fontSize: typography.fontSizes.caption, color: colors.text },
   ageChipTextSelected: { color: colors.onPrimary },
+  dateField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  dateFieldText: {
+    fontSize: typography.fontSizes.body,
+    color: colors.text,
+  },
+  dateFieldPlaceholder: {
+    color: colors.inputPlaceholder,
+  },
+  avatarPreviewRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    marginBottom: spacing.md,
+    backgroundColor: colors.background,
+    borderRadius: radius.md,
+    padding: spacing.md,
+  },
+  avatarPreviewText: {
+    fontSize: typography.fontSizes.title,
+    fontWeight: typography.fontWeights.bold,
+    color: colors.text,
+    flex: 1,
+  },
   avatarGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',

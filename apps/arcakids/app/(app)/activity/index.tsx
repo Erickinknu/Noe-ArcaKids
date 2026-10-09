@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useParentalStatus } from '@/hooks/use-parental-status';
+import { ScreenHeader } from '@/components/screen-header';
 import { identityService } from '@/features/identity/services/identity-service';
 import { Card, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
@@ -68,7 +69,7 @@ export default function ActivityScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
       <ScrollView style={styles.screen} contentContainerStyle={styles.content}>
-        <Text style={styles.title}>{tr('arcakids.activity.title')}</Text>
+        <ScreenHeader title={tr('arcakids.activity.title')} />
       <Text style={styles.date}>{today}</Text>
 
       <Card>

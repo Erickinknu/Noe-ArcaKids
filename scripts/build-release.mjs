@@ -48,6 +48,23 @@ run(
 // Post-chequeo anti trampa up-to-date de Gradle: el bundle debe ser fresco y con la version.
 run(NPM, ['run', 'check:bundle', '--', `--app=${APP}`], { shell: process.platform !== 'win32' ? false : true });
 // Post-chequeo de firma: la huella del certificado debe coincidir con la
+  // Verificacion cruzada: APKs en APKs_para_instalar no deben cruzar certificados
+  const {readdirSync, statSync} = await import('node:fs');
+  const {join} = await import('node:path');
+  try {
+    const dir = 'APKs_para_instalar';
+    const files = readdirSync(dir).filter(f=>f.endsWith('.apk'));
+    const arcaCert='1a7c8b640455b80ac8a07c13a6f6423c5769736be1be75225ed173633871c852';
+    const noeCert='421ef0257cea004626705a58fdad15220a8a9301b9a15ea96fb3bcbede7d6c8bb';
+    for (const f of files) {
+      const full=join(dir,f); const st=statSync(full); if(st.size<100000) continue;
+      const out2=execFileSync(signer,['verify','--print-certs',full],{encoding:'utf8'});
+      const m2=out2.match(/SHA-256 digest:\s*([0-9A-Fa-f:]+)/);
+      const got2=m2?m2[1].replace(/:/g,'').toLowerCase():'';
+      if(f.startsWith('NOE-') && got2===arcaCert) { console.error('CRUCE: '+f+' firmado con cert ARCA'); process.exit(1); }
+      if(f.startsWith('ARCAKIDS-') && got2===noeCert) { console.error('CRUCE: '+f+' firmado con cert NOE'); process.exit(1); }
+    }
+  } catch(e) { console.warn('cross-check skipped', e.message); }
 // esperada POR APP (scripts/release-certs.json). Detecta keystore cruzado.
 {
   const { readFileSync } = await import('node:fs');

@@ -6,12 +6,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button } from '@/components/ui/button';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { ParentalPinGate } from '@/components/parental-pin-gate';
+import { ScreenHeader } from '@/components/screen-header';
 import { identityService } from '@/features/identity/services/identity-service';
 import type { ChildInfo } from '@/features/identity/repositories/identity-repository';
 import { useAchievements } from '@/features/achievements';
 import { Card, Input, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { Avatar3D, AVATAR_IDS } from '@noe-arcakids/shared';
 
-const AVATARS = ['🦊', '🐼', '🦁', '🐸', '🐙', '🦄'];
+const AVATARS = AVATAR_IDS;
 
 export default function ProfileScreen() {
   const { t: tr } = useTranslation();
@@ -31,7 +33,7 @@ export default function ProfileScreen() {
   }, []);
   const fetchInfo = useCallback(async () => {
     const info = await identityService.getChildInfo();
-    return info ?? { name: '', avatar: AVATARS[0] };
+    return info ?? { name: '', avatar: AVATAR_IDS[0] };
   }, []);
   const { achievements } = useAchievements();
   const currentAchievement = achievements.find((a) => !a.isAchieved) ?? achievements[0];
@@ -74,10 +76,7 @@ export default function ProfileScreen() {
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
       <ScrollView contentContainerStyle={styles.screen} keyboardShouldPersistTaps="handled">
-      <View style={styles.headerBar}>
-        <Text style={styles.title}>{tr('arcakids.profile.title')}</Text>
-        <ThemeToggle />
-      </View>
+      <ScreenHeader title={tr('arcakids.profile.title')} right={<ThemeToggle />} />
 
       {/* Achievement Progress Section */}
       {childId && currentAchievement && (
@@ -105,7 +104,9 @@ export default function ProfileScreen() {
 
       <ParentalPinGate variant="card">
         <Card>
-          <Text style={styles.avatarPreview}>{avatar}</Text>
+          <View style={styles.avatarPreviewWrap}>
+            <Avatar3D id={avatar} size={88} />
+          </View>
           <Input
             label={tr('arcakids.profile.nameLabel')}
             value={name}
@@ -120,7 +121,7 @@ export default function ProfileScreen() {
                 onPress={() => setAvatar(item)}
                 style={[styles.avatarOption, item === avatar && styles.avatarSelected]}
               >
-                <Text style={styles.avatarEmoji}>{item}</Text>
+                <Avatar3D id={item} size={44} />
               </Pressable>
             ))}
           </View>
@@ -166,6 +167,10 @@ const makeStyles = (colors: ThemeColors) =>
   avatarPreview: {
     fontSize: 48,
     textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  avatarPreviewWrap: {
+    alignItems: 'center',
     marginBottom: spacing.sm,
   },
   avatarRow: {

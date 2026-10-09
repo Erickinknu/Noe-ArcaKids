@@ -1,11 +1,13 @@
 import { useMemo, useEffect, useState } from 'react';
 import { Alert, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { setLanguage } from '@/i18n';
 import { useParentalStatus } from '@/hooks/use-parental-status';
 import { ParentalPinGate } from '@/components/parental-pin-gate';
+import { ScreenHeader } from '@/components/screen-header';
 import { identityService } from '@/features/identity/services/identity-service';
 import { parentalBridge } from '@/features/parental/native/parental-bridge';
 import { deviceOwnerBridge } from '@/features/device-control/native/device-owner-module';
@@ -25,6 +27,7 @@ import {
 
 export default function SettingsScreen() {
   const { t: tr, i18n } = useTranslation();
+  const router = useRouter();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const [current, setCurrent] = useState<SupportedLanguage>(i18n.language as SupportedLanguage);
@@ -146,7 +149,7 @@ export default function SettingsScreen() {
   return (
     <ParentalPinGate>
       <SafeAreaView style={styles.screen} edges={['top', 'bottom']}>
-      <Text style={styles.title}>{tr('arcakids.home.settings')}</Text>
+      <ScreenHeader title={tr('arcakids.home.settings')} />
       {isLinked ? (
         <Card>
           <Text style={styles.cardTitle}>{tr('arcakids.parental.title')}</Text>
@@ -377,6 +380,23 @@ export default function SettingsScreen() {
             trackColor={{ true: colors.primary, false: colors.border }}
           />
         </View>
+      </Card>
+      <Card>
+        <Text style={styles.cardTitle}>
+          {(tr('arcakids.settings.legalTitle') as string) || 'Legal'}
+        </Text>
+        <Text style={styles.cardDescription}>
+          {(tr('arcakids.settings.legalDescription') as string) ||
+            'Reglas y privacidad de ARCA KIDS.'}
+        </Text>
+        <Pressable
+          onPress={() => router.push('/terms')}
+          style={[styles.actionButton, styles.actionButtonPrimary]}
+        >
+          <Text style={styles.actionButtonText}>
+            {(tr('arcakids.settings.legalAction') as string) || 'Ver reglas'}
+          </Text>
+        </Pressable>
       </Card>
       </SafeAreaView>
     </ParentalPinGate>

@@ -7,6 +7,7 @@ import * as SplashScreen from 'expo-splash-screen';
 
 import { initI18n } from '@/i18n';
 import { useDevicePoller } from '@/hooks/use-device-poller';
+import { useSystemBackGuard } from '@/hooks/use-system-back';
 import { startRemoteControl, stopRemoteControl } from '@/features/device-control/services/remote-control-runner';
 import { ThemeProvider, useTheme, networkService, ErrorBoundary, sentryService } from '@noe-arcakids/shared';
 
@@ -19,6 +20,8 @@ function RootNavigator() {
   const segments = useSegments();
   const { isBlocked } = useDevicePoller();
   const { colors, resolved } = useTheme();
+  // Botón atrás del sistema: vuelve en la pila; en bloqueo total se consume.
+  useSystemBackGuard({ blockedRoutes: ['blocked'] });
 
   useEffect(() => {
     let mounted = true;

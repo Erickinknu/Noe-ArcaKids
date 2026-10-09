@@ -15,4 +15,6 @@ export { Card } from './components/card';
 export { Input } from './components/input';
 export { ErrorBoundary } from './components/ErrorBoundary';
 export { VerseText, VerseBanner } from './components/verse-text';
+export { Avatar3D, AVATAR_IDS, avatarParamsFor, isLegacyEmojiAvatar } from './components/avatar-3d';
+export { CalendarPicker, formatISODate, parseISODate } from './components/calendar-picker';
 export * from './verses';

@@ -1,34 +1,686 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NOE Admin (DEUNA)</title>
-  <style>
-    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:0;background:#f8fafc;color:#0f172a}
-    header{background:#fff;border-bottom:1px solid #e2e8f0;padding:16px 24px}
-    main{padding:24px;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(260px,1fr))}
-    .card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px;box-shadow:0 1px 2px rgba(2,6,23,.02)}
-    .muted{color:#475569;font-size:14px}
-    nav a{margin-right:12px;text-decoration:none;color:#1f7ae0}
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>NOE ArcaKids — Panel Admin</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          rey: '#1D4ED8',
+          esmeralda: '#059669',
+          ambar: '#F59E0B',
+          fondo: '#F1F5F9',
+          tinta: '#0F172A'
+        },
+        boxShadow: { card: '0 1px 2px rgba(2,6,23,.06), 0 4px 14px rgba(2,6,23,.05)' }
+      }
+    }
+  }
+</script>
+<style>
+  html { scrollbar-color: #cbd5e1 transparent; }
+  .nav-active { background:#1D4ED8 !important; color:#fff !important; }
+  .nav-active svg { stroke:#fff !important; }
+  .qr-grid { display:grid; grid-template-columns:repeat(9,1fr); gap:2px; }
+  .qr-grid span { aspect-ratio:1/1; border-radius:2px; }
+  details > summary { list-style:none; cursor:pointer; }
+  details > summary::-webkit-details-marker { display:none; }
+  .section-hidden { display:none; }
+  @media (max-width:1023px){
+    #sidebar { transform:translateX(-105%); transition:transform .25s ease; }
+    #sidebar.open { transform:translateX(0); }
+  }
+</style>
 </head>
-<body>
-  <header>
-    <h1 style="margin:0;font-size:20px">NOE Admin � DEUNA</h1>
-    <p class="muted" style="margin:8px 0 0">Panel base para conectar con sistema DEUNA (QR propio). Listo para migrar a Lovable.</p>
-    <nav style="margin-top:12px">
-      <a href="#usuarios">Usuarios</a>
-      <a href="#familias">Familias/Conexiones</a>
-      <a href="#suscripciones">Suscripciones/DEUNA</a>
-      <a href="#soporte">Soporte</a>
+<body class="bg-fondo text-tinta antialiased">
+
+<div class="min-h-screen lg:flex">
+
+  <!-- Overlay móvil -->
+  <div id="overlay" class="fixed inset-0 bg-slate-900/50 z-30 hidden lg:hidden"></div>
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside id="sidebar" class="fixed lg:static z-40 w-72 shrink-0 min-h-screen bg-white border-r border-slate-200 flex flex-col">
+    <div class="px-5 pt-6 pb-4 flex items-center gap-3">
+      <div class="w-11 h-11 rounded-2xl bg-rey flex items-center justify-center shrink-0" aria-hidden="true">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 3 7v10l9 5 9-5V7l-9-5z"/><path d="M12 22V12"/><path d="m3 7 9 5 9-5"/></svg>
+      </div>
+      <div>
+        <p class="font-extrabold leading-tight text-[17px]">NOE ArcaKids</p>
+        <p class="text-xs text-slate-500 -mt-0.5">Panel Admin · DEUNA</p>
+      </div>
+      <button id="closeSidebar" class="ml-auto lg:hidden p-2 rounded-lg hover:bg-slate-100" aria-label="Cerrar menú">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <div class="mx-5 mb-3 flex items-center gap-2 rounded-xl bg-amber-50 border border-amber-200 px-3 py-2">
+      <span class="w-2.5 h-2.5 rounded-full bg-ambar animate-pulse"></span>
+      <p class="text-xs font-semibold text-amber-800">Modo MOCK · sin Supabase</p>
+    </div>
+
+    <nav class="px-3 space-y-1 text-sm font-medium" aria-label="Navegación principal">
+      <button data-nav="dashboard" class="nav-btn nav-active w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </button>
+      <button data-nav="familias" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 text-slate-700">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        Familias
+        <span id="badgeFamilias" class="ml-auto text-xs font-bold bg-slate-100 text-slate-600 rounded-full px-2 py-0.5"></span>
+      </button>
+      <button data-nav="pagos" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 text-slate-700">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        Pagos DEUNA
+        <span id="badgePagos" class="ml-auto text-xs font-bold bg-amber-100 text-amber-800 rounded-full px-2 py-0.5"></span>
+      </button>
+      <button data-nav="suscripciones" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 text-slate-700">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+        Suscripciones
+      </button>
+      <button data-nav="soporte" class="nav-btn w-full flex items-center gap-3 px-3 py-2.5 rounded-xl hover:bg-slate-100 text-slate-700">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg>
+        Soporte
+        <span id="badgeTickets" class="ml-auto text-xs font-bold bg-slate-100 text-slate-600 rounded-full px-2 py-0.5"></span>
+      </button>
     </nav>
-  </header>
-  <main>
-    <section class="card" id="usuarios"><h2 style="font-size:16px;margin:0">Usuarios / Padres</h2><p class="muted">Listado + detalle, familia, hijos, tutores, dispositivos, �ltima conexi�n.</p></section>
-    <section class="card" id="familias"><h2 style="font-size:16px;margin:0">Familias y conexiones padre-hijo</h2><p class="muted">�rbol: familia ? tutores ? hijos ? dispositivos + estado + reglas activas.</p></section>
-    <section class="card" id="suscripciones"><h2 style="font-size:16px;margin:0">Suscripciones / Cobros DEUNA</h2><p class="muted">Verificaci�n de cobros por QR DEUNA, estados, vigencia, l�mites por plan.</p></section>
-    <section class="card" id="soporte"><h2 style="font-size:16px;margin:0">Soporte</h2><p class="muted">Tickets, conversaci�n tipo chat, asignaci�n.</p></section>
-  </main>
+
+    <div class="mt-auto p-5">
+      <div class="rounded-2xl bg-tinta text-white p-4 shadow-card">
+        <p class="text-sm font-bold">Migración a Lovable</p>
+        <p class="text-xs text-slate-300 mt-1 leading-relaxed">Reemplaza <code class="bg-white/10 px-1 rounded">MOCK_DB</code> por consultas Supabase. Tablas sugeridas: <code class="bg-white/10 px-1 rounded">families, payments, tickets</code>.</p>
+      </div>
+      <div class="flex items-center gap-3 mt-4">
+        <div class="w-10 h-10 rounded-full bg-rey/10 text-rey font-extrabold flex items-center justify-center">AD</div>
+        <div class="text-sm">
+          <p class="font-bold leading-tight">Admin NOE</p>
+          <p class="text-xs text-slate-500">admin@noe.ec · Quito</p>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============ MAIN ============ -->
+  <div class="flex-1 min-w-0">
+    <!-- Topbar -->
+    <header class="sticky top-0 z-20 bg-fondo/90 backdrop-blur border-b border-slate-200">
+      <div class="px-4 sm:px-6 lg:px-8 py-3.5 flex items-center gap-3">
+        <button id="openSidebar" class="lg:hidden p-2 rounded-lg bg-white border border-slate-200" aria-label="Abrir menú">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+        <div>
+          <h1 id="pageTitle" class="font-extrabold text-lg sm:text-xl leading-tight">Dashboard</h1>
+          <p id="pageSubtitle" class="text-xs sm:text-sm text-slate-500">Resumen operativo · Ecuador · USD</p>
+        </div>
+        <div class="ml-auto flex items-center gap-2">
+          <span class="hidden sm:inline-flex items-center gap-1.5 text-xs font-semibold bg-white border border-slate-200 rounded-full px-3 py-1.5">
+            <span class="w-2 h-2 rounded-full bg-esmeralda"></span> DEUNA conectado (mock)
+          </span>
+          <button onclick="toast('Datos de ejemplo recargados desde MOCK_DB','ok')" class="text-xs sm:text-sm font-bold bg-rey text-white rounded-xl px-3.5 py-2 hover:bg-blue-700">Recargar mock</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="px-4 sm:px-6 lg:px-8 py-6 space-y-6 max-w-[1200px] mx-auto w-full">
+
+      <!-- ===== DASHBOARD ===== -->
+      <section id="section-dashboard" class="space-y-6">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-semibold text-slate-500">Familias activas</p>
+              <span class="w-9 h-9 rounded-xl bg-blue-50 flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></span>
+            </div>
+            <p id="kpiFamilias" class="text-3xl font-extrabold mt-2">—</p>
+            <p class="text-xs text-esmeralda font-semibold mt-1">+6 este mes · Quito + Guayaquil</p>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-semibold text-slate-500">Niños vinculados</p>
+              <span class="w-9 h-9 rounded-xl bg-emerald-50 flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 21v-1a8 8 0 0 1 16 0v1"/></svg></span>
+            </div>
+            <p id="kpiNinos" class="text-3xl font-extrabold mt-2">—</p>
+            <p class="text-xs text-slate-500 font-medium mt-1">Promedio 2.1 niños / familia</p>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-semibold text-slate-500">MRR (USD)</p>
+              <span class="w-9 h-9 rounded-xl bg-amber-50 flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span>
+            </div>
+            <p id="kpiMrr" class="text-3xl font-extrabold mt-2">—</p>
+            <p class="text-xs text-esmeralda font-semibold mt-1">+12.4% vs mes anterior</p>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+            <div class="flex items-center justify-between">
+              <p class="text-sm font-semibold text-slate-500">Tickets abiertos</p>
+              <span class="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F172A" stroke-width="2" stroke-linecap="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
+            </div>
+            <p id="kpiTickets" class="text-3xl font-extrabold mt-2">—</p>
+            <p class="text-xs text-amber-600 font-semibold mt-1">2 urgentes · DEUNA + accesos</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-5 gap-4">
+          <div class="xl:col-span-3 bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+            <div class="flex items-center justify-between flex-wrap gap-2">
+              <div>
+                <h2 class="font-extrabold">Ingresos últimos 6 meses (USD)</h2>
+                <p class="text-xs text-slate-500">Gráfico SVG inline · sin librerías</p>
+              </div>
+              <span class="text-xs font-bold bg-emerald-50 text-esmeralda border border-emerald-200 rounded-full px-3 py-1">Total: <span id="totalIngresos">—</span></span>
+            </div>
+            <div id="chartBarras" class="mt-4 overflow-x-auto"></div>
+            <div id="chartLegend" class="mt-2 flex flex-wrap gap-3 text-xs text-slate-500"></div>
+          </div>
+          <div class="xl:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+            <h2 class="font-extrabold">Actividad reciente</h2>
+            <p class="text-xs text-slate-500 mb-3">Últimos pagos y altas</p>
+            <div class="overflow-x-auto">
+              <table class="w-full text-sm min-w-[420px]">
+                <thead><tr class="text-left text-xs text-slate-500 border-b border-slate-100">
+                  <th class="py-2 pr-2 font-semibold">Familia</th>
+                  <th class="py-2 pr-2 font-semibold">Evento</th>
+                  <th class="py-2 font-semibold text-right">Monto</th>
+                </tr></thead>
+                <tbody id="tablaReciente"></tbody>
+              </table>
+            </div>
+            <button onclick="go('pagos')" class="mt-4 w-full text-sm font-bold text-rey bg-blue-50 hover:bg-blue-100 rounded-xl py-2.5">Ir a cola DEUNA</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== FAMILIAS ===== -->
+      <section id="section-familias" class="section-hidden space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+          <div class="flex flex-col sm:flex-row sm:items-center gap-3">
+            <div>
+              <h2 class="font-extrabold text-lg">Familias</h2>
+              <p class="text-sm text-slate-500">Click en una fila para ver conexiones padre · hijo · dispositivo</p>
+            </div>
+            <div class="sm:ml-auto relative w-full sm:max-w-xs">
+              <svg class="absolute left-3 top-1/2 -translate-y-1/2" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+              <input id="buscadorFamilias" type="search" placeholder="Buscar familia, titular, ciudad…" class="w-full pl-9 pr-3 py-2.5 text-sm rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-rey/30 focus:border-rey" />
+            </div>
+          </div>
+          <div class="mt-4 overflow-x-auto -mx-5 px-5">
+            <table class="w-full text-sm min-w-[760px]">
+              <thead><tr class="text-left text-xs uppercase tracking-wide text-slate-500 border-b border-slate-200">
+                <th class="py-2.5 pr-3">Familia</th><th class="py-2.5 pr-3">Titular</th><th class="py-2.5 pr-3">Niños</th>
+                <th class="py-2.5 pr-3">Dispositivos</th><th class="py-2.5 pr-3">Plan</th><th class="py-2.5">Estado</th>
+              </tr></thead>
+              <tbody id="tablaFamilias"></tbody>
+            </table>
+          </div>
+          <p id="sinResultados" class="hidden text-sm text-slate-500 py-6 text-center">Sin resultados para esa búsqueda.</p>
+        </div>
+      </section>
+
+      <!-- ===== PAGOS DEUNA ===== -->
+      <section id="section-pagos" class="section-hidden space-y-4">
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div class="bg-white rounded-2xl border-2 border-ambar/40 p-4 flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center font-extrabold text-amber-700" id="countPend">0</span>
+            <div><p class="font-bold text-sm">Pendientes</p><p class="text-xs text-slate-500">Requieren verificación QR</p></div>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-emerald-100 flex items-center justify-center font-extrabold text-esmeralda" id="countVer">0</span>
+            <div><p class="font-bold text-sm">Verificadas</p><p class="text-xs text-slate-500">Listas para activar plan</p></div>
+          </div>
+          <div class="bg-white rounded-2xl border border-slate-200 p-4 flex items-center gap-3">
+            <span class="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center font-extrabold text-slate-600" id="countRech">0</span>
+            <div><p class="font-bold text-sm">Rechazadas</p><p class="text-xs text-slate-500">Comprobante inválido</p></div>
+          </div>
+        </div>
+        <div class="bg-blue-50 border border-blue-200 rounded-2xl px-4 py-3 text-sm text-blue-900 flex gap-2">
+          <svg class="shrink-0 mt-0.5" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1D4ED8" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          <p><strong>Flujo DEUNA (mock):</strong> la app genera un QR propio con <code class="bg-white px-1 rounded border">order_id</code>. El padre paga en DEUNA y sube el comprobante. Aquí verificas y luego activas el plan en <strong>Suscripciones</strong>.</p>
+        </div>
+        <div id="colaPagos" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+      </section>
+
+      <!-- ===== SUSCRIPCIONES ===== -->
+      <section id="section-suscripciones" class="section-hidden space-y-4">
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4" id="cardsPlanes"></div>
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-card p-5">
+          <h2 class="font-extrabold">Activar plan por familia <span class="text-xs font-semibold text-amber-700 bg-amber-100 rounded-full px-2 py-0.5 ml-1 align-middle">MOCK · confirm</span></h2>
+          <p class="text-sm text-slate-500 mt-0.5">Simula la activación. En Lovable: <code class="bg-slate-100 px-1 rounded">supabase.from('subscriptions').update(...)</code></p>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-4">
+            <label class="text-sm font-semibold">Familia
+              <select id="selFamPlan" class="mt-1 w-full text-sm font-normal rounded-xl border border-slate-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-rey/30"></select>
+            </label>
+            <label class="text-sm font-semibold">Plan
+              <select id="selPlan" class="mt-1 w-full text-sm font-normal rounded-xl border border-slate-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-rey/30">
+                <option value="free">Free — $0</option>
+                <option value="familia" selected>Familia — $4.99/mes</option>
+                <option value="anual">Anual — $39.99/año</option>
+              </select>
+            </label>
+            <div class="flex items-end">
+              <button onclick="pedirActivacion()" class="w-full font-bold text-sm bg-esmeralda hover:bg-emerald-600 text-white rounded-xl px-4 py-2.5">Activar plan</button>
+            </div>
+          </div>
+          <div class="mt-4 overflow-x-auto">
+            <table class="w-full text-sm min-w-[640px]">
+              <thead><tr class="text-left text-xs uppercase tracking-wide text-slate-500 border-b border-slate-200">
+                <th class="py-2 pr-3">Familia</th><th class="py-2 pr-3">Plan actual</th><th class="py-2 pr-3">Vigencia</th><th class="py-2">Estado pago</th>
+              </tr></thead>
+              <tbody id="tablaSubs"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SOPORTE ===== -->
+      <section id="section-soporte" class="section-hidden">
+        <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+          <div class="lg:col-span-2 bg-white rounded-2xl border border-slate-200 shadow-card p-4">
+            <div class="flex items-center justify-between px-1 pb-2">
+              <h2 class="font-extrabold">Tickets</h2>
+              <span id="filtroInfo" class="text-xs text-slate-500"></span>
+            </div>
+            <div class="flex gap-2 px-1 pb-3">
+              <button onclick="filtrarTickets('todos',this)" class="filtro-ticket text-xs font-bold px-3 py-1.5 rounded-full bg-tinta text-white">Todos</button>
+              <button onclick="filtrarTickets('abierto',this)" class="filtro-ticket text-xs font-bold px-3 py-1.5 rounded-full bg-slate-100 text-slate-600">Abiertos</button>
+              <button onclick="filtrarTickets('urgente',this)" class="filtro-ticket text-xs font-bold px-3 py-1.5 rounded-full bg-slate-100 text-slate-600">Urgentes</button>
+            </div>
+            <div id="listaTickets" class="space-y-2 max-h-[560px] overflow-y-auto pr-1"></div>
+          </div>
+          <div class="lg:col-span-3 bg-white rounded-2xl border border-slate-200 shadow-card flex flex-col min-h-[480px]">
+            <div id="chatHeader" class="border-b border-slate-100 px-5 py-4"></div>
+            <div id="chatBody" class="flex-1 px-5 py-4 space-y-3 overflow-y-auto max-h-[440px] bg-slate-50/60"></div>
+            <div class="border-t border-slate-100 p-4">
+              <label class="text-xs font-semibold text-slate-500" for="chatInput">Responder como soporte NOE</label>
+              <div class="flex gap-2 mt-1.5">
+                <input id="chatInput" type="text" placeholder="Escribe una respuesta… (mock, se guarda solo en memoria)" class="flex-1 text-sm rounded-xl border border-slate-200 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-rey/30" />
+                <button onclick="enviarRespuesta()" class="font-bold text-sm bg-rey hover:bg-blue-700 text-white rounded-xl px-4 py-2.5 shrink-0">Enviar</button>
+              </div>
+              <p class="text-[11px] text-slate-400 mt-1.5">En Lovable: insertar en <code>ticket_messages</code> + Realtime para chat en vivo.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer class="text-center text-xs text-slate-400 pb-8 pt-2">
+        NOE ArcaKids · Panel admin estático · <code>MOCK_DB</code> listo para migrar a Supabase en Lovable · Quito, Ecuador
+      </footer>
+    </main>
+  </div>
+</div>
+
+<!-- Modal confirm genérico -->
+<div id="modal" class="hidden fixed inset-0 z-50 flex items-center justify-center p-4">
+  <div class="absolute inset-0 bg-slate-900/50" onclick="cerrarModal()"></div>
+  <div class="relative bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+    <h3 id="modalTitle" class="font-extrabold text-lg">Confirmar</h3>
+    <p id="modalBody" class="text-sm text-slate-600 mt-2 leading-relaxed"></p>
+    <div class="flex gap-2 mt-5">
+      <button onclick="cerrarModal()" class="flex-1 text-sm font-bold rounded-xl border border-slate-200 py-2.5 hover:bg-slate-50">Cancelar</button>
+      <button id="modalOk" class="flex-1 text-sm font-bold rounded-xl bg-rey text-white py-2.5 hover:bg-blue-700">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Toast -->
+<div id="toast" class="hidden fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-2 bg-tinta text-white text-sm font-semibold rounded-xl px-4 py-3 shadow-xl max-w-[92vw]"></div>
+
+<script>
+/* =====================================================================
+   MOCK_DB — DATOS DE EJEMPLO (ECUADOR, USD)
+   ---------------------------------------------------------------------
+   LOVABLE / SUPABASE: borra este objeto y reemplázalo por lecturas a:
+     - supabase.from('families').select('*, children(*), devices(*)')
+     - supabase.from('deuna_orders').select('*').order('created_at')
+     - supabase.from('subscriptions').select('*')
+     - supabase.from('tickets').select('*, ticket_messages(*)')
+   Los nombres de funciones render* ya están separadas para ese cambio.
+   ===================================================================== */
+const MOCK_DB = {
+  familias: [
+    { id:'fam-01', nombre:'Familia Quishpe Cando', ciudad:'Quito', titular:'María Fernanda Quishpe', email:'mafer.quishpe@gmail.com', tel:'+593 99 412 7780', plan:'familia', estado:'activa', vigencia:'2026-11-15',
+      tutores:[{n:'María Fernanda Quishpe', r:'Madre · titular'},{n:'Jorge Luis Cando', r:'Padre'}],
+      hijos:[
+        {n:'Danna Cando (9)', disp:[{n:'Tablet Lenovo Tab M10', os:'Android 13', ultimo:'hace 12 min', estado:'ok'},{n:'TV TCL salón', os:'Android TV', ultimo:'hace 2 h', estado:'ok'}]},
+        {n:'Mateo Cando (6)', disp:[{n:'Celular Redmi 12 (modo niño)', os:'Android 14', ultimo:'hace 40 min', estado:'ok'}]}
+      ]},
+    { id:'fam-02', nombre:'Familia Zambrano Vélez', ciudad:'Guayaquil', titular:'Carlos Zambrano', email:'czambrano.v@gmail.com', tel:'+593 98 220 4319', plan:'anual', estado:'activa', vigencia:'2027-03-02',
+      tutores:[{n:'Carlos Zambrano', r:'Padre · titular'},{n:'Denisse Vélez', r:'Madre'}],
+      hijos:[ {n:'Thiago Zambrano (11)', disp:[{n:'iPad 9na gen', os:'iPadOS 17', ultimo:'hace 5 min', estado:'ok'},{n:'Laptop HP aula virtual', os:'Windows 11', ultimo:'ayer', estado:'ok'}]} ]},
+    { id:'fam-03', nombre:'Familia Tenesaca Pulla', ciudad:'Cuenca', titular:'Johanna Tenesaca', email:'johi.tenesaca@hotmail.com', tel:'+593 97 665 9021', plan:'free', estado:'prueba', vigencia:'2026-10-20',
+      tutores:[{n:'Johanna Tenesaca', r:'Madre · titular'}],
+      hijos:[ {n:'Emilia Pulla (7)', disp:[{n:'Tablet Samsung A8', os:'Android 13', ultimo:'hace 1 h', estado:'ok'}]} ]},
+    { id:'fam-04', nombre:'Familia Guamán Sisalema', ciudad:'Ambato', titular:'Pedro Guamán', email:'pedro.guaman.s@gmail.com', tel:'+593 96 330 1187', plan:'familia', estado:'morosa', vigencia:'2026-09-28',
+      tutores:[{n:'Pedro Guamán', r:'Padre · titular'},{n:'Rosa Sisalema', r:'Madre'}],
+      hijos:[
+        {n:'Sofía Guamán (10)', disp:[{n:'Celular Samsung A14', os:'Android 14', ultimo:'hace 3 h', estado:'pausado'}]},
+        {n:'Ariel Guamán (5)', disp:[{n:'Tablet Amazon Fire HD', os:'Fire OS 8', ultimo:'hace 2 días', estado:'ok'}]}
+      ]},
+    { id:'fam-05', nombre:'Familia Moreira Intriago', ciudad:'Manta', titular:'Liseth Moreira', email:'lis.moreira86@gmail.com', tel:'+593 99 018 5542', plan:'free', estado:'activa', vigencia:'—',
+      tutores:[{n:'Liseth Moreira', r:'Madre · titular'},{n:'Abuela: Carmen Intriago', r:'Tutora invitada'}],
+      hijos:[ {n:'Benjamín Intriago (8)', disp:[{n:'Tablet Alcatel 10', os:'Android 12', ultimo:'hace 25 min', estado:'ok'}]} ]},
+    { id:'fam-06', nombre:'Familia Chicaiza Pilco', ciudad:'Riobamba', titular:'William Chicaiza', email:'will.chicaiza@gmail.com', tel:'+593 98 774 2093', plan:'familia', estado:'activa', vigencia:'2026-12-01',
+      tutores:[{n:'William Chicaiza', r:'Padre · titular'}],
+      hijos:[
+        {n:'Valentina Chicaiza (12)', disp:[{n:'Laptop Lenovo Ideapad', os:'Windows 11', ultimo:'hace 9 min', estado:'ok'}]},
+        {n:'Sebastián Chicaiza (8)', disp:[{n:'Celular Poco X5', os:'Android 13', ultimo:'hace 1 h', estado:'ok'}]},
+        {n:'Camila Chicaiza (4)', disp:[{n:'Tablet perfil solo lectura', os:'Android 13', ultimo:'ayer', estado:'ok'}]}
+      ]}
+  ],
+  ordenes: [
+    { id:'DEU-90412', familiaId:'fam-04', monto:4.99, plan:'familia', estado:'pendiente', fecha:'2026-10-06 09:12', comprobante:'transf. #88213 Banco Pichincha' },
+    { id:'DEU-90409', familiaId:'fam-03', monto:4.99, plan:'familia', estado:'pendiente', fecha:'2026-10-05 18:44', comprobante:'captura DEUNA app ref 551-A' },
+    { id:'DEU-90402', familiaId:'fam-06', monto:4.99, plan:'familia', estado:'verificada', fecha:'2026-10-04 11:03', comprobante:'DEUNA ref 990-C verificada' },
+    { id:'DEU-90388', familiaId:'fam-05', monto:39.99, plan:'anual', estado:'verificada', fecha:'2026-10-02 15:30', comprobante:'DEUNA ref 771-F verificada' },
+    { id:'DEU-90371', familiaId:'fam-04', monto:4.99, plan:'familia', estado:'rechazada', fecha:'2026-09-30 20:10', comprobante:'imagen ilegible, sin número ref' }
+  ],
+  ingresos6m: [
+    { mes:'May', valor: 412 }, { mes:'Jun', valor: 538 }, { mes:'Jul', valor: 621 },
+    { mes:'Ago', valor: 589 }, { mes:'Sep', valor: 744 }, { mes:'Oct', valor: 812 }
+  ],
+  reciente: [
+    { fam:'Familia Chicaiza Pilco', evento:'Pago Familia $4.99 verificado', monto:'+$4.99' },
+    { fam:'Familia Zambrano Vélez', evento:'Renovación Anual $39.99', monto:'+$39.99' },
+    { fam:'Familia Guamán Sisalema', evento:'Orden DEU-90412 pendiente', monto:'$4.99' },
+    { fam:'Familia Tenesaca Pulla', evento:'Alta plan Free (prueba)', monto:'$0.00' },
+    { fam:'Familia Moreira Intriago', evento:'Orden anual DEU-90388 verificada', monto:'+$39.99' }
+  ],
+  tickets: [
+    { id:'T-231', fam:'Familia Quishpe Cando', asunto:'No llega el QR de DEUNA', estado:'abierto', prioridad:'urgente', fecha:'2026-10-06 08:20',
+      msgs:[ {de:'madre', t:'Hola, generé el QR del plan Familia pero no me llega al correo. ¿Pueden ayudarme?', h:'08:20'}, {de:'soporte', t:'Hola María Fernanda, lo revisamos de inmediato. ¿Qué correo usaste para el registro?', h:'08:35'} ]},
+    { id:'T-229', fam:'Familia Guamán Sisalema', asunto:'Dispositivo pausado no se reactiva', estado:'abierto', prioridad:'urgente', fecha:'2026-10-05 19:02',
+      msgs:[ {de:'madre', t:'El celular de Sofía quedó pausado y ya pagamos. Sigue bloqueado.', h:'19:02'} ]},
+    { id:'T-227', fam:'Familia Zambrano Vélez', asunto:'Cambiar titular a la mamá', estado:'abierto', prioridad:'normal', fecha:'2026-10-04 12:15',
+      msgs:[ {de:'padre', t:'¿Pueden pasar la titularidad a mi esposa Denisse? Yo viajo mucho.', h:'12:15'}, {de:'soporte', t:'Claro, necesitamos la cédula de Denisse y una confirmación por correo.', h:'13:00'} ]},
+    { id:'T-224', fam:'Familia Moreira Intriago', asunto:'Duda plan Anual vs mensual', estado:'cerrado', prioridad:'normal', fecha:'2026-10-01 10:40',
+      msgs:[ {de:'madre', t:'¿El anual incluye los mismos 5 dispositivos?', h:'10:40'}, {de:'soporte', t:'Sí, incluye 5 dispositivos + reportes y 2 meses gratis frente al mensual.', h:'11:05'} ]}
+  ],
+  planes: [
+    { id:'free', nombre:'Free', precio:'$0', per:'/ siempre', limites:'1 niño · 1 dispositivo · Filtros básicos · Sin reportes', cta:'Ideal para probar' },
+    { id:'familia', nombre:'Familia', precio:'$4.99', per:'/ mes', limites:'Hasta 4 niños · 5 dispositivos · Filtros + horarios + reportes semanales', cta:'El más popular en Ecuador' },
+    { id:'anual', nombre:'Anual', precio:'$39.99', per:'/ año', limites:'Todo lo de Familia · 2 meses gratis · Soporte prioritario', cta:'Ahorra ~33% vs mensual' }
+  ]
+};
+/* ============ FIN MOCK_DB ============ */
+
+const $ = (id) => document.getElementById(id);
+const famById = (id) => MOCK_DB.familias.find(f => f.id === id);
+let ticketActivo = 'T-231';
+let filtroTicket = 'todos';
+let modalCb = null;
+
+/* ---------- Navegación ---------- */
+const TITLES = {
+  dashboard:['Dashboard','Resumen operativo · Ecuador · USD'],
+  familias:['Familias','Padres, hijos y dispositivos vinculados'],
+  pagos:['Pagos DEUNA','Cola de verificación QR · montos en USD'],
+  suscripciones:['Suscripciones','Planes Free / Familia / Anual'],
+  soporte:['Soporte','Tickets y conversación con familias']
+};
+function go(sec){
+  document.querySelectorAll('.nav-btn').forEach(b => {
+    const on = b.dataset.nav === sec;
+    b.classList.toggle('nav-active', on);
+    b.classList.toggle('text-slate-700', !on);
+  });
+  ['dashboard','familias','pagos','suscripciones','soporte'].forEach(s =>
+    $('section-'+s).classList.toggle('section-hidden', s !== sec));
+  $('pageTitle').textContent = TITLES[sec][0];
+  $('pageSubtitle').textContent = TITLES[sec][1];
+  $('sidebar').classList.remove('open'); $('overlay').classList.add('hidden');
+  window.scrollTo({top:0, behavior:'smooth'});
+}
+document.querySelectorAll('.nav-btn').forEach(b => b.addEventListener('click', () => go(b.dataset.nav)));
+$('openSidebar').addEventListener('click', () => { $('sidebar').classList.add('open'); $('overlay').classList.remove('hidden'); });
+$('closeSidebar').addEventListener('click', () => go(document.querySelector('.nav-btn.nav-active').dataset.nav));
+$('overlay').addEventListener('click', () => { $('sidebar').classList.remove('open'); $('overlay').classList.add('hidden'); });
+
+/* ---------- Toast + modal ---------- */
+function toast(msg, type){
+  const t = $('toast');
+  t.innerHTML = (type === 'ok'
+    ? '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#34d399" stroke-width="2.5" stroke-linecap="round"><path d="M20 6 9 17l-5-5"/></svg>'
+    : '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#F59E0B" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>')
+    + '<span>' + msg + '</span>';
+  t.classList.remove('hidden');
+  clearTimeout(t._h); t._h = setTimeout(() => t.classList.add('hidden'), 2800);
+}
+function abrirModal(title, body, okLabel, cb){
+  $('modalTitle').textContent = title; $('modalBody').innerHTML = body;
+  $('modalOk').textContent = okLabel || 'Confirmar'; modalCb = cb;
+  $('modal').classList.remove('hidden');
+}
+function cerrarModal(){ $('modal').classList.add('hidden'); modalCb = null; }
+$('modalOk').addEventListener('click', () => { if (modalCb) modalCb(); cerrarModal(); });
+
+/* ---------- Dashboard ---------- */
+function renderDashboard(){
+  const activas = MOCK_DB.familias.filter(f => f.estado === 'activa').length;
+  const ninos = MOCK_DB.familias.reduce((a,f) => a + f.hijos.length, 0);
+  const mrr = MOCK_DB.familias.reduce((a,f) => a + (f.plan === 'familia' ? 4.99 : f.plan === 'anual' ? 39.99/12 : 0), 0);
+  const abiertos = MOCK_DB.tickets.filter(t => t.estado === 'abierto').length;
+  $('kpiFamilias').textContent = activas + ' / ' + MOCK_DB.familias.length;
+  $('kpiNinos').textContent = ninos;
+  $('kpiMrr').textContent = '$' + mrr.toFixed(2);
+  $('kpiTickets').textContent = abiertos;
+  $('badgeFamilias').textContent = MOCK_DB.familias.length;
+  $('badgePagos').textContent = MOCK_DB.ordenes.filter(o => o.estado === 'pendiente').length + ' pend.';
+  $('badgeTickets').textContent = abiertos + ' ab.';
+
+  $('tablaReciente').innerHTML = MOCK_DB.reciente.map(r =>
+    '<tr class="border-b border-slate-50 last:border-0"><td class="py-2.5 pr-2 font-semibold">' + r.fam +
+    '</td><td class="py-2.5 pr-2 text-slate-500">' + r.evento +
+    '</td><td class="py-2.5 text-right font-bold ' + (r.monto.startsWith('+') ? 'text-esmeralda' : 'text-slate-600') + '">' + r.monto + '</td></tr>').join('');
+
+  // Gráfico de barras SVG inline
+  const datos = MOCK_DB.ingresos6m, W = 560, H = 220, pad = 34, max = Math.max(...datos.map(d => d.valor)) * 1.15;
+  const bw = (W - pad * 2) / datos.length;
+  let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" class="w-full min-w-[480px]" role="img" aria-label="Ingresos 6 meses">';
+  svg += '<line x1="' + pad + '" y1="' + (H - pad) + '" x2="' + (W - 8) + '" y2="' + (H - pad) + '" stroke="#e2e8f0" stroke-width="1"/>';
+  datos.forEach((d, i) => {
+    const h = (H - pad * 2) * (d.valor / max);
+    const x = pad + i * bw + bw * 0.22, y = H - pad - h, w = bw * 0.56;
+    const top = i === datos.length - 1;
+    svg += '<rect x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + w.toFixed(1) + '" height="' + h.toFixed(1) +
+      '" rx="6" fill="' + (top ? '#1D4ED8' : '#93c5fd') + '"/>'
+      + '<text x="' + (x + w / 2).toFixed(1) + '" y="' + (y - 6).toFixed(1) + '" text-anchor="middle" font-size="11" font-weight="700" fill="#0F172A">$' + d.valor + '</text>'
+      + '<text x="' + (x + w / 2).toFixed(1) + '" y="' + (H - pad + 18) + '" text-anchor="middle" font-size="11" fill="#64748b">' + d.mes + '</text>';
+  });
+  svg += '</svg>';
+  $('chartBarras').innerHTML = svg;
+  const total = datos.reduce((a,d) => a + d.valor, 0);
+  $('totalIngresos').textContent = '$' + total.toLocaleString('es-EC');
+  $('chartLegend').innerHTML = '<span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-rey inline-block"></span>Mes actual (Oct)</span>'
+    + '<span class="inline-flex items-center gap-1.5"><span class="w-3 h-3 rounded bg-blue-300 inline-block"></span>Meses previos</span>'
+    + '<span class="ml-auto">Fuente mock · Lovable: agregar tabla revenue_monthly</span>';
+}
+
+/* ---------- Familias ---------- */
+function pillPlan(p){ return p === 'familia'
+  ? '<span class="text-xs font-bold bg-blue-50 text-rey border border-blue-200 rounded-full px-2.5 py-0.5">Familia $4.99</span>'
+  : p === 'anual' ? '<span class="text-xs font-bold bg-emerald-50 text-esmeralda border border-emerald-200 rounded-full px-2.5 py-0.5">Anual $39.99</span>'
+  : '<span class="text-xs font-bold bg-slate-100 text-slate-600 border border-slate-200 rounded-full px-2.5 py-0.5">Free</span>'; }
+function pillEstado(e){ return e === 'activa'
+  ? '<span class="text-xs font-bold bg-emerald-50 text-esmeralda border border-emerald-200 rounded-full px-2.5 py-0.5">Activa</span>'
+  : e === 'morosa' ? '<span class="text-xs font-bold bg-red-50 text-red-600 border border-red-200 rounded-full px-2.5 py-0.5">Morosa</span>'
+  : '<span class="text-xs font-bold bg-amber-50 text-amber-700 border border-amber-200 rounded-full px-2.5 py-0.5">Prueba</span>'; }
+
+function renderFamilias(filtro){
+  const q = (filtro || '').toLowerCase();
+  const rows = MOCK_DB.familias.filter(f =>
+    (f.nombre + ' ' + f.titular + ' ' + f.ciudad + ' ' + f.email).toLowerCase().includes(q));
+  $('sinResultados').classList.toggle('hidden', rows.length > 0);
+  $('tablaFamilias').innerHTML = rows.map(f => {
+    const ndev = f.hijos.reduce((a,h) => a + h.disp.length, 0);
+    const tree = f.tutores.map(t => '<div class="flex items-center gap-2 text-sm"><span class="w-7 h-7 rounded-full bg-blue-50 text-rey text-xs font-extrabold flex items-center justify-center">' + t.n.charAt(0) + '</span><div><p class="font-bold leading-tight">' + t.n + '</p><p class="text-xs text-slate-500">' + t.r + '</p></div></div>').join('')
+      + '<div class="ml-3 border-l-2 border-blue-100 pl-3 mt-2 space-y-2">'
+      + f.hijos.map(h => '<div><p class="text-sm font-bold">' + h.n + '</p><div class="ml-3 border-l-2 border-emerald-200 pl-3 mt-1 space-y-1">'
+        + h.disp.map(d => '<p class="text-xs text-slate-600"><span class="font-bold text-tinta">' + d.n + '</span> · ' + d.os + ' · ' + d.ultimo
+          + (d.estado === 'pausado' ? ' · <span class="font-bold text-amber-600">PAUSADO</span>' : ' · <span class="text-esmeralda font-semibold">en línea</span>') + '</p>').join('')
+        + '</div></div>').join('') + '</div>'
+      + '<p class="text-xs text-slate-500 mt-2">' + f.email + ' · ' + f.tel + ' · Vigencia: <strong>' + f.vigencia + '</strong></p>';
+    return '<tr class="fila-fam border-b border-slate-100 hover:bg-blue-50/50 cursor-pointer" data-id="' + f.id + '">'
+      + '<td class="py-3 pr-3"><p class="font-bold">' + f.nombre + '</p><p class="text-xs text-slate-500">' + f.ciudad + ' · ' + f.id + '</p></td>'
+      + '<td class="py-3 pr-3">' + f.titular + '</td>'
+      + '<td class="py-3 pr-3 font-bold">' + f.hijos.length + '</td>'
+      + '<td class="py-3 pr-3 font-bold">' + ndev + '</td>'
+      + '<td class="py-3 pr-3">' + pillPlan(f.plan) + '</td>'
+      + '<td class="py-3">' + pillEstado(f.estado) + '</td></tr>'
+      + '<tr class="detalle hidden bg-slate-50/70" data-det="' + f.id + '"><td colspan="6" class="px-4 py-4"><div class="rounded-xl bg-white border border-slate-200 p-4 max-w-2xl">'
+      + '<p class="text-xs font-extrabold uppercase tracking-wide text-slate-500 mb-2">Conexiones padre · hijo · dispositivo</p>' + tree
+      + '<div class="flex flex-wrap gap-2 mt-3"><button onclick="go(\'pagos\')" class="text-xs font-bold bg-rey text-white rounded-lg px-3 py-1.5">Ver pagos</button>'
+      + '<button onclick="go(\'soporte\')" class="text-xs font-bold border border-slate-200 rounded-lg px-3 py-1.5 hover:bg-slate-50">Abrir ticket</button></div>'
+      + '</div></td></tr>';
+  }).join('');
+  document.querySelectorAll('.fila-fam').forEach(tr => tr.addEventListener('click', () => {
+    const det = document.querySelector('tr.detalle[data-det="' + tr.dataset.id + '"]');
+    const open = !det.classList.contains('hidden');
+    document.querySelectorAll('tr.detalle').forEach(d => d.classList.add('hidden'));
+    if (!open) det.classList.remove('hidden');
+  }));
+}
+$('buscadorFamilias').addEventListener('input', e => renderFamilias(e.target.value));
+
+/* ---------- Pagos DEUNA ---------- */
+function qrPlaceholder(orderId){
+  let cells = '';
+  for (let i = 0; i < 81; i++){
+    const on = ((i * 7 + orderId.length * 13) % 5) < 2 || i % 9 === 0 || i % 9 === 8 || i < 9 || i > 71;
+    cells += '<span style="background:' + (on ? '#0F172A' : '#e2e8f0') + '"></span>';
+  }
+  return '<div class="w-24 shrink-0"><div class="qr-grid bg-white border-2 border-slate-200 rounded-xl p-1.5">' + cells + '</div>'
+    + '<p class="text-[10px] text-center text-slate-500 font-mono mt-1">QR ' + orderId + '</p></div>';
+}
+function renderPagos(){
+  const c = { pendiente:0, verificada:0, rechazada:0 };
+  MOCK_DB.ordenes.forEach(o => c[o.estado]++);
+  $('countPend').textContent = c.pendiente; $('countVer').textContent = c.verificada; $('countRech').textContent = c.rechazada;
+  $('badgePagos').textContent = c.pendiente + ' pend.';
+  const orden = { pendiente:0, verificada:1, rechazada:2 };
+  const list = [...MOCK_DB.ordenes].sort((a,b) => orden[a.estado] - orden[b.estado]);
+  $('colaPagos').innerHTML = list.map(o => {
+    const f = famById(o.familiaId);
+    const borde = o.estado === 'pendiente' ? 'border-ambar/50 ring-1 ring-amber-200' : 'border-slate-200';
+    const tag = o.estado === 'pendiente'
+      ? '<span class="text-xs font-bold bg-amber-100 text-amber-800 rounded-full px-2.5 py-0.5">Pendiente</span>'
+      : o.estado === 'verificada' ? '<span class="text-xs font-bold bg-emerald-100 text-esmeralda rounded-full px-2.5 py-0.5">Verificada</span>'
+      : '<span class="text-xs font-bold bg-slate-200 text-slate-600 rounded-full px-2.5 py-0.5">Rechazada</span>';
+    const acciones = o.estado === 'pendiente'
+      ? '<div class="flex gap-2 mt-3"><button onclick="verificarOrden(\'' + o.id + '\')" class="flex-1 text-sm font-bold bg-esmeralda hover:bg-emerald-600 text-white rounded-xl py-2">Verificar</button>'
+        + '<button onclick="rechazarOrden(\'' + o.id + '\')" class="flex-1 text-sm font-bold border border-red-200 text-red-600 hover:bg-red-50 rounded-xl py-2">Rechazar</button></div>'
+      : o.estado === 'verificada'
+        ? '<button onclick="proponerActivacion(\'' + o.familiaId + '\',\'' + o.plan + '\')" class="w-full mt-3 text-sm font-bold bg-rey hover:bg-blue-700 text-white rounded-xl py-2">Activar plan ' + o.plan + ' →</button>'
+        : '<p class="text-xs text-slate-500 mt-3">Motivo: comprobante inválido. La familia debe reenviar el QR.</p>';
+    return '<article class="bg-white rounded-2xl border-2 ' + borde + ' shadow-card p-4"><div class="flex gap-4">'
+      + qrPlaceholder(o.id)
+      + '<div class="min-w-0 flex-1"><div class="flex items-center gap-2 flex-wrap"><p class="font-extrabold font-mono">' + o.id + '</p>' + tag + '</div>'
+      + '<p class="font-bold text-sm mt-1">' + (f ? f.nombre : o.familiaId) + '</p>'
+      + '<p class="text-2xl font-extrabold mt-0.5">$' + o.monto.toFixed(2) + ' <span class="text-xs font-semibold text-slate-500">USD · plan ' + o.plan + '</span></p>'
+      + '<p class="text-xs text-slate-500 mt-1">' + o.fecha + ' · ' + o.comprobante + '</p>' + acciones + '</div></div></article>';
+  }).join('');
+}
+function verificarOrden(id){
+  const o = MOCK_DB.ordenes.find(x => x.id === id);
+  abrirModal('Verificar ' + id,
+    'Familia: <strong>' + famById(o.familiaId).nombre + '</strong><br>Monto: <strong>$' + o.monto.toFixed(2) + '</strong> · Plan ' + o.plan +
+    '<br><br>Al confirmar, la orden pasa a <strong>verificada</strong> y podrás activar el plan.',
+    'Verificar pago', () => { o.estado = 'verificada'; renderPagos(); toast(id + ' verificada. Activa el plan en Suscripciones.', 'ok'); });
+}
+function rechazarOrden(id){
+  const o = MOCK_DB.ordenes.find(x => x.id === id);
+  abrirModal('Rechazar ' + id, 'La orden quedará como <strong>rechazada</strong>. Úsalo si el comprobante DEUNA es ilegible o no coincide el monto.',
+    'Rechazar', () => { o.estado = 'rechazada'; renderPagos(); toast(id + ' rechazada.'); });
+}
+function proponerActivacion(famId, plan){
+  go('suscripciones');
+  $('selFamPlan').value = famId; $('selPlan').value = plan;
+  pedirActivacion();
+}
+
+/* ---------- Suscripciones ---------- */
+function renderSubs(){
+  $('cardsPlanes').innerHTML = MOCK_DB.planes.map((p, i) =>
+    '<div class="rounded-2xl border-2 p-5 shadow-card ' + (i === 1 ? 'bg-tinta text-white border-tinta' : 'bg-white border-slate-200') + '">'
+    + (i === 1 ? '<span class="text-[11px] font-extrabold bg-ambar text-tinta rounded-full px-2.5 py-0.5">MÁS POPULAR</span>' : '<span class="text-[11px] font-bold ' + (i === 2 ? 'text-esmeralda' : 'text-slate-400') + ' uppercase tracking-wide">' + p.cta + '</span>')
+    + '<h3 class="font-extrabold text-lg mt-2">' + p.nombre + '</h3>'
+    + '<p class="text-3xl font-extrabold mt-1">' + p.precio + '<span class="text-sm font-semibold ' + (i === 1 ? 'text-slate-300' : 'text-slate-500') + '">' + p.per + '</span></p>'
+    + '<p class="text-sm mt-2 leading-relaxed ' + (i === 1 ? 'text-slate-200' : 'text-slate-600') + '">' + p.limites + '</p></div>').join('');
+  $('selFamPlan').innerHTML = MOCK_DB.familias.map(f =>
+    '<option value="' + f.id + '">' + f.nombre + ' — actual: ' + f.plan + '</option>').join('');
+  $('tablaSubs').innerHTML = MOCK_DB.familias.map(f =>
+    '<tr class="border-b border-slate-100 last:border-0"><td class="py-2.5 pr-3 font-semibold">' + f.nombre + '<span class="block text-xs font-normal text-slate-500">' + f.ciudad + '</span></td>'
+    + '<td class="py-2.5 pr-3">' + pillPlan(f.plan) + '</td>'
+    + '<td class="py-2.5 pr-3 text-slate-600">' + f.vigencia + '</td>'
+    + '<td class="py-2.5">' + pillEstado(f.estado) + '</td></tr>').join('');
+}
+function pedirActivacion(){
+  const f = famById($('selFamPlan').value);
+  const plan = $('selPlan').value;
+  const precio = plan === 'familia' ? '$4.99/mes' : plan === 'anual' ? '$39.99/año' : '$0';
+  abrirModal('Activar plan ' + plan,
+    'Familia: <strong>' + f.nombre + '</strong> (' + f.titular + ')<br>Plan: <strong>' + plan + ' · ' + precio + '</strong><br><br>Mock: actualiza estado local. En Lovable: <code>subscriptions</code> + RPC de vigencia.',
+    'Sí, activar', () => {
+      f.plan = plan;
+      f.estado = 'activa';
+      f.vigencia = plan === 'anual' ? '2027-10-06' : plan === 'familia' ? '2026-11-06' : '—';
+      renderSubs(); renderFamilias($('buscadorFamilias').value); renderDashboard();
+      toast('Plan ' + plan + ' activado para ' + f.nombre, 'ok');
+    });
+}
+
+/* ---------- Soporte ---------- */
+function renderTickets(){
+  const list = MOCK_DB.tickets.filter(t =>
+    filtroTicket === 'todos' ? true : filtroTicket === 'urgente' ? t.prioridad === 'urgente' && t.estado === 'abierto' : t.estado === 'abierto');
+  $('filtroInfo').textContent = list.length + ' tickets';
+  $('badgeTickets').textContent = MOCK_DB.tickets.filter(t => t.estado === 'abierto').length + ' ab.';
+  $('listaTickets').innerHTML = list.map(t =>
+    '<button onclick="abrirTicket(\'' + t.id + '\')" class="w-full text-left rounded-xl border-2 p-3 hover:border-rey/40 ' + (t.id === ticketActivo ? 'border-rey bg-blue-50/60' : 'border-slate-100 bg-white') + '">'
+    + '<div class="flex items-center gap-2"><span class="font-mono text-xs font-bold text-slate-500">' + t.id + '</span>'
+    + (t.prioridad === 'urgente' ? '<span class="text-[10px] font-extrabold bg-red-100 text-red-600 rounded-full px-2 py-0.5">URGENTE</span>' : '')
+    + (t.estado === 'cerrado' ? '<span class="text-[10px] font-bold bg-slate-100 text-slate-500 rounded-full px-2 py-0.5 ml-auto">CERRADO</span>' : '<span class="w-2 h-2 rounded-full bg-esmeralda ml-auto"></span>') + '</div>'
+    + '<p class="font-bold text-sm mt-1 leading-snug">' + t.asunto + '</p>'
+    + '<p class="text-xs text-slate-500 mt-0.5">' + t.fam + ' · ' + t.fecha + '</p></button>').join('')
+    || '<p class="text-sm text-slate-500 text-center py-8">No hay tickets en este filtro.</p>';
+  renderChat();
+}
+function filtrarTickets(f, btn){
+  filtroTicket = f;
+  document.querySelectorAll('.filtro-ticket').forEach(b => { b.className = 'filtro-ticket text-xs font-bold px-3 py-1.5 rounded-full bg-slate-100 text-slate-600'; });
+  btn.className = 'filtro-ticket text-xs font-bold px-3 py-1.5 rounded-full bg-tinta text-white';
+  renderTickets();
+}
+function abrirTicket(id){ ticketActivo = id; renderTickets(); }
+function renderChat(){
+  const t = MOCK_DB.tickets.find(x => x.id === ticketActivo) || MOCK_DB.tickets[0];
+  if (!t) return;
+  ticketActivo = t.id;
+  $('chatHeader').innerHTML = '<div class="flex items-center gap-3 flex-wrap"><div class="w-10 h-10 rounded-full bg-rey/10 text-rey font-extrabold flex items-center justify-center">'
+    + t.fam.charAt(8) + '</div><div class="min-w-0"><p class="font-extrabold leading-tight">' + t.asunto + '</p>'
+    + '<p class="text-xs text-slate-500">' + t.id + ' · ' + t.fam + ' · ' + t.fecha + '</p></div>'
+    + '<span class="ml-auto text-xs font-bold rounded-full px-2.5 py-1 ' + (t.estado === 'abierto' ? 'bg-emerald-50 text-esmeralda border border-emerald-200' : 'bg-slate-100 text-slate-500') + '">' + t.estado.toUpperCase() + '</span></div>';
+  $('chatBody').innerHTML = t.msgs.map(m => m.de === 'soporte'
+    ? '<div class="flex justify-end"><div class="max-w-[85%] bg-rey text-white rounded-2xl rounded-br-md px-3.5 py-2.5 text-sm"><p class="text-[10px] font-bold text-blue-200 mb-0.5">SOPORTE NOE · ' + m.h + '</p>' + m.t + '</div></div>'
+    : '<div class="flex justify-start"><div class="max-w-[85%] bg-white border border-slate-200 rounded-2xl rounded-bl-md px-3.5 py-2.5 text-sm shadow-sm"><p class="text-[10px] font-bold text-slate-400 mb-0.5">FAMILIA · ' + m.h + '</p>' + m.t + '</div></div>'
+  ).join('');
+  $('chatBody').scrollTop = $('chatBody').scrollHeight;
+}
+function enviarRespuesta(){
+  const v = $('chatInput').value.trim();
+  if (!v) return;
+  const t = MOCK_DB.tickets.find(x => x.id === ticketActivo);
+  const h = new Date().toTimeString().slice(0,5);
+  t.msgs.push({ de:'soporte', t:v.replace(/</g,'&lt;'), h });
+  $('chatInput').value = '';
+  renderChat(); toast('Respuesta enviada (mock, memoria local).', 'ok');
+}
+$('chatInput').addEventListener('keydown', e => { if (e.key === 'Enter') enviarRespuesta(); });
+
+/* ---------- Init ---------- */
+renderDashboard(); renderFamilias(''); renderPagos(); renderSubs(); renderTickets();
+</script>
 </body>
 </html>

@@ -11,6 +11,8 @@ import { useAchievements } from '@/features/achievements/use-achievements';
 import { identityService } from '@/features/identity/services/identity-service';
 import { ROUTES } from '@/constants';
 import {
+  Avatar3D,
+  AVATAR_IDS,
   Card,
   VerseBanner,
   useAsyncData,
@@ -127,7 +129,7 @@ export default function HomeScreen() {
   const eggVerse = useRandomVerse(['love', 'courage'] as const);
 
   const name = childInfo?.name?.split(' ')[0] ?? 'kid';
-  const avatar = childInfo?.avatar ?? '🧸';
+  const avatar = childInfo?.avatar ?? AVATAR_IDS[0];
 
   const totalMinutes = snapshot?.totalMinutes ?? 0;
   const limit = rules?.dailyLimitMinutes;
@@ -187,7 +189,7 @@ export default function HomeScreen() {
           accessibilityRole="button"
           accessibilityLabel={tr('arcakids.home.profile')}
         >
-          <Text style={styles.avatar}>{avatar}</Text>
+          <Avatar3D id={avatar} size={72} />
         </Pressable>
         <Text style={styles.title}>{tr('arcakids.home.hi', { name })}</Text>
         <View style={styles.statusRow}>

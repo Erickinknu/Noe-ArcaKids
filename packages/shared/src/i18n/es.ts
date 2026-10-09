@@ -224,6 +224,8 @@ export const es = {
       nameLabel: 'Nombre del hijo',
       namePlaceholder: 'p. ej. Luc\u00eda',
       pickAvatar: 'Elige un avatar',
+      birthDateLabel: 'Fecha de nacimiento',
+      birthDatePlaceholder: 'Toca para elegir en el calendario',
       add: 'Agregar hijo',
       editTitle: 'Editar hijo',
       save: 'Guardar cambios',
@@ -361,9 +363,29 @@ export const es = {
       choose: 'Elegir plan',
       upgraded: 'Cambiaste al plan {{plan}}.',
       billingNote:
-        'El cobro autom\u00e1tico se activar\u00e1 pronto; por ahora el plan queda activado al instante en esta app.',
+        'El plan gratuito queda activado al instante en esta app.',
       providerNote:
-        'Cuando se conecte Play Store o RevenueCat, los pagos reales reemplazar\u00e1n esta activaci\u00f3n manual.',
+        'Los planes de pago se cancelan con DEUNA (Ecuador): escanea el QR, paga y tu plan se activa tras la verificaci\u00f3n.',
+      limitsLine: '{{kids}} hijo(s) \u00b7 {{apps}} app(s) bloqueadas',
+      payWithDeuna: 'Pagar con DEUNA',
+      deunaBannerTitle: 'Pagos con DEUNA (Ecuador)',
+      deunaBannerText:
+        'Escanea nuestro QR desde tu app DEUNA, registra tu pago y activamos tu plan.',
+    },
+    deuna: {
+      title: 'Pagar con DEUNA',
+      amountHint: 'Monto exacto a pagar en USD (d\u00f3lares, moneda de Ecuador).',
+      qrTitle: 'Escanea para pagar',
+      qrPlaceholder: 'Aqu\u00ed va el QR DEUNA del negocio (pendiente de conectar el QR real).',
+      stepsTitle: 'C\u00f3mo pagar',
+      step1: 'Abre tu app DEUNA y escanea el QR con el monto del plan.',
+      step2: 'Completa el pago en DEUNA y vuelve aqu\u00ed.',
+      step3: 'Pulsa "Ya realic\u00e9 el pago" para registrar tu orden.',
+      reportButton: 'Ya realic\u00e9 el pago',
+      reportedTitle: 'Pago registrado',
+      reportedText:
+        'Tu orden qued\u00f3 pendiente de verificaci\u00f3n. Activaremos tu plan en cuanto confirmemos el pago en DEUNA.',
+      backToPlans: 'Volver a planes',
     },
     planErrors: {
       childLimit: 'El plan gratuito incluye {{max}} hijo. Mejora tu plan para agregar m\u00e1s hijos.',
@@ -423,6 +445,11 @@ export const es = {
       shareMessage:
         'Te invito a ser responsable en NOE y administrar juntos la seguridad digital de los ni\u00f1os. C\u00f3digo: {{code}}. Abre NOE y elige \u201cUnirme como responsable\u201d para aceptar: {{link}}',
       inviteFailed: 'No se pudo generar la invitaci\u00f3n. Intenta de nuevo.',
+      expiresLabel: 'V\u00e1lido hasta {{date}}',
+      generateTitle: '¿Eres el titular de una familia?',
+      generateDesc:
+        'Genera un c\u00f3digo desde tu familia y comp\u00e1rtelo para que otro tutor pueda monitorearla.',
+      generateButton: 'Generar c\u00f3digo de invitaci\u00f3n',
     },
     familyMode: {
       title: 'Modo de contenido',

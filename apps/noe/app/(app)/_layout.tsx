@@ -10,6 +10,7 @@ import { useAuthStore } from '@/stores/auth-store';
 import { ROUTES } from '@/constants';
 import { pinService } from '@/features/pin/services/pin-service';
 import { biometricService } from '@/features/security/services/biometric-service';
+import { useSystemBackGuard } from '@/hooks/use-system-back';
 
 const TAB_BAR_BASE_HEIGHT = 54;
 const PIN_LENGTH = 4;
@@ -27,6 +28,8 @@ export default function AppLayout() {
   const [bioEnabled, setBioEnabled] = useState(false);
   const [bioSupported, setBioSupported] = useState(false);
   const pinVerse = useRandomVerse(['hope']);
+  // Botón atrás del sistema: vuelve en la pila, doble-tap para salir en raíz.
+  useSystemBackGuard();
 
   useEffect(() => {
     let mounted = true;
@@ -223,6 +226,7 @@ export default function AppLayout() {
       <Tabs.Screen name="profile/privacidad" options={{ href: null }} />
       <Tabs.Screen name="profile/terminos" options={{ href: null }} />
       <Tabs.Screen name="profile/suscripcion" options={{ href: null }} />
+      <Tabs.Screen name="profile/deuna" options={{ href: null }} />
       {/* Activity sub-screens */}
       <Tabs.Screen name="activity/web" options={{ href: null }} />
       <Tabs.Screen name="activity/youtube" options={{ href: null }} />

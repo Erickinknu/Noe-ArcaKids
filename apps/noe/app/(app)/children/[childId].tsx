@@ -4,7 +4,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
@@ -16,10 +15,21 @@ import { appCategoryService } from '@/features/app-categories/services/app-categ
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { ROUTES } from '@/constants';
 import { Card, Input, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
+import { Avatar3D, AVATAR_IDS, CalendarPicker } from '@noe-arcakids/shared';
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
 import type { InstalledApp } from '@noe-arcakids/types';
 
-const AVATARS = ['🐻', '🐰', '🐱', '🐶', '🦊', '🐼', '🦁', '🐸', '🐵', '🦋', '🌟', '🚀'];
+/** Rango permitido: 3 a 17 años. */
+function maxChildBirthDate(): Date {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 3);
+  return d;
+}
+function minChildBirthDate(): Date {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 18);
+  return d;
+}
 
 interface ChildDetail {
   id: string;
@@ -39,7 +49,8 @@ export default function ChildDetailScreen() {
 
   const [displayName, setDisplayName] = useState('');
   const [birthDate, setBirthDate] = useState('');
-  const [selectedAvatar, setSelectedAvatar] = useState(AVATARS[0]);
+  const [selectedAvatar, setSelectedAvatar] = useState(AVATAR_IDS[0]);
+  const [showCalendar, setShowCalendar] = useState(false);
   const [saving, setSaving] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [loaded, setLoaded] = useState(false);
@@ -81,7 +92,7 @@ export default function ChildDetailScreen() {
   const handleLoaded = (data: ChildDetail) => {
     if (!loaded) {
       setDisplayName(data.displayName);
-      setSelectedAvatar(data.avatarUrl ?? AVATARS[0]);
+      setSelectedAvatar(data.avatarUrl ?? AVATAR_IDS[0]);
       setBirthDate(data.birthDate ?? '');
       setLoaded(true);
     }
@@ -348,16 +359,16 @@ export default function ChildDetailScreen() {
 
       <Card style={styles.card}>
         <View style={styles.avatarSection}>
-          <Avatar name={child.displayName} emoji={selectedAvatar} size={80} />
+          <Avatar3D id={selectedAvatar} size={88} />
           <Text style={styles.avatarHint}>{tr('noe.children.pickAvatar')}</Text>
           <View style={styles.avatarGrid}>
-            {AVATARS.map((emoji) => (
+            {AVATAR_IDS.map((id) => (
               <Pressable
-                key={emoji}
-                onPress={() => setSelectedAvatar(emoji)}
-                style={[styles.avatarWrapper, emoji === selectedAvatar && styles.avatarSelected]}
+                key={id}
+                onPress={() => setSelectedAvatar(id)}
+                style={[styles.avatarWrapper, id === selectedAvatar && styles.avatarSelected]}
               >
-                <Avatar name={emoji} emoji={emoji} size={40} />
+                <Avatar3D id={id} size={44} />
               </Pressable>
             ))}
           </View>
@@ -370,13 +381,24 @@ export default function ChildDetailScreen() {
           placeholder={tr('noe.children.namePlaceholder')}
         />
 
-        <Input
-          label="Fecha de nacimiento (AAAA-MM-DD)"
-          value={birthDate}
-          onChangeText={setBirthDate}
-          placeholder="ej: 2018-04-12"
-          autoCapitalize="none"
-          autoCorrect={false}
+        <Text style={styles.avatarHint}>{tr('noe.children.birthDateLabel', 'Fecha de nacimiento')}</Text>
+        <Pressable
+          style={styles.dateField}
+          onPress={() => setShowCalendar(true)}
+          accessibilityRole="button"
+        >
+          <MaterialIcons name="calendar-month" size={20} color={colors.primary} />
+          <Text style={[styles.dateFieldText, !birthDate && styles.dateFieldPlaceholder]}>
+            {birthDate || tr('noe.children.birthDatePlaceholder', 'Toca para elegir en el calendario')}
+          </Text>
+        </Pressable>
+        <CalendarPicker
+          visible={showCalendar}
+          value={birthDate || null}
+          minDate={minChildBirthDate()}
+          maxDate={maxChildBirthDate()}
+          onSelect={setBirthDate}
+          onClose={() => setShowCalendar(false)}
         />
 
         <Text style={styles.memberSince}>
@@ -604,6 +626,25 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   avatarSelected: {
     borderColor: colors.primary,
     backgroundColor: colors.primaryLight,
+  },
+  dateField: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: radius.md,
+    backgroundColor: colors.background,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  dateFieldText: {
+    fontSize: typography.fontSizes.body,
+    color: colors.text,
+  },
+  dateFieldPlaceholder: {
+    color: colors.inputPlaceholder,
   },
   memberSince: {
     fontSize: typography.fontSizes.caption,

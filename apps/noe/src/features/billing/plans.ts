@@ -4,6 +4,8 @@ export interface PlanCatalogEntry {
   id: PlanId;
   name: string;
   price: string;
+  /** Precio en centavos USD. Fuente para reportes DEUNA (el servidor lo valida). */
+  priceCents: number;
   period: string;
   features: string[];
   maxChildren: number | null; // null = unlimited
@@ -15,6 +17,7 @@ export const PLAN_CATALOG: PlanCatalogEntry[] = [
     id: 'free',
     name: 'Gratuito',
     price: '$0',
+    priceCents: 0,
     period: 'para siempre',
     features: ['1 hijo', 'Control básico de tiempo', '5 apps bloqueadas', 'Reportes semanales'],
     maxChildren: 1,
@@ -24,6 +27,7 @@ export const PLAN_CATALOG: PlanCatalogEntry[] = [
     id: 'family',
     name: 'Familia',
     price: '$4.99',
+    priceCents: 499,
     period: '/mes',
     features: [
       'Hijos ilimitados',
@@ -40,6 +44,7 @@ export const PLAN_CATALOG: PlanCatalogEntry[] = [
     id: 'family_annual',
     name: 'Familia Anual',
     price: '$39.99',
+    priceCents: 3999,
     period: '/año',
     features: ['Todo de Familia', 'Ahorra 33%', 'Soporte prioritario', 'Nuevas funciones primero'],
     maxChildren: null,

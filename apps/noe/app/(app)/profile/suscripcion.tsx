@@ -23,7 +23,20 @@ export default function SuscripcionScreen() {
 
   const currentPlan: PlanId = subscription?.plan ?? 'free';
 
-  async function handleClaim(plan: PlanId) {
+  function planLimits(plan: PlanId): string {
+    const entry = PLAN_CATALOG.find((p) => p.id === plan);
+    if (!entry) return '';
+    const kids = entry.maxChildren == null ? '∞' : String(entry.maxChildren);
+    const apps = entry.maxBlockedApps == null ? '∞' : String(entry.maxBlockedApps);
+    return tr('noe.plans.limitsLine', { kids, apps });
+  }
+
+  async function handleChoose(plan: PlanId) {
+    // Los planes de pago van a DEUNA; el gratuito se activa directo.
+    if (plan !== 'free') {
+      router.push({ pathname: '/(app)/profile/deuna', params: { plan } });
+      return;
+    }
     setClaiming(plan);
     try {
       const updated = await billingService.claimPlan(plan);
@@ -50,6 +63,14 @@ export default function SuscripcionScreen() {
 
       <Text style={styles.subtitle}>{tr('noe.plans.subtitle')}</Text>
 
+      <Card style={styles.deunaBanner}>
+        <MaterialIcons name="qr-code-2" size={28} color={colors.secondary} />
+        <View style={styles.deunaBannerInfo}>
+          <Text style={styles.deunaBannerTitle}>{tr('noe.plans.deunaBannerTitle')}</Text>
+          <Text style={styles.deunaBannerText}>{tr('noe.plans.deunaBannerText')}</Text>
+        </View>
+      </Card>
+
       {loading ? (
         <View style={styles.loadingRow}>
           <ActivityIndicator color={colors.primary} />
@@ -67,6 +88,7 @@ export default function SuscripcionScreen() {
                   <Text style={styles.planPeriod}>{plan.period}</Text>
                 </View>
               </View>
+              <Text style={styles.limitsLine}>{planLimits(plan.id)}</Text>
               {plan.features.map((f) => (
                 <View key={f} style={styles.featureRow}>
                   <MaterialIcons name="check" size={18} color={colors.success} />
@@ -83,9 +105,9 @@ export default function SuscripcionScreen() {
                   size="sm"
                   style={{ marginTop: spacing.sm }}
                   loading={claiming === plan.id}
-                  onPress={() => handleClaim(plan.id)}
+                  onPress={() => handleChoose(plan.id)}
                 >
-                  {tr('noe.plans.choose')}
+                  {plan.id === 'free' ? tr('noe.plans.choose') : tr('noe.plans.payWithDeuna')}
                 </Button>
               )}
             </Card>
@@ -117,6 +139,33 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     fontSize: typography.fontSizes.body,
     color: colors.textMuted,
     lineHeight: 22,
+  },
+  deunaBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+    borderColor: colors.secondary,
+    borderWidth: 1.5,
+    ...shadows.sm,
+  },
+  deunaBannerInfo: {
+    flex: 1,
+  },
+  deunaBannerTitle: {
+    fontSize: typography.fontSizes.body,
+    fontWeight: typography.fontWeights.semibold,
+    color: colors.text,
+  },
+  deunaBannerText: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    marginTop: 2,
+    lineHeight: 18,
+  },
+  limitsLine: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.primary,
+    fontWeight: typography.fontWeights.semibold,
   },
   loadingRow: {
     flexDirection: 'row',

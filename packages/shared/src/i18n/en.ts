@@ -220,6 +220,8 @@ export const en = {
       nameLabel: 'Child name',
       namePlaceholder: 'e.g. Mia',
       pickAvatar: 'Pick an avatar',
+      birthDateLabel: 'Birth date',
+      birthDatePlaceholder: 'Tap to pick from the calendar',
       add: 'Add child',
       editTitle: 'Edit child',
       save: 'Save changes',
@@ -354,9 +356,29 @@ export const en = {
       choose: 'Choose plan',
       upgraded: 'You switched to the {{plan}} plan.',
       billingNote:
-        'Automatic billing is coming soon; for now the plan is activated instantly in this app.',
+        'The free plan is activated instantly in this app.',
       providerNote:
-        'Once Play Store or RevenueCat is connected, real payments will replace this manual activation.',
+        'Paid plans are charged with DEUNA (Ecuador): scan the QR, pay, and your plan activates after verification.',
+      limitsLine: '{{kids}} kid(s) · {{apps}} blocked app(s)',
+      payWithDeuna: 'Pay with DEUNA',
+      deunaBannerTitle: 'Payments with DEUNA (Ecuador)',
+      deunaBannerText:
+        'Scan our QR from your DEUNA app, report your payment, and we will activate your plan.',
+    },
+    deuna: {
+      title: 'Pay with DEUNA',
+      amountHint: 'Exact amount to pay in USD (US dollars, the currency of Ecuador).',
+      qrTitle: 'Scan to pay',
+      qrPlaceholder: 'The business DEUNA QR goes here (pending the real QR).',
+      stepsTitle: 'How to pay',
+      step1: 'Open your DEUNA app and scan the QR with the plan amount.',
+      step2: 'Complete the payment in DEUNA and come back here.',
+      step3: 'Tap "I already paid" to register your order.',
+      reportButton: 'I already paid',
+      reportedTitle: 'Payment registered',
+      reportedText:
+        'Your order is pending verification. We will activate your plan as soon as we confirm the payment in DEUNA.',
+      backToPlans: 'Back to plans',
     },
     planErrors: {
       childLimit: 'The free plan includes {{max}} child. Upgrade to add more children.',
@@ -415,6 +437,11 @@ export const en = {
       shareMessage:
         'I invite you to be a caregiver in NOE and manage kids\u2019 digital safety together. Code: {{code}}. Open NOE and choose \u201cJoin as a caregiver\u201d to accept: {{link}}',
       inviteFailed: 'Could not generate the invitation. Try again.',
+      expiresLabel: 'Valid until {{date}}',
+      generateTitle: 'Are you a family owner?',
+      generateDesc:
+        'Generate a code from your family and share it so another caregiver can monitor it.',
+      generateButton: 'Generate invitation code',
     },
     familyMode: {
       title: 'Content mode',

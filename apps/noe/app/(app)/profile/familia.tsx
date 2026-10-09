@@ -13,7 +13,6 @@ import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 import type { ChildProfile, FamilyMode } from '@noe-arcakids/types';
 
-import { Avatar } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
@@ -25,6 +24,7 @@ import { familyService } from '@/features/family/services/family-service';
 import { familyInviteService, buildInviteLink, type FamilyInvite } from '@/features/family-invites/services/family-invite-service';
 import type { MyFamily } from '@/features/family/repositories/family-repository';
 import { Card, Input, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
+import { Avatar3D } from '@noe-arcakids/shared';
 
 interface ModeOption {
   value: FamilyMode;
@@ -193,11 +193,7 @@ export default function FamiliaScreen() {
               ]}
               onPress={() => router.push(`/children/${child.id}` as any)}
             >
-              <Avatar
-                name={child.displayName}
-                emoji={child.avatarUrl ?? '👶'}
-                size={40}
-              />
+              <Avatar3D id={child.avatarUrl ?? undefined} size={40} />
               <Text style={styles.childName}>{child.displayName}</Text>
               <MaterialIcons name="chevron-right" size={22} color={colors.textMuted} />
             </Pressable>
@@ -242,6 +238,7 @@ export default function FamiliaScreen() {
       <Card style={styles.card}>
         <Text style={styles.hint}>
           Los responsables pueden administrar conjuntamente los dispositivos de los niños.
+          Genera un código y compártelo para que otro tutor monitoree a esta familia.
         </Text>
         <View style={styles.inviteRow}>
           <Pressable
@@ -275,6 +272,11 @@ export default function FamiliaScreen() {
               <View style={styles.inviteCodeInfo}>
                 <Text style={styles.inviteCodeLabel}>{tr('noe.familyInvites.codeLabel')}</Text>
                 <Text style={styles.inviteCodeText}>{invite.code}</Text>
+                <Text style={styles.inviteExpiry}>
+                  {tr('noe.familyInvites.expiresLabel', {
+                    date: new Date(invite.expiresAt).toLocaleString(),
+                  })}
+                </Text>
               </View>
               <MaterialIcons name="share" size={20} color={colors.primary} />
             </Pressable>
@@ -413,6 +415,11 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     fontWeight: typography.fontWeights.bold,
     color: colors.primary,
     letterSpacing: 4,
+  },
+  inviteExpiry: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    marginTop: 2,
   },
   modeRow: {
     flexDirection: 'row',
