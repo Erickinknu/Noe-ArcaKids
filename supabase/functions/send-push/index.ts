@@ -1,18 +1,18 @@
-import \"jsr:@supabase/functions-js@2/edge-runtime.d.ts\";
-import { createClient } from \"jsr:@supabase/supabase-js@2\";
+import "jsr:@supabase/functions-js@2/edge-runtime.d.ts";
+import { createClient } from "jsr:@supabase/supabase-js@2";
 
-const EXPO_PUSH_URL = \"https://exp.host/--/api/v2/push/send\";
+const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
 const MAX_TITLE = 120;
 const MAX_BODY = 500;
 
 function isValidExpoPushToken(token) {
-  if (!token || typeof token !== \"string\") return false;
+  if (!token || typeof token !== "string") return false;
   return (
-    token.startsWith(\"ExponentPushToken[\") ||
-    token.startsWith(\"ExpoPushToken[\") ||
-    /^ExponentPushToken\\[[A-Za-z0-9_\\-]+\\]$/.test(token) ||
-    /^ExpoPushToken\\[[A-Za-z0-9_\\-]+\\]$/.test(token) ||
-    (token.length > 20 && !token.includes(\" \"))
+    token.startsWith("ExponentPushToken[") ||
+    token.startsWith("ExpoPushToken[") ||
+    /^ExponentPushToken\[[A-Za-z0-9_\-]+\]$/.test(token) ||
+    /^ExpoPushToken\[[A-Za-z0-9_\-]+\]$/.test(token) ||
+    (token.length > 20 && !token.includes(" "))
   );
 }
 
@@ -28,13 +28,13 @@ async function sendExpoPush(messages) {
   const all = [];
   for (const ch of c) {
     const res = await fetch(EXPO_PUSH_URL, {
-      method: \"POST\",
-      headers: { \"Content-Type\": \"application/json\", Accept: \"application/json\", \"Accept-Encoding\": \"gzip, deflate\" },
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json", "Accept-Encoding": "gzip, deflate" },
       body: JSON.stringify(ch),
     });
     if (!res.ok) {
-      const t = await res.text().catch(() => \"\");
-      throw new Error(\"Expo push HTTP \" + res.status + \": \" + t);
+      const t = await res.text().catch(() => "");
+      throw new Error("Expo push HTTP " + res.status + ": " + t);
     }
     const data = await res.json();
     if (Array.isArray(data?.data)) all.push(...data.data);
@@ -43,33 +43,33 @@ async function sendExpoPush(messages) {
 }
 
 function json(status, obj) {
-  return new Response(JSON.stringify(obj), { status, headers: { \"Content-Type\": \"application/json\" } });
+  return new Response(JSON.stringify(obj), { status, headers: { "Content-Type": "application/json" } });
 }
 
 Deno.serve(async (req) => {
-  if (req.method === \"OPTIONS\") {
+  if (req.method === "OPTIONS") {
     return new Response(null, {
       headers: {
-        \"Access-Control-Allow-Origin\": \"*\",
-        \"Access-Control-Allow-Headers\": \"authorization, x-client-info, apikey, content-type, x-push-secret\",
-        \"Access-Control-Allow-Methods\": \"POST, OPTIONS\",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-push-secret",
+        "Access-Control-Allow-Methods": "POST, OPTIONS",
       },
     });
   }
-  if (req.method !== \"POST\") return json(405, { error: \"Method not allowed\" });
+  if (req.method !== "POST") return json(405, { error: "Method not allowed" });
   try {
     const body = await req.json().catch(() => ({}));
     const notification_id = body?.notification_id;
-    if (!notification_id) return json(400, { error: \"notification_id required\" });
+    if (!notification_id) return json(400, { error: "notification_id required" });
 
-    const supabaseUrl = Deno.env.get(\"SUPABASE_URL\");
-    const supabaseServiceKey = Deno.env.get(\"SUPABASE_SERVICE_ROLE_KEY\");
-    const pushSecret = Deno.env.get(\"PUSH_ADMIN_SECRET\") ?? Deno.env.get(\"PUSH_SECRET\") ?? \"\";
-    if (!supabaseUrl || !supabaseServiceKey) return json(500, { error: \"Missing Supabase env\" });
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+    const pushSecret = Deno.env.get("PUSH_ADMIN_SECRET") ?? Deno.env.get("PUSH_SECRET") ?? "";
+    if (!supabaseUrl || !supabaseServiceKey) return json(500, { error: "Missing Supabase env" });
 
-    const providedSecret = req.headers.get(\"x-push-secret\") ?? \"\";
-    if (pushSecret === \"\" || providedSecret === \"\" || providedSecret !== pushSecret) {
-      return json(401, { error: \"unauthorized\" });
+    const providedSecret = req.headers.get("x-push-secret") ?? "";
+    if (pushSecret === "" || providedSecret === "" || providedSecret !== pushSecret) {
+      return json(401, { error: "unauthorized" });
     }
 
     const admin = createClient(supabaseUrl, supabaseServiceKey, {
@@ -77,51 +77,82 @@ Deno.serve(async (req) => {
     });
 
     const { data: n, error: nerr } = await admin
-      .from(\"notifications\")
-      .select(\"user_id, title, body, data, family_id, child_id\")
-      .eq(\"id\", notification_id)
+      .from("notifications")
+      .select("user_id, title, body, data, family_id, child_id, pushed_at")
+      .eq("id", notification_id)
       .maybeSingle();
-    if (nerr) return json(500, { error: nerr.message });
-    if (!n || !n.user_id) return json(404, { error: \"notification not found\" });
+    if (nerr) {
+      console.error("send-push: notification lookup failed");
+      return json(500, { error: "internal" });
+    }
+    if (!n || !n.user_id) return json(404, { error: "notification not found" });
 
-    const title = n.title ?? \"\";
-    const messageBody = n.body ?? \"\";
+    // Idempotencia: un reintento del trigger no duplica el push.
+    if (n.pushed_at) return json(200, { sent: 0, duplicate: true });
+    const claimedAt = new Date().toISOString();
+    const { data: claimed, error: claimErr } = await admin
+      .from("notifications")
+      .update({ pushed_at: claimedAt })
+      .is("pushed_at", null)
+      .eq("id", notification_id)
+      .select("id")
+      .maybeSingle();
+    if (claimErr) {
+      console.error("send-push: push claim failed");
+      return json(500, { error: "internal" });
+    }
+    if (!claimed) return json(200, { sent: 0, duplicate: true });
+
+    const title = n.title ?? "";
+    const messageBody = n.body ?? "";
     if (String(title).length > MAX_TITLE || String(messageBody).length > MAX_BODY) {
-      return json(400, { error: \"title/body too long\" });
+      return json(400, { error: "title/body too long" });
     }
 
     const { data: tokensRows, error: tokensErr } = await admin
-      .from(\"push_tokens\")
-      .select(\"token, user_id\")
-      .eq(\"user_id\", n.user_id)
-      .not(\"token\", \"is\", null);
-    if (tokensErr) return json(500, { error: tokensErr.message });
+      .from("push_tokens")
+      .select("token, user_id")
+      .eq("user_id", n.user_id)
+      .not("token", "is", null);
+    if (tokensErr) {
+      console.error("send-push: tokens lookup failed");
+      return json(500, { error: "internal" });
+    }
 
     const tokens = (tokensRows || []).map((r) => r.token).filter((t) => isValidExpoPushToken(t));
     const uniqueTokens = Array.from(new Set(tokens));
     if (uniqueTokens.length === 0) return json(200, { sent: 0, tickets: [] });
 
-    const dataPayload = (n.data && typeof n.data === \"object\") ? n.data : {};
+    const dataPayload = (n.data && typeof n.data === "object") ? n.data : {};
     const messages = uniqueTokens.map((to) => ({
       to,
       title,
       body: messageBody,
       data: { ...(dataPayload || {}), family_id: n.family_id, child_id: n.child_id, notification_id },
-      sound: \"default\",
-      channelId: \"default\",
-      priority: \"high\",
+      sound: "default",
+      channelId: "default",
+      priority: "high",
     }));
-    const tickets = await sendExpoPush(messages);
+    let tickets;
+    try {
+      tickets = await sendExpoPush(messages);
+    } catch (sendErr) {
+      console.error("send-push: provider failed");
+      // Libera el claim para que un reintento posterior pueda enviar.
+      await admin.from("notifications").update({ pushed_at: null }).eq("id", notification_id);
+      return json(502, { error: "provider" });
+    }
     const invalid = [];
     tickets.forEach((t, i) => {
-      if (t.status === \"error\" && t.details?.error === \"DeviceNotRegistered\") {
+      if (t.status === "error" && t.details?.error === "DeviceNotRegistered") {
         const tok = uniqueTokens[i];
         if (tok) invalid.push(tok);
       }
     });
-    if (invalid.length > 0) await admin.from(\"push_tokens\").delete().in(\"token\", invalid);
+    if (invalid.length > 0) await admin.from("push_tokens").delete().in("token", invalid);
     return json(200, { sent: uniqueTokens.length, tickets, cleaned: invalid.length });
   } catch (err) {
-    return json(500, { error: err?.message || \"Internal error\" });
+    console.error("send-push: unhandled", err instanceof Error ? err.message : typeof err);
+    return json(500, { error: "internal" });
   }
 });
