@@ -3,6 +3,10 @@ builds/*
 !builds/**/README.md
 *.apk
 *.aab
+# entregas renombradas / respaldos locales (no versionar)
+*.bak
+# capturas de pantalla de validacion en raiz (no versionar; los assets van en sus carpetas)
+noe*.png
 # local keystores
 *.keystore
 *.jks
