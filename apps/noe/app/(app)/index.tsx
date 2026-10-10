@@ -158,38 +158,41 @@ export default function DashboardScreen() {
     },
     [familyId, fetchData, tr]
   );
-
   const handleChildSelect = useCallback(
-    async (childId: string) => {
+    (childId: string) => {
       setChildSelectVisible(false);
-      if (childSelectAction === 'block') {
-        try {
-          await deviceControlService.blockChild(childId);
-          Alert.alert(
-            tr('noe.dashboard.deviceBlockedTitle'),
-            tr('noe.dashboard.deviceBlockedMessage')
-          );
-        } catch {
-          Alert.alert(
-            tr('noe.dashboard.errorTitle'),
-            tr('noe.dashboard.blockFailedMessage')
-          );
-        }
-      } else if (childSelectAction === 'alert') {
-        try {
-          await deviceControlService.triggerAlert(childId);
-          Alert.alert(
-            tr('noe.dashboard.alertActivatedTitle'),
-            tr('noe.dashboard.alertActivatedMessage')
-          );
-        } catch {
-          Alert.alert(
-            tr('noe.dashboard.errorTitle'),
-            tr('noe.dashboard.alertFailedMessage')
-          );
-        }
-      }
-      setChildSelectAction(null);
+      setTimeout(() => {
+        (async () => {
+          if (childSelectAction === 'block') {
+            try {
+              await deviceControlService.blockChild(childId);
+              Alert.alert(
+                tr('noe.dashboard.deviceBlockedTitle'),
+                tr('noe.dashboard.deviceBlockedMessage')
+              );
+            } catch {
+              Alert.alert(
+                tr('noe.dashboard.errorTitle'),
+                tr('noe.dashboard.blockFailedMessage')
+              );
+            }
+          } else if (childSelectAction === 'alert') {
+            try {
+              await deviceControlService.triggerAlert(childId);
+              Alert.alert(
+                tr('noe.dashboard.alertActivatedTitle'),
+                tr('noe.dashboard.alertActivatedMessage')
+              );
+            } catch {
+              Alert.alert(
+                tr('noe.dashboard.errorTitle'),
+                tr('noe.dashboard.alertFailedMessage')
+              );
+            }
+          }
+          setChildSelectAction(null);
+        })();
+      }, 0);
     },
     [childSelectAction, tr]
   );
@@ -503,7 +506,10 @@ export default function DashboardScreen() {
       <ChildSelectModal
         visible={childSelectVisible}
         childList={data?.children ?? []}
-        onClose={() => { setChildSelectVisible(false); setChildSelectAction(null); }}
+        onClose={() => {
+          setChildSelectVisible(false);
+          setTimeout(() => setChildSelectAction(null), 0);
+        }}
         onSelect={handleChildSelect}
         actionType={childSelectAction}
       />
