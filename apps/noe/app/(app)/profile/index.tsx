@@ -119,6 +119,12 @@ export default function OtrosScreen() {
       title: 'Seguridad',
       items: [
         {
+          icon: 'security',
+          title: 'Seguridad',
+          subtitle: 'Bloqueo, PIN e inicio de sesión',
+          onPress: navigate('/profile/seguridad'),
+        },
+        {
           icon: 'lock',
           title: 'Código PIN',
           subtitle: 'PIN para bloquear el acceso a NOE con contraseña',

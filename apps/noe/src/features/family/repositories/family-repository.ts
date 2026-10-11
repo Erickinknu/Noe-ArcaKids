@@ -89,6 +89,21 @@ export const familyRepository = {
     return mapRow(data as unknown as MyFamilyRow);
   },
 
+  async countParentMembers(familyId: string): Promise<number> {
+    if (!familyId) return 0;
+    const client = requireSupabaseClient();
+    const { count, error } = await client
+      .from('profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('family_id', familyId)
+      .eq('role', 'parent');
+
+    if (error) {
+      throw new DatabaseError(error.message);
+    }
+    return count ?? 0;
+  },
+
   async renameFamily(familyId: string, name: string): Promise<void> {
     const client = requireSupabaseClient();
     const { error } = await client.from('families').update({ name }).eq('id', familyId);

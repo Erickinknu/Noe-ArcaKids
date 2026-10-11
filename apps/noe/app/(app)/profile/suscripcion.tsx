@@ -6,6 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { Button } from '@/components/ui/button';
 import { billingService } from '@/features/billing/services/billing-service';
+import { plansService } from '@/features/billing/services/plans-service';
 import { PLAN_CATALOG, type PlanId } from '@/features/billing/plans';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { Card, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
@@ -21,10 +22,14 @@ export default function SuscripcionScreen() {
   const fetchSubscription = useCallback(() => billingService.getSubscription(), []);
   const { data: subscription, loading, reload } = useAsyncData(fetchSubscription);
 
+  const fetchCatalog = useCallback(() => plansService.getCatalog(), []);
+  const { data: catalog } = useAsyncData(fetchCatalog);
+  const plans = catalog ?? PLAN_CATALOG;
+
   const currentPlan: PlanId = subscription?.plan ?? 'free';
 
   function planLimits(plan: PlanId): string {
-    const entry = PLAN_CATALOG.find((p) => p.id === plan);
+    const entry = plans.find((p) => p.id === plan);
     if (!entry) return '';
     const kids = entry.maxChildren == null ? '∞' : String(entry.maxChildren);
     const apps = entry.maxBlockedApps == null ? '∞' : String(entry.maxBlockedApps);
@@ -77,7 +82,7 @@ export default function SuscripcionScreen() {
           <Text style={styles.loadingText}>{tr('noe.plans.loading')}</Text>
         </View>
       ) : (
-        PLAN_CATALOG.map((plan) => {
+        plans.map((plan) => {
           const isCurrent = plan.id === currentPlan;
           return (
             <Card key={plan.id} style={[styles.planCard, isCurrent && styles.planCurrent]}>

@@ -1,3 +1,7 @@
+export const LAST_EMAIL_KEY = 'noe_last_email';
+export const SETUP_PENDING_KEY = 'noe_setup_pending';
+export const ONBOARDING_KEY = 'noe_onboarding_seen_v1';
+
 export const ROUTES = {
   auth: '/(auth)',
   app: '/(app)',

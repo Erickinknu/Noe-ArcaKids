@@ -26,7 +26,19 @@ export default function JoinEntryScreen() {
         <Text style={styles.emoji}>👋</Text>
         <Text style={styles.title}>{tr('noe.familyInvites.notLoggedInTitle')}</Text>
         <Text style={styles.description}>{tr('noe.familyInvites.notLoggedInText')}</Text>
-        <Button onPress={() => router.replace('/(auth)/login')}>
+        <Button
+          onPress={() =>
+            router.replace({ pathname: '/(auth)/register', params: { code: code ?? '' } })
+          }
+        >
+          {tr('noe.welcome.createAccount')}
+        </Button>
+        <Button
+          variant="secondary"
+          onPress={() =>
+            router.replace({ pathname: '/(auth)/login', params: { code: code ?? '' } })
+          }
+        >
           {tr('noe.familyInvites.goToLogin')}
         </Button>
         <Pressable style={({ pressed }) => [styles.backLink, pressed && styles.pressed]} onPress={() => router.replace('/')}>

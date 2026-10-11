@@ -11,6 +11,16 @@ export const familyService = {
     return familyRepository.getMyFamily();
   },
 
+  async getMemberCount(): Promise<number> {
+    const { family } = await familyRepository.getMyFamily();
+    if (!family.id) return 0;
+    try {
+      return await familyRepository.countParentMembers(family.id);
+    } catch {
+      return 1;
+    }
+  },
+
   async renameFamily(familyId: string, name: string): Promise<void> {
     const trimmed = name.trim();
     if (trimmed.length === 0) {

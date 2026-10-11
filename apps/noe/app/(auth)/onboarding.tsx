@@ -1,92 +1,155 @@
-import { useMemo } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { useCallback, useMemo, useRef, useState } from 'react';
+import {
+  Dimensions,
+  FlatList,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  type ViewToken,
+} from 'react-native';
 import { useRouter } from 'expo-router';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
-interface PlanOption {
+const { width } = Dimensions.get('window');
+
+interface Slide {
   id: string;
   icon: keyof typeof MaterialIcons.glyphMap;
   title: string;
   subtitle: string;
-  color: string;
 }
 
-const PLANS: PlanOption[] = [
+const SLIDES: Slide[] = [
   {
-    id: 'family',
-    icon: 'family-restroom',
-    title: 'Crear mi familia',
-    subtitle: 'Configura el perfil, vincula los dispositivos de tus hijos y aplica las reglas.',
-    color: '#6366F1',
+    id: 'limits',
+    icon: 'timer',
+    title: 'Tiempo y l�mites',
+    subtitle: 'Establece l�mites de tiempo y restricciones de forma clara y sencilla.',
   },
   {
-    id: 'demo',
-    icon: 'travel-explore',
-    title: 'Explorar (demo)',
-    subtitle: 'Crea una cuenta gratuita para ver cómo funciona NOE antes de configurar todo.',
-    color: '#059669',
+    id: 'protection',
+    icon: 'location-on',
+    title: 'Protecci�n y ubicaci�n',
+    subtitle: 'Cuida y localiza con herramientas pensadas para acompa�ar.',
+  },
+  {
+    id: 'transparency',
+    icon: 'visibility',
+    title: 'Acompa�ar sin espiar',
+    subtitle: 'Todo con transparencia: el ni�o/a conoce la app y acepta permisos.',
   },
 ];
+
+const ONBOARDING_KEY = 'noe_onboarding_seen_v1';
+
+const VIEWABILITY_CONFIG = { viewAreaCoveragePercentThreshold: 50 } as const;
 
 export default function OnboardingScreen() {
   const router = useRouter();
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
+  const [index, setIndex] = useState(0);
+  const listRef = useRef<FlatList<Slide>>(null);
+
+  const onViewableItemsChanged = useCallback(
+    ({ viewableItems }: { viewableItems: ViewToken[] }) => {
+      if (viewableItems.length > 0) {
+        setIndex(viewableItems[0].index ?? 0);
+      }
+    },
+    []
+  );
+
+  async function finish() {
+    try {
+      await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
+    } catch {}
+    router.replace('/(auth)/welcome');
+  }
+
+  async function skip() {
+    await finish();
+  }
+
+  function next() {
+    if (index < SLIDES.length - 1) {
+      listRef.current?.scrollToIndex({ index: index + 1 });
+    } else {
+      finish();
+    }
+  }
 
   return (
-    <ScrollView
-      contentContainerStyle={styles.screen}
-      keyboardShouldPersistTaps="handled"
-    >
-      <View style={styles.header}>
-        <MaterialIcons name="shield-moon" size={56} color={colors.primary} />
-        <Text style={styles.title}>Bienvenido a NOE</Text>
-        <Text style={styles.subtitle}>Elige cómo quieres empezar</Text>
-      </View>
-
-      <View style={styles.plans}>
-        {PLANS.map((plan) => (
-          <Pressable
-            key={plan.id}
-            style={({ pressed }) => [styles.planCard, pressed && styles.planCardPressed]}
-            onPress={() => router.push(`/(auth)/register?plan=${plan.id}`)}
-          >
-            <View style={[styles.planIcon, { backgroundColor: plan.color + '18' }]}>
-              <MaterialIcons name={plan.icon} size={28} color={plan.color} />
-            </View>
-            <View style={styles.planInfo}>
-              <Text style={styles.planTitle}>{plan.title}</Text>
-              <Text style={styles.planSubtitle}>{plan.subtitle}</Text>
-            </View>
-            <MaterialIcons name="chevron-right" size={22} color={colors.textMuted} />
-          </Pressable>
-        ))}
-      </View>
-
-      <Pressable
-        style={({ pressed }) => [styles.loginLink, pressed && styles.loginLinkPressed]}
-        onPress={() => router.push('/(auth)/login')}
-      >
-        <Text style={styles.loginText}>Ya tengo una cuenta — Iniciar sesión</Text>
+    <View style={styles.screen}>
+      <Pressable style={styles.skip} onPress={skip}>
+        <Text style={styles.skipText}>Saltar</Text>
       </Pressable>
-    </ScrollView>
+
+      <FlatList
+        ref={listRef}
+        data={SLIDES}
+        horizontal
+        pagingEnabled
+        showsHorizontalScrollIndicator={false}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={VIEWABILITY_CONFIG}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <View style={[styles.slide, { width }]}>
+            <View style={styles.iconWrap}>
+              <MaterialIcons name={item.icon} size={64} color={colors.primary} />
+            </View>
+            <Text style={styles.title}>{item.title}</Text>
+            <Text style={styles.subtitle}>{item.subtitle}</Text>
+          </View>
+        )}
+      />
+
+      <View style={styles.footer}>
+        <View style={styles.dots}>
+          {SLIDES.map((_, i) => (
+            <View
+              key={i}
+              style={[styles.dot, i === index && { backgroundColor: colors.primary, width: 24 }]}
+            />
+          ))}
+        </View>
+        <Pressable style={styles.nextBtn} onPress={next}>
+          <Text style={styles.nextText}>{index === SLIDES.length - 1 ? 'Comenzar' : 'Siguiente'}</Text>
+        </Pressable>
+      </View>
+    </View>
   );
 }
 
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     screen: {
-      flexGrow: 1,
-      justifyContent: 'center',
-      padding: spacing.lg,
+      flex: 1,
       backgroundColor: colors.background,
-      gap: spacing.lg,
     },
-    header: {
+    skip: {
+      position: 'absolute',
+      top: spacing.xl + spacing.md,
+      right: spacing.lg,
+      zIndex: 1,
+    },
+    skipText: {
+      color: colors.textMuted,
+      fontSize: typography.fontSizes.body,
+    },
+    slide: {
+      flex: 1,
       alignItems: 'center',
-      gap: spacing.sm,
+      justifyContent: 'center',
+      padding: spacing.xl,
+      gap: spacing.md,
+    },
+    iconWrap: {
       marginBottom: spacing.lg,
     },
     title: {
@@ -99,58 +162,33 @@ const makeStyles = (colors: ThemeColors) =>
       fontSize: typography.fontSizes.body,
       color: colors.textMuted,
       textAlign: 'center',
+      lineHeight: 22,
     },
-    plans: {
-      gap: spacing.md,
-    },
-    planCard: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      gap: spacing.md,
-      backgroundColor: colors.surface,
-      borderRadius: radius.lg,
-      padding: spacing.lg,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    planCardPressed: {
-      borderColor: colors.primary,
-      backgroundColor: colors.primaryLight,
-    },
-    planIcon: {
-      width: 52,
-      height: 52,
-      borderRadius: radius.full,
-      alignItems: 'center',
-      justifyContent: 'center',
-    },
-    planInfo: {
-      flex: 1,
-      gap: 2,
-    },
-    planTitle: {
-      fontSize: typography.fontSizes.subtitle,
-      fontWeight: typography.fontWeights.semibold,
-      color: colors.text,
-    },
-    planSubtitle: {
-      fontSize: typography.fontSizes.caption,
-      color: colors.textMuted,
-      lineHeight: 18,
-    },
-    loginLink: {
-      alignSelf: 'center',
-      paddingVertical: spacing.sm,
+    footer: {
       paddingHorizontal: spacing.lg,
-      borderRadius: radius.md,
+      paddingBottom: spacing.xl,
+      gap: spacing.lg,
     },
-    loginLinkPressed: {
-      opacity: 0.7,
+    dots: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      gap: spacing.sm,
     },
-    loginText: {
-      fontSize: typography.fontSizes.body,
-      color: colors.primary,
+    dot: {
+      width: 8,
+      height: 8,
+      borderRadius: 4,
+      backgroundColor: colors.border,
+    },
+    nextBtn: {
+      backgroundColor: colors.primary,
+      paddingVertical: spacing.md,
+      borderRadius: 12,
+      alignItems: 'center',
+    },
+    nextText: {
+      color: colors.surface,
+      fontSize: typography.fontSizes.subtitle,
       fontWeight: typography.fontWeights.medium,
-      textAlign: 'center',
     },
   });

@@ -6,6 +6,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { familyInviteService } from '@/features/family-invites/services/family-invite-service';
+import { familyService } from '@/features/family/services/family-service';
 import { Button } from '@/components/ui/button';
 import { Card, Input, useTheme, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
@@ -22,6 +23,21 @@ export default function UnirmeScreen() {
   const handleJoin = useCallback(async () => {
     setJoining(true);
     try {
+      const memberCount = await familyService.getMemberCount();
+      if (memberCount > 1) {
+        const confirmed = await new Promise<boolean>((resolve) => {
+          Alert.alert(
+            tr('noe.familyInvites.unirmeTitle'),
+            tr('noe.familyInvites.alreadyInGroupConfirm'),
+            [
+              { text: tr('common.cancel'), style: 'cancel', onPress: () => resolve(false) },
+              { text: tr('common.continue'), onPress: () => resolve(true) },
+            ],
+            { cancelable: true, onDismiss: () => resolve(false) }
+          );
+        });
+        if (!confirmed) return;
+      }
       const { familyName } = await familyInviteService.redeemInvite(code);
       Alert.alert(tr('noe.familyInvites.unirmeTitle'), tr('noe.familyInvites.joinSuccess', { family: familyName }), [
         { text: 'OK', onPress: () => router.replace('/(app)') },
