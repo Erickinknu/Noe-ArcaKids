@@ -93,4 +93,27 @@ export const authHelpers = {
     const { data: { user } } = await client.auth.getUser();
     return user;
   },
+
+  /**
+   * Re-authenticate the current user with their account password without
+   * changing the active session. Used to gate sensitive local actions (e.g.
+   * resetting a forgotten PIN). Returns false on a wrong password or a missing
+   * session; throws only on network/auth-server failures.
+   */
+  async verifyCurrentPassword(password: string): Promise<boolean> {
+    const client = requireSupabaseClient();
+    const {
+      data: { user },
+    } = await client.auth.getUser();
+    if (!user?.email) return false;
+    const { error } = await client.auth.signInWithPassword({
+      email: user.email,
+      password,
+    });
+    if (!error) return true;
+    if (error.status === 0) {
+      throw mapAuthError(error);
+    }
+    return false;
+  },
 };

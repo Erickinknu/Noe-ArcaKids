@@ -20,4 +20,7 @@ export const authRepository = {
   updatePassword(newPassword: string) {
     return authHelpers.updateUserPassword(newPassword);
   },
+  verifyCurrentPassword(password: string) {
+    return authHelpers.verifyCurrentPassword(password);
+  },
 };

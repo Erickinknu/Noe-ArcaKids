@@ -1,18 +1,21 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Switch, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 
+import { Button } from '@/components/ui/button';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { pinService } from '@/features/pin/services/pin-service';
+import { pinSyncService } from '@/features/pin/services/pin-sync-service';
+import { authService } from '@/features/auth/services/auth-service';
 import { biometricService } from '@/features/security/services/biometric-service';
 import {
   lockService,
   INACTIVITY_OPTIONS,
   type InactivityMinutes,
 } from '@/features/security/services/lock-service';
-import { useAsyncData, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+import { useAsyncData, errorMessage, networkService, useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
 export default function SecurityScreen() {
   const { t: tr } = useTranslation();
@@ -26,6 +29,13 @@ export default function SecurityScreen() {
   const [bioSupported, setBioSupported] = useState(false);
   const [hidePreview, setHidePreview] = useState(false);
   const [inactivity, setInactivity] = useState<InactivityMinutes>(1);
+
+  // Flujo "Olvidé mi PIN": exige la contraseña de la cuenta para restablecerlo.
+  const [forgetOpen, setForgetOpen] = useState(false);
+  const [forgetPassword, setForgetPassword] = useState('');
+  const [forgetSaving, setForgetSaving] = useState(false);
+  const [forgetError, setForgetError] = useState<string | null>(null);
+  const [forgetDone, setForgetDone] = useState(false);
 
   const load = useCallback(async () => {
     const [lock, bio, supported, hide, minutes] = await Promise.all([
@@ -69,6 +79,42 @@ export default function SecurityScreen() {
   async function onToggleHidePreview(value: boolean) {
     setHidePreview(value);
     await lockService.setHidePreviewEnabled(value);
+  }
+
+  function openForget() {
+    setForgetOpen(true);
+    setForgetPassword('');
+    setForgetError(null);
+    setForgetDone(false);
+  }
+
+  async function onConfirmForget() {
+    setForgetError(null);
+    if (!forgetPassword) {
+      setForgetError(tr('noe.forgetPinScreen.wrongPassword'));
+      return;
+    }
+    if (!networkService.isOnline()) {
+      setForgetError(tr('noe.forgetPinScreen.offline'));
+      return;
+    }
+    setForgetSaving(true);
+    try {
+      const ok = await authService.verifyPassword(forgetPassword);
+      if (!ok) {
+        setForgetError(tr('noe.forgetPinScreen.wrongPassword'));
+        return;
+      }
+      await pinService.reset();
+      await pinSyncService.clearPinFromFamily();
+      setForgetPassword('');
+      setLockOnOpen(false);
+      setForgetDone(true);
+    } catch (cause) {
+      setForgetError(errorMessage(cause));
+    } finally {
+      setForgetSaving(false);
+    }
   }
 
   const inactivityLabel = (minutes: InactivityMinutes) => {
@@ -171,13 +217,64 @@ export default function SecurityScreen() {
         <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
       </Pressable>
 
-      <Pressable style={styles.linkRow} onPress={() => router.push('/(auth)/forgot-password')}>
+      <Pressable
+        style={styles.linkRow}
+        onPress={() => (forgetOpen ? setForgetOpen(false) : openForget())}
+      >
         <MaterialIcons name="help-outline" size={22} color={colors.primary} />
         <View style={styles.rowText}>
           <Text style={styles.linkText}>{tr('noe.security.forgetPin')}</Text>
           <Text style={styles.rowSubtitle}>{tr('noe.security.forgetPinHint')}</Text>
         </View>
+        <MaterialIcons
+          name={forgetOpen ? 'expand-less' : 'expand-more'}
+          size={20}
+          color={colors.textMuted}
+        />
       </Pressable>
+
+      {forgetOpen ? (
+        <View style={styles.card}>
+          <Text style={styles.rowTitle}>{tr('noe.forgetPinScreen.title')}</Text>
+          <Text style={styles.rowSubtitle}>{tr('noe.forgetPinScreen.subtitle')}</Text>
+
+          {forgetDone ? (
+            <View style={styles.forgetDone}>
+              <MaterialIcons name="check-circle" size={40} color={colors.success} />
+              <Text style={styles.forgetDoneText}>{tr('noe.forgetPinScreen.resetDone')}</Text>
+              <Button onPress={() => router.push('/profile/pin')}>
+                {tr('noe.forgetPinScreen.createNew')}
+              </Button>
+            </View>
+          ) : (
+            <>
+              <Text style={styles.fieldLabel}>{tr('noe.forgetPinScreen.passwordLabel')}</Text>
+              <TextInput
+                style={styles.passwordInput}
+                value={forgetPassword}
+                onChangeText={(value) => {
+                  setForgetPassword(value);
+                  setForgetError(null);
+                }}
+                placeholder={tr('noe.forgetPinScreen.passwordPlaceholder')}
+                placeholderTextColor={colors.textMuted}
+                secureTextEntry
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              {forgetError ? (
+                <View style={styles.forgetErrorRow}>
+                  <MaterialIcons name="error" size={18} color={colors.danger} />
+                  <Text style={styles.forgetErrorText}>{forgetError}</Text>
+                </View>
+              ) : null}
+              <Button onPress={onConfirmForget} loading={forgetSaving} disabled={!forgetPassword}>
+                {tr('noe.forgetPinScreen.confirm')}
+              </Button>
+            </>
+          )}
+        </View>
+      ) : null}
 
       <Text style={styles.note}>{tr('noe.security.offlineNote')}</Text>
     </ScrollView>
@@ -281,5 +378,39 @@ const makeStyles = (colors: ThemeColors) =>
       textAlign: 'center',
       fontSize: typography.fontSizes.caption,
       color: colors.textMuted,
+    },
+    fieldLabel: {
+      fontSize: typography.fontSizes.caption,
+      color: colors.textMuted,
+    },
+    passwordInput: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: radius.md,
+      padding: spacing.md,
+      fontSize: typography.fontSizes.body,
+      color: colors.text,
+      backgroundColor: colors.background,
+    },
+    forgetErrorRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: spacing.sm,
+    },
+    forgetErrorText: {
+      flex: 1,
+      fontSize: typography.fontSizes.caption,
+      color: colors.danger,
+    },
+    forgetDone: {
+      alignItems: 'center',
+      gap: spacing.sm,
+      paddingVertical: spacing.sm,
+    },
+    forgetDoneText: {
+      fontSize: typography.fontSizes.body,
+      fontWeight: typography.fontWeights.semibold,
+      color: colors.success,
+      textAlign: 'center',
     },
   });

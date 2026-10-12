@@ -162,6 +162,18 @@ export const en = {
       forgetPinHint: 'To reset it you need your account password.',
       offlineNote: 'Locking works without a connection.',
     },
+    forgetPinScreen: {
+      title: 'Reset PIN',
+      subtitle:
+        'For your security, confirm with your account password to create a new PIN. Your password does not change.',
+      passwordLabel: 'Account password',
+      passwordPlaceholder: 'Your password',
+      confirm: 'Confirm',
+      wrongPassword: 'Wrong password. Please try again.',
+      offline: 'No connection. You need to be online to confirm your password.',
+      resetDone: 'PIN reset. Create a new one.',
+      createNew: 'Create new PIN',
+    },
     forgotPassword: {
       title: 'Reset password',
       subtitle: 'Enter your email and we will send you a reset link.',

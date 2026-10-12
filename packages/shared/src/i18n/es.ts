@@ -168,6 +168,19 @@ export const es = {
         'Para restablecerlo necesitas tu contrase\u00f1a de la cuenta.',
       offlineNote: 'El bloqueo funciona sin conexi\u00f3n.',
     },
+    forgetPinScreen: {
+      title: 'Restablecer PIN',
+      subtitle:
+        'Por seguridad, confirma con la contrase\u00f1a de tu cuenta para crear un PIN nuevo. Tu contrase\u00f1a no cambia.',
+      passwordLabel: 'Contrase\u00f1a de la cuenta',
+      passwordPlaceholder: 'Tu contrase\u00f1a',
+      confirm: 'Confirmar',
+      wrongPassword: 'Contrase\u00f1a incorrecta. Int\u00e9ntalo de nuevo.',
+      offline:
+        'No hay conexi\u00f3n. Necesitas estar en l\u00ednea para confirmar tu contrase\u00f1a.',
+      resetDone: 'Pin restablecido. Crea uno nuevo.',
+      createNew: 'Crear PIN nuevo',
+    },
     forgotPassword: {
       title: 'Restablecer contrase\u00f1a',
       subtitle:

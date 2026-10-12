@@ -116,6 +116,17 @@ export const pinService = {
     return config?.enabled ?? false;
   },
 
+  /**
+   * Forget the current PIN (credentials are removed). Only call after the user
+   * has proven identity with their account password; the next visit to the PIN
+   * screen starts a fresh "create PIN" flow. Turns off lock-on-open as well so
+   * the app is not left locked without a usable PIN.
+   */
+  async reset(): Promise<void> {
+    await storage.remove(STORAGE_KEY);
+    await storage.save(LOCK_ON_OPEN_KEY, 'false');
+  },
+
   async isLockOnOpenEnabled(): Promise<boolean> {
     const raw = await storage.get(LOCK_ON_OPEN_KEY);
     return raw === 'true';

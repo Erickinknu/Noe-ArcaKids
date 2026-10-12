@@ -63,4 +63,14 @@ export const authService = {
     }
     await authRepository.updatePassword(password);
   },
+
+  /**
+   * Re-authenticate the current user with their account password. Used to gate
+   * sensitive local actions such as resetting a forgotten PIN.
+   * Returns false when the password is wrong or there is no active session.
+   */
+  async verifyPassword(password: string): Promise<boolean> {
+    if (!isNonEmptyString(password)) return false;
+    return authRepository.verifyCurrentPassword(password);
+  },
 };

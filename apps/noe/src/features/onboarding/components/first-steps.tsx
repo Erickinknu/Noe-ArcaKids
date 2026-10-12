@@ -1,10 +1,13 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
+
+import { SETUP_STEP_KEY } from '@/constants';
 
 interface FirstStepsProps {
   onDone: () => void;
@@ -18,6 +21,32 @@ export function FirstSteps({ onDone }: FirstStepsProps) {
   const styles = useMemo(() => makeStyles(colors), [colors]);
   const router = useRouter();
   const [step, setStep] = useState(0);
+
+  // Retoma el paso donde el usuario se quedó (p. ej. si abrió "Agregar hijo").
+  useEffect(() => {
+    let mounted = true;
+    AsyncStorage.getItem(SETUP_STEP_KEY)
+      .then((value) => {
+        const parsed = Number(value);
+        if (mounted && Number.isInteger(parsed) && parsed >= 0 && parsed < TOTAL) {
+          setStep(parsed);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      mounted = false;
+    };
+  }, []);
+
+  const goToStep = (next: number) => {
+    setStep(next);
+    AsyncStorage.setItem(SETUP_STEP_KEY, String(next)).catch(() => {});
+  };
+
+  const handleDone = () => {
+    AsyncStorage.removeItem(SETUP_STEP_KEY).catch(() => {});
+    onDone();
+  };
 
   const steps = [
     {
@@ -76,15 +105,15 @@ export function FirstSteps({ onDone }: FirstStepsProps) {
       <Text style={styles.transparency}>{tr('noe.firstSteps.transparency')}</Text>
 
       <View style={styles.footer}>
-        <Pressable style={styles.skip} onPress={onDone}>
+        <Pressable style={styles.skip} onPress={handleDone}>
           <Text style={styles.skipText}>{tr('noe.firstSteps.skip')}</Text>
         </Pressable>
         {isLast ? (
-          <Pressable style={styles.primary} onPress={onDone}>
+          <Pressable style={styles.primary} onPress={handleDone}>
             <Text style={styles.primaryText}>{tr('noe.firstSteps.finish')}</Text>
           </Pressable>
         ) : (
-          <Pressable style={styles.primary} onPress={() => setStep((s) => s + 1)}>
+          <Pressable style={styles.primary} onPress={() => goToStep(step + 1)}>
             <Text style={styles.primaryText}>{tr('noe.firstSteps.next')}</Text>
           </Pressable>
         )}
