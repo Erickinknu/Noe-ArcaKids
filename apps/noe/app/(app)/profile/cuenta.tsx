@@ -7,6 +7,7 @@ import {
   Pressable,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { Avatar } from '@/components/ui/avatar';
@@ -14,12 +15,16 @@ import { Button } from '@/components/ui/button';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
+import { authService } from '@/features/auth/services/auth-service';
+import { accountService } from '@/features/account/services/account-service';
+import { analyticsService } from '@/features/analytics/services/analytics-service';
 import { familyService } from '@/features/family/services/family-service';
 import { profileService } from '@/features/profile/services/profile-service';
 import type { MyFamily } from '@/features/family/repositories/family-repository';
-import { Card, Input, errorMessage, useAsyncData, useTheme, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
+import { Card, Input, errorMessage, networkService, useAsyncData, useTheme, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 export default function CuentaScreen() {
+  const { t: tr } = useTranslation();
   const router = useRouter();
   const screenPadding = useScreenPadding();
   const { colors, shadows } = useTheme();
@@ -28,6 +33,11 @@ export default function CuentaScreen() {
   const [saving, setSaving] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
+  const [delPassword, setDelPassword] = useState('');
+  const [delWord, setDelWord] = useState('');
+  const [delSaving, setDelSaving] = useState(false);
+  const [delError, setDelError] = useState<string | null>(null);
+  const [delDone, setDelDone] = useState(false);
 
   const fetchFamily = useCallback(() => familyService.getMyFamily(), []);
   const handleLoaded = useCallback((result: MyFamily) => {
@@ -49,6 +59,45 @@ export default function CuentaScreen() {
       setActionError(errorMessage(cause));
     } finally {
       setSaving(false);
+    }
+  }
+
+  // Borrado de cuenta (spec §10): exige contraseña + palabra de confirmación.
+  async function handleDeleteAccount() {
+    setDelError(null);
+    const confirmWord = tr('noe.accountDeletion.confirmWord');
+    if (delWord.trim() !== confirmWord) {
+      setDelError(tr('noe.accountDeletion.mismatch', { word: confirmWord }));
+      return;
+    }
+    if (!delPassword) {
+      setDelError(tr('noe.accountDeletion.wrongPassword'));
+      return;
+    }
+    if (!networkService.isOnline()) {
+      setDelError(tr('noe.accountDeletion.offline'));
+      return;
+    }
+    setDelSaving(true);
+    try {
+      const ok = await authService.verifyPassword(delPassword);
+      if (!ok) {
+        setDelError(tr('noe.accountDeletion.wrongPassword'));
+        return;
+      }
+      await accountService.deleteAccount();
+      analyticsService.track('account_deleted');
+      try {
+        await authService.signOut();
+      } catch {}
+      setDelPassword('');
+      setDelWord('');
+      setDelDone(true);
+      router.replace('/(auth)/login');
+    } catch (cause) {
+      setDelError(errorMessage(cause) || tr('noe.accountDeletion.error'));
+    } finally {
+      setDelSaving(false);
     }
   }
 
@@ -95,6 +144,44 @@ export default function CuentaScreen() {
       </Button>
 
       {actionError ? <ErrorState message={actionError} /> : null}
+
+      <Card style={styles.card}>
+        <Text style={styles.dangerTitle}>{tr('noe.accountDeletion.title')}</Text>
+        {delDone ? (
+          <Text style={styles.dangerDone}>{tr('noe.accountDeletion.done')}</Text>
+        ) : (
+          <>
+            <Text style={styles.dangerWarning}>{tr('noe.accountDeletion.warning')}</Text>
+            <Input
+              label={tr('noe.accountDeletion.passwordLabel')}
+              value={delPassword}
+              onChangeText={(value) => {
+                setDelPassword(value);
+                setDelError(null);
+              }}
+              secureTextEntry
+              autoCapitalize="none"
+              placeholder={tr('noe.accountDeletion.passwordPlaceholder')}
+            />
+            <Input
+              label={tr('noe.accountDeletion.typeLabel', {
+                word: tr('noe.accountDeletion.confirmWord'),
+              })}
+              value={delWord}
+              onChangeText={(value) => {
+                setDelWord(value);
+                setDelError(null);
+              }}
+              autoCapitalize="characters"
+              placeholder={tr('noe.accountDeletion.confirmWord')}
+            />
+            {delError ? <Text style={styles.dangerError}>{delError}</Text> : null}
+            <Button variant="danger" onPress={handleDeleteAccount} loading={delSaving}>
+              {tr('noe.accountDeletion.submit')}
+            </Button>
+          </>
+        )}
+      </Card>
     </ScrollView>
   );
 }
@@ -141,5 +228,23 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     fontSize: typography.fontSizes.caption,
     color: colors.textMuted,
     marginTop: spacing.xs,
+  },
+  dangerTitle: {
+    fontSize: typography.fontSizes.body,
+    fontWeight: typography.fontWeights.semibold,
+    color: colors.danger,
+  },
+  dangerWarning: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    lineHeight: 18,
+  },
+  dangerError: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.danger,
+  },
+  dangerDone: {
+    fontSize: typography.fontSizes.body,
+    color: colors.success,
   },
 });

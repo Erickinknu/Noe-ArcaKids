@@ -1,5 +1,6 @@
 import { PlanLimitError, t } from '@noe-arcakids/shared';
 
+import { analyticsService } from '@/features/analytics/services/analytics-service';
 import { familyService } from '@/features/family/services/family-service';
 
 import { billingRepository } from '../repositories/billing-repository';
@@ -38,6 +39,7 @@ export const billingService = {
   async claimPlan(plan: PlanId): Promise<SubscriptionStatus> {
     const subscription = await billingRepository.claimPlan(plan);
     cache = { plan: subscription.plan, at: Date.now() };
+    analyticsService.track('plan_selected', { plan: subscription.plan });
     return subscription;
   },
 

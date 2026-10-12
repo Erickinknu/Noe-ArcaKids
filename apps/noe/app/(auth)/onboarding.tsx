@@ -14,6 +14,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
+import { analyticsService } from '@/features/analytics/services/analytics-service';
+
 const { width } = Dimensions.get('window');
 
 interface Slide {
@@ -68,6 +70,7 @@ export default function OnboardingScreen() {
     try {
       await AsyncStorage.setItem(ONBOARDING_KEY, 'true');
     } catch {}
+    analyticsService.track('onboarding_completed');
     router.replace('/(auth)/welcome');
   }
 

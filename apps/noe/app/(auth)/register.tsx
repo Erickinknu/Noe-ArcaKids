@@ -8,6 +8,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 import { Button } from '@/components/ui/button';
 import { PasswordStrength } from '@/components/ui/password-strength';
 import { authService } from '@/features/auth/services/auth-service';
+import { analyticsService } from '@/features/analytics/services/analytics-service';
 import { billingService } from '@/features/billing/services/billing-service';
 import { familyService } from '@/features/family/services/family-service';
 import { familyInviteService } from '@/features/family-invites/services/family-invite-service';
@@ -100,12 +101,19 @@ export default function RegisterScreen() {
       }
 
       // Si vino con código de invitación, se une al hogar existente.
+      let redeemed = false;
       if (code && code.trim().length > 0) {
         try {
           await familyInviteService.redeemInvite(code.trim());
+          redeemed = true;
         } catch {
           // el código inválido/expirado se gestiona en la pantalla de unirse
         }
+      }
+
+      analyticsService.track('signup_completed', { withInvite: redeemed });
+      if (redeemed) {
+        analyticsService.track('invite_redeemed');
       }
 
       // Plan Gratis por defecto (best-effort) y nombre del grupo (best-effort).

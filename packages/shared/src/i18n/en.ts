@@ -154,6 +154,9 @@ export const en = {
       biometricUnavailable: 'This device has no biometrics configured.',
       hidePreview: 'Hide preview in recents',
       hidePreviewDesc: 'Prevent content from showing in the recent apps screen.',
+      analytics: 'Share usage data',
+      analyticsDesc:
+        'Help us improve with anonymous usage events. We never send emails or your children\u2019s data.',
       changePin: 'Change PIN',
       setPin: 'Create PIN',
       pinHint: 'Use 4 to 6 digits.',
@@ -173,6 +176,21 @@ export const en = {
       offline: 'No connection. You need to be online to confirm your password.',
       resetDone: 'PIN reset. Create a new one.',
       createNew: 'Create new PIN',
+    },
+    accountDeletion: {
+      title: 'Delete account',
+      warning:
+        'This is permanent. Your account and data will be erased and, if you are the only guardian, the family and your children\u2019s profiles too.',
+      passwordLabel: 'Confirm with your password',
+      passwordPlaceholder: 'Your password',
+      typeLabel: 'Type {{word}} to confirm',
+      confirmWord: 'DELETE',
+      submit: 'Permanently delete my account',
+      wrongPassword: 'Wrong password.',
+      offline: 'You need a connection to delete your account.',
+      mismatch: 'Type {{word}} to confirm.',
+      error: 'Could not delete the account. Please try again.',
+      done: 'Your account was deleted.',
     },
     forgotPassword: {
       title: 'Reset password',

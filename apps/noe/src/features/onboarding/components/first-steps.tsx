@@ -7,6 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { useTheme, radius, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
 
+import { analyticsService } from '@/features/analytics/services/analytics-service';
 import { SETUP_STEP_KEY } from '@/constants';
 
 interface FirstStepsProps {
@@ -45,6 +46,7 @@ export function FirstSteps({ onDone }: FirstStepsProps) {
 
   const handleDone = () => {
     AsyncStorage.removeItem(SETUP_STEP_KEY).catch(() => {});
+    analyticsService.track('setup_completed');
     onDone();
   };
 

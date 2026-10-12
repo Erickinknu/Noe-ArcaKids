@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { pinService } from '@/features/pin/services/pin-service';
 import { pinSyncService } from '@/features/pin/services/pin-sync-service';
+import { analyticsService } from '@/features/analytics/services/analytics-service';
 import { authService } from '@/features/auth/services/auth-service';
 import { biometricService } from '@/features/security/services/biometric-service';
 import {
@@ -28,6 +29,7 @@ export default function SecurityScreen() {
   const [bioEnabled, setBioEnabled] = useState(false);
   const [bioSupported, setBioSupported] = useState(false);
   const [hidePreview, setHidePreview] = useState(false);
+  const [analytics, setAnalytics] = useState(true);
   const [inactivity, setInactivity] = useState<InactivityMinutes>(1);
 
   // Flujo "Olvidé mi PIN": exige la contraseña de la cuenta para restablecerlo.
@@ -38,18 +40,20 @@ export default function SecurityScreen() {
   const [forgetDone, setForgetDone] = useState(false);
 
   const load = useCallback(async () => {
-    const [lock, bio, supported, hide, minutes] = await Promise.all([
+    const [lock, bio, supported, hide, minutes, analyticsOn] = await Promise.all([
       pinService.isLockOnOpenEnabled(),
       biometricService.isEnabled(),
       biometricService.isSupported(),
       lockService.isHidePreviewEnabled(),
       lockService.getInactivityMinutes(),
+      analyticsService.isEnabled(),
     ]);
     setLockOnOpen(lock);
     setBioEnabled(bio);
     setBioSupported(supported);
     setHidePreview(hide);
     setInactivity(minutes);
+    setAnalytics(analyticsOn);
   }, []);
   useAsyncData<null>(async () => {
     await load();
@@ -79,6 +83,11 @@ export default function SecurityScreen() {
   async function onToggleHidePreview(value: boolean) {
     setHidePreview(value);
     await lockService.setHidePreviewEnabled(value);
+  }
+
+  async function onToggleAnalytics(value: boolean) {
+    setAnalytics(value);
+    await analyticsService.setEnabled(value);
   }
 
   function openForget() {
@@ -182,6 +191,21 @@ export default function SecurityScreen() {
           <Switch
             value={hidePreview}
             onValueChange={onToggleHidePreview}
+            trackColor={{ false: colors.border, true: colors.primary }}
+            thumbColor={colors.onPrimary}
+          />
+        </View>
+
+        <View style={styles.divider} />
+
+        <View style={styles.row}>
+          <View style={styles.rowText}>
+            <Text style={styles.rowTitle}>{tr('noe.security.analytics')}</Text>
+            <Text style={styles.rowSubtitle}>{tr('noe.security.analyticsDesc')}</Text>
+          </View>
+          <Switch
+            value={analytics}
+            onValueChange={onToggleAnalytics}
             trackColor={{ false: colors.border, true: colors.primary }}
             thumbColor={colors.onPrimary}
           />

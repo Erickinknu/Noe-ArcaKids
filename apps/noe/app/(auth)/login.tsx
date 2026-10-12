@@ -7,6 +7,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { Button } from '@/components/ui/button';
 import { authService } from '@/features/auth/services/auth-service';
+import { analyticsService } from '@/features/analytics/services/analytics-service';
 import { familyInviteService } from '@/features/family-invites/services/family-invite-service';
 import { useAuthStore } from '@/stores/auth-store';
 import { Input, errorMessage, networkService, useTheme, spacing, typography, type ThemeColors } from '@noe-arcakids/shared';
@@ -78,8 +79,12 @@ export default function LoginScreen() {
     try {
       await authService.signIn({ email, password });
       await AsyncStorage.setItem(LAST_EMAIL_KEY, email.trim().toLowerCase()).catch(() => {});
+      analyticsService.track('login_success');
       if (code && code.trim().length > 0) {
-        await familyInviteService.redeemInvite(code.trim()).catch(() => {});
+        await familyInviteService
+          .redeemInvite(code.trim())
+          .then(() => analyticsService.track('invite_redeemed'))
+          .catch(() => {});
       }
       setFailedAttempts(0);
     } catch (cause) {

@@ -1,6 +1,8 @@
 import * as Crypto from 'expo-crypto';
 import { storage } from '@noe-arcakids/storage';
 
+import { analyticsService } from '@/features/analytics/services/analytics-service';
+
 const STORAGE_KEY = 'pin_config';
 const LOCK_ON_OPEN_KEY = 'pin_lock_on_open';
 
@@ -75,6 +77,7 @@ export const pinService = {
       failedAttempts: 0,
     };
     await storage.save(STORAGE_KEY, JSON.stringify(config));
+    analyticsService.track('pin_created');
     return config;
   },
 

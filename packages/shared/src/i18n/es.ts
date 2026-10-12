@@ -159,6 +159,9 @@ export const es = {
       hidePreview: 'Ocultar vista previa en recientes',
       hidePreviewDesc:
         'Evita que el contenido se vea en la pantalla de apps recientes.',
+      analytics: 'Compartir datos de uso',
+      analyticsDesc:
+        'Ay\u00fadanos a mejorar con eventos an\u00f3nimos de uso. Nunca enviamos correos ni datos de tus hijos.',
       changePin: 'Cambiar PIN',
       setPin: 'Crear PIN',
       pinHint: 'Usa entre 4 y 6 d\u00edgitos.',
@@ -180,6 +183,21 @@ export const es = {
         'No hay conexi\u00f3n. Necesitas estar en l\u00ednea para confirmar tu contrase\u00f1a.',
       resetDone: 'Pin restablecido. Crea uno nuevo.',
       createNew: 'Crear PIN nuevo',
+    },
+    accountDeletion: {
+      title: 'Eliminar cuenta',
+      warning:
+        'Esta acci\u00f3n es permanente. Se borrar\u00e1n tu cuenta y tus datos y, si eres el \u00fanico responsable, tambi\u00e9n la familia y los perfiles de tus hijos.',
+      passwordLabel: 'Confirma con tu contrase\u00f1a',
+      passwordPlaceholder: 'Tu contrase\u00f1a',
+      typeLabel: 'Escribe {{word}} para confirmar',
+      confirmWord: 'ELIMINAR',
+      submit: 'Eliminar mi cuenta definitivamente',
+      wrongPassword: 'Contrase\u00f1a incorrecta.',
+      offline: 'Necesitas conexi\u00f3n para eliminar tu cuenta.',
+      mismatch: 'Escribe {{word}} para confirmar.',
+      error: 'No se pudo eliminar la cuenta. Int\u00e9ntalo de nuevo.',
+      done: 'Tu cuenta fue eliminada.',
     },
     forgotPassword: {
       title: 'Restablecer contrase\u00f1a',

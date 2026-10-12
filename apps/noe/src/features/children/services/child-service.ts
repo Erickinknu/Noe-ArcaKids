@@ -2,6 +2,7 @@ import type { ChildProfile } from '@noe-arcakids/types';
 import { ValidationError, checkRateLimit, t } from '@noe-arcakids/shared';
 
 import { billingService } from '../../billing/services/billing-service';
+import { analyticsService } from '../../analytics/services/analytics-service';
 import { childRepository } from '../repositories/child-repository';
 import { isValidBirthDate } from '../utils/child-age';
 
@@ -34,7 +35,14 @@ export const childService = {
       const existing = await childRepository.listChildren(familyId);
       billingService.assertUnderChildLimit(existing.length);
     }
-    return childRepository.addChild(familyId, trimmed, avatarUrl ?? null, validatedBirthDate);
+    const created = await childRepository.addChild(
+      familyId,
+      trimmed,
+      avatarUrl ?? null,
+      validatedBirthDate
+    );
+    analyticsService.track('child_added');
+    return created;
   },
 
   async updateChild(
