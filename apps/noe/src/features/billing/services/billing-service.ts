@@ -1,7 +1,9 @@
 import { PlanLimitError, t } from '@noe-arcakids/shared';
 
+import { familyService } from '@/features/family/services/family-service';
+
 import { billingRepository } from '../repositories/billing-repository';
-import { DEFAULT_PLAN, FREE_MAX_BLOCKED_APPS, FREE_MAX_CHILDREN, type PlanId, type SubscriptionStatus } from '../plans';
+import { DEFAULT_PLAN, FREE_MAX_BLOCKED_APPS, FREE_MAX_CHILDREN, type PlanId, type PlanLimits, type SubscriptionStatus } from '../plans';
 
 interface PlanCache {
   plan: PlanId;
@@ -37,6 +39,20 @@ export const billingService = {
     const subscription = await billingRepository.claimPlan(plan);
     cache = { plan: subscription.plan, at: Date.now() };
     return subscription;
+  },
+
+  /**
+   * Límites efectivos del plan de la familia actual. Devuelve null si no hay
+   * familia o si la red falla (la pantalla cae al catálogo local).
+   */
+  async getPlanLimits(): Promise<PlanLimits | null> {
+    try {
+      const { family } = await familyService.getMyFamily();
+      if (!family.id) return null;
+      return await billingRepository.getFamilyPlanLimits(family.id);
+    } catch {
+      return null;
+    }
   },
 
   invalidate() {

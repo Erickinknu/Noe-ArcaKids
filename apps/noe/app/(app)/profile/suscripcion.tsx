@@ -26,7 +26,13 @@ export default function SuscripcionScreen() {
   const { data: catalog } = useAsyncData(fetchCatalog);
   const plans = catalog ?? PLAN_CATALOG;
 
-  const currentPlan: PlanId = subscription?.plan ?? 'free';
+  const fetchLimits = useCallback(() => billingService.getPlanLimits(), []);
+  const { data: limits } = useAsyncData(fetchLimits);
+
+  const currentPlan: PlanId = limits?.plan ?? subscription?.plan ?? 'free';
+  const currentEntry = plans.find((p) => p.id === currentPlan);
+  const limitText = (value: number | null | undefined, unlimitedKey: string, key: string) =>
+    value == null ? tr(unlimitedKey) : tr(key, { n: value });
 
   function planLimits(plan: PlanId): string {
     const entry = plans.find((p) => p.id === plan);
@@ -67,6 +73,36 @@ export default function SuscripcionScreen() {
       </Pressable>
 
       <Text style={styles.subtitle}>{tr('noe.plans.subtitle')}</Text>
+
+      <Card style={styles.currentCard}>
+        <Text style={styles.currentCardLabel}>{tr('noe.plans.yourPlan')}</Text>
+        <Text style={styles.currentCardName}>{currentEntry?.name ?? currentPlan}</Text>
+        <View style={styles.currentLimits}>
+          <View style={styles.currentLimitRow}>
+            <MaterialIcons name="child-care" size={18} color={colors.primary} />
+            <Text style={styles.currentLimitText}>
+              {limitText(
+                limits?.maxChildren ?? currentEntry?.maxChildren,
+                'noe.plans.unlimited',
+                'noe.plans.childrenLimit',
+              )}
+            </Text>
+          </View>
+          <View style={styles.currentLimitRow}>
+            <MaterialIcons name="supervisor-account" size={18} color={colors.primary} />
+            <Text style={styles.currentLimitText}>
+              {limitText(limits?.maxTutors, 'noe.plans.unlimited', 'noe.plans.tutorsLimit')}
+            </Text>
+          </View>
+          <View style={styles.currentLimitRow}>
+            <MaterialIcons name="devices" size={18} color={colors.primary} />
+            <Text style={styles.currentLimitText}>
+              {limitText(limits?.maxDevices, 'noe.plans.unlimited', 'noe.plans.devicesLimit')}
+            </Text>
+          </View>
+        </View>
+        <Text style={styles.currentNote}>{tr('noe.plans.managingNote')}</Text>
+      </Card>
 
       <Card style={styles.deunaBanner}>
         <MaterialIcons name="qr-code-2" size={28} color={colors.secondary} />
@@ -144,6 +180,41 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     fontSize: typography.fontSizes.body,
     color: colors.textMuted,
     lineHeight: 22,
+  },
+  currentCard: {
+    borderColor: colors.primary,
+    borderWidth: 2,
+    gap: spacing.xs,
+    ...shadows.sm,
+  },
+  currentCardLabel: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+  },
+  currentCardName: {
+    fontSize: typography.fontSizes.title,
+    fontWeight: typography.fontWeights.bold,
+    color: colors.primary,
+  },
+  currentLimits: {
+    marginTop: spacing.sm,
+    gap: spacing.xs,
+  },
+  currentLimitRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  currentLimitText: {
+    fontSize: typography.fontSizes.body,
+    color: colors.text,
+  },
+  currentNote: {
+    fontSize: typography.fontSizes.caption,
+    color: colors.textMuted,
+    marginTop: spacing.xs,
   },
   deunaBanner: {
     flexDirection: 'row',

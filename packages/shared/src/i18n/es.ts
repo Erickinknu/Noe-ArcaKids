@@ -459,6 +459,12 @@ export const es = {
       providerNote:
         'Los planes de pago se cancelan con DEUNA (Ecuador): escanea el QR, paga y tu plan se activa tras la verificaci\u00f3n.',
       limitsLine: '{{kids}} hijo(s) \u00b7 {{apps}} app(s) bloqueadas',
+      yourPlan: 'Tu plan actual',
+      unlimited: 'Ilimitado',
+      childrenLimit: '{{n}} hijo(s)',
+      tutorsLimit: '{{n}} tutor(es)',
+      devicesLimit: '{{n}} dispositivo(s)',
+      managingNote: 'Puedes cambiarlo cuando quieras.',
       payWithDeuna: 'Pagar con DEUNA',
       deunaBannerTitle: 'Pagos con DEUNA (Ecuador)',
       deunaBannerText:

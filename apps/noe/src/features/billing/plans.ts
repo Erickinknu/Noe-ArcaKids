@@ -62,5 +62,15 @@ export interface SubscriptionStatus {
   productId: string;
 }
 
+/** Límites efectivos del plan de una familia (RPC get_family_plan_limits). */
+export interface PlanLimits {
+  plan: PlanId;
+  maxChildren: number | null; // null = ilimitado
+  maxTutors: number | null;
+  maxDevices: number | null;
+  status: string;
+  currentPeriodEnd: string | null;
+}
+
 export const FREE_MAX_CHILDREN = 1;
 export const FREE_MAX_BLOCKED_APPS = 5;

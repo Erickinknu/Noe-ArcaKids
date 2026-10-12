@@ -447,6 +447,12 @@ export const en = {
       providerNote:
         'Paid plans are charged with DEUNA (Ecuador): scan the QR, pay, and your plan activates after verification.',
       limitsLine: '{{kids}} kid(s) · {{apps}} blocked app(s)',
+      yourPlan: 'Your current plan',
+      unlimited: 'Unlimited',
+      childrenLimit: '{{n}} child(ren)',
+      tutorsLimit: '{{n}} tutor(s)',
+      devicesLimit: '{{n}} device(s)',
+      managingNote: 'You can change it whenever you want.',
       payWithDeuna: 'Pay with DEUNA',
       deunaBannerTitle: 'Payments with DEUNA (Ecuador)',
       deunaBannerText:
