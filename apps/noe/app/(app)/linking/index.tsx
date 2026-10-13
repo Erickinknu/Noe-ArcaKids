@@ -95,6 +95,12 @@ export default function LinkingScreen() {
       : buildCompactQrValue(payload)
     : '';
 
+  // El JSON DPC (~1900 bytes) no cabe en un QR con corrección alta (H≈1273);
+  // con M (≈2331) sí. Si un día supera el margen, se muestra el compacto.
+  const DPC_QR_SAFE_LEN = 2000;
+  const qrTooBig = qrType === 'dpc' && qrValue.length > DPC_QR_SAFE_LEN;
+  const qrRenderValue = qrTooBig && payload ? buildCompactQrValue(payload) : qrValue;
+
   const pairingLink = payload ? buildPairingLink(payload.code, payload.familyId) : '';
 
   const handleShareLink = useCallback(() => {
@@ -188,8 +194,9 @@ export default function LinkingScreen() {
             </Pressable>
           </View>
           <View style={styles.qrBox}>
-            <QRCode value={qrValue} size={190} ecl="H" />
+            <QRCode value={qrRenderValue} size={190} ecl={qrType === 'dpc' ? 'M' : 'H'} />
           </View>
+          {qrTooBig ? <Text style={styles.error}>{tr('noe.linking.qrTooBig')}</Text> : null}
           <Text style={styles.muted}>
             {qrType === 'dpc'
               ? tr('noe.linking.modeHintDpc')
@@ -209,11 +216,11 @@ export default function LinkingScreen() {
             </Button>
           </View>
           <Text style={styles.payloadLabel}>
-            {qrType === 'dpc'
+            {qrType === 'dpc' && !qrTooBig
               ? tr('noe.linking.qrPayloadLabel')
               : tr('noe.linking.qrPayloadCompactLabel')}
           </Text>
-          <Text style={styles.payloadJson} selectable>{qrValue}</Text>
+          <Text style={styles.payloadJson} selectable>{qrRenderValue}</Text>
           <Text style={styles.muted}>
             {tr('noe.linking.adminComponentLabel', { component: DEVICE_ADMIN_COMPONENT_SHORT })}
           </Text>

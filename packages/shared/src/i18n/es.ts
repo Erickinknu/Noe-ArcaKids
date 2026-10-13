@@ -368,6 +368,8 @@ export const es = {
       qrModeDpc: 'QR del asistente de configuración (Device Owner)',
       modeHintDpc:
         'Durante la configuración de Android, escanea este QR para hacer de ARCA KIDS el Device Owner y vincular el dispositivo automáticamente.',
+      qrTooBig:
+        'El QR completo no cabe: se muestra el código compacto. Usa el vínculo o el JSON de abajo.',
       copyPayload: 'Copiar',
       copied: 'Copiado',
       linkLabel: 'Vínculo de emparejamiento',

@@ -357,6 +357,8 @@ export const en = {
       qrModeDpc: 'Setup Wizard QR (Device Owner)',
       modeHintDpc:
         'During Android setup, scan this QR to make ARCA KIDS the Device Owner and link the device automatically.',
+      qrTooBig:
+        'The full QR does not fit: showing the compact code. Use the link or the JSON below.',
       copyPayload: 'Copy',
       copied: 'Copied',
       linkLabel: 'Pairing link',
