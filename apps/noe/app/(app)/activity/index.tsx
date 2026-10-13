@@ -13,6 +13,8 @@ import { WeeklyChart } from '@/components/ui/weekly-chart';
 import { activityService, AlertItem, DailyUsage, BlockedHistoryItem } from '@/features/activity/services/activity-service';
 import { appPlayStoreUrl, appWebSearchUrl, categoryForPackage, friendlyAppName } from '@/features/activity/utils/app-links';
 import { childService } from '@/features/children/services/child-service';
+import { EduTipCard } from '@/features/family/components/edu-tip-card';
+import { useContentMode } from '@/features/family/hooks/use-content-mode';
 import { familyService } from '@/features/family/services/family-service';
 import { unlockRequestService } from '@/features/unlock-request/services/unlock-request-service';
 import { type UnlockRequest } from '@noe-arcakids/types';
@@ -105,6 +107,7 @@ export default function ActivityScreen() {
   const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
   const [detailApp, setDetailApp] = useState<UsageDetail | null>(null);
   const approveVerse = useRandomVerse(['family', 'love']);
+  const { mode: contentMode, loaded: contentLoaded } = useContentMode();
 
   const fetchChildren = useCallback(async () => {
     const { family } = await familyService.getMyFamily();
@@ -416,9 +419,7 @@ export default function ActivityScreen() {
               {selectedUnlockRequests.length > 0 && (
                 <>
                   <SectionHeader title="Solicitudes de desbloqueo" />
-                  {approveVerse ? (
-                    <VerseBanner verse={approveVerse} title={tr('common.verseOfDay')} />
-                  ) : null}
+                  {contentLoaded && (contentMode === 'educativo' ? <EduTipCard /> : contentMode === 'cristiano' && approveVerse ? <VerseBanner verse={approveVerse} title={tr('common.verseOfDay')} /> : null)}
                   {selectedUnlockRequests.map((req) => (
                     <Card key={req.id} style={styles.card}>
                       <View style={styles.unlockRow}>

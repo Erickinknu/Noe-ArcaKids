@@ -13,6 +13,8 @@ import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { SectionHeader } from '@/components/ui/section-header';
 import { childService } from '@/features/children/services/child-service';
+import { EduTipCard } from '@/features/family/components/edu-tip-card';
+import { useContentMode } from '@/features/family/hooks/use-content-mode';
 import { familyService } from '@/features/family/services/family-service';
 import {
   buildAndroidProvisioningExtras,
@@ -44,6 +46,7 @@ export default function LinkingScreen() {
   const [actionError, setActionError] = useState<string | null>(null);
   const [qrType, setQrType] = useState<'app' | 'dpc'>('app');
   const covenantVerse = useVerseOfDay(['covenant']);
+  const { mode: contentMode, loaded: contentLoaded } = useContentMode();
 
   const fetchFamily = useCallback(async (): Promise<FamilyWithChildren> => {
     const { family } = await familyService.getMyFamily();
@@ -132,9 +135,7 @@ export default function LinkingScreen() {
       <Text style={styles.title}>{tr('noe.linking.title')}</Text>
       <Text style={styles.subtitle}>{tr('noe.linking.subtitle')}</Text>
 
-      {covenantVerse ? (
-        <VerseBanner verse={covenantVerse} title={tr('common.verseOfDay')} />
-      ) : null}
+      {contentLoaded && (contentMode === 'educativo' ? <EduTipCard /> : contentMode === 'cristiano' && covenantVerse ? <VerseBanner verse={covenantVerse} title={tr('common.verseOfDay')} /> : null)}
 
       <Card style={styles.card}>
         <SectionHeader title={tr('noe.linking.chooseChild')} />

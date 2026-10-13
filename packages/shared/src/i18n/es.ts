@@ -587,6 +587,16 @@ export const es = {
       sharing:
         'El modo es \u00fanico para todo el hogar; si hay varios responsables, se aplica el mismo a todos los ni\u00f1os.',
     },
+    eduTips: {
+      tip1: 'Acuerda reglas simples y sostenlas con calma: la constancia enseña más que el castigo.',
+      tip2: 'Pantallas fuera una hora antes de dormir: el descanso ordena lo aprendido en el día.',
+      tip3: 'Pregunta qué vio hoy en internet: la conversación es el mejor filtro.',
+      tip4: 'Tus hijos imitan tu uso del teléfono más de lo que obedecen tus reglas.',
+      tip5: 'Veinte minutos de juego sin pantallas valen más que dos horas de control.',
+      tip6: 'Define horarios juntos: el niño que participa en el acuerdo, lo cumple.',
+      tip7: 'Usa un video o un juego como excusa para aprender algo juntos cada semana.',
+      tip8: 'Felicita el esfuerzo, no solo el resultado: así crece la constancia.',
+    },
   },
   arcakids: {
     onboarding: {

@@ -41,7 +41,7 @@ export const dashboardRepository = {
 
     if (childIds.length === 0) {
       return {
-        parentName: user.user_metadata?.name ?? user.email?.split('@')[0] ?? 'Parent',
+        parentName: user.user_metadata?.display_name ?? user.user_metadata?.name ?? user.email?.split('@')[0] ?? 'Parent',
         children: [],
         connectedCount: 0,
         totalChildren: 0,
@@ -108,7 +108,7 @@ export const dashboardRepository = {
     const totalMinutes = childSummaries.reduce((sum, c) => sum + c.minutesToday, 0);
 
     return {
-      parentName: user.user_metadata?.name ?? user.email?.split('@')[0] ?? 'Parent',
+      parentName: user.user_metadata?.display_name ?? user.user_metadata?.name ?? user.email?.split('@')[0] ?? 'Parent',
       children: childSummaries,
       connectedCount: connected,
       totalChildren: childSummaries.length,

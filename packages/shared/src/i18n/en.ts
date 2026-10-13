@@ -574,6 +574,16 @@ export const en = {
       sharing:
         'The mode is unique for the whole household; if there are several caregivers, it applies to all kids.',
     },
+    eduTips: {
+      tip1: 'Agree on simple rules and hold them calmly: consistency teaches more than punishment.',
+      tip2: 'Screens off one hour before bed: rest organizes what was learned today.',
+      tip3: 'Ask what they saw online today: conversation is the best filter.',
+      tip4: 'Your children copy your phone habits more than they obey your rules.',
+      tip5: 'Twenty minutes of screen-free play beat two hours of control.',
+      tip6: 'Set schedules together: a child who joins the agreement keeps it.',
+      tip7: 'Use a video or game as an excuse to learn something together each week.',
+      tip8: 'Praise effort, not just results: that is how perseverance grows.',
+    },
   },
   arcakids: {
     onboarding: {

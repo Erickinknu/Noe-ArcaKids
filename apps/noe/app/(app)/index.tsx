@@ -46,6 +46,8 @@ import { parentalService } from '@/features/parental/services/parental-service';
 import { deviceControlService } from '@/features/device-control/services/device-control-service';
 import { pinSyncService } from '@/features/pin/services/pin-sync-service';
 import { ROUTES } from '@/constants';
+import { EduTipCard } from '@/features/family/components/edu-tip-card';
+import { useContentMode } from '@/features/family/hooks/use-content-mode';
 
 const FETCH_TIMEOUT_MS = 10_000;
 
@@ -57,6 +59,7 @@ export default function DashboardScreen() {
   const screenPadding = useScreenPadding();
   const { isOnline } = useNetworkStatus();
   const reflectVerse = useVerseOfDay();
+  const { mode: contentMode, loaded: contentLoaded } = useContentMode();
 
   const [data, setData] = useState<FamilySummary | null>(null);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
@@ -351,28 +354,24 @@ export default function DashboardScreen() {
               {
                 icon: 'lock' as const,
                 title: tr('noe.dashboard.actionBlock'),
-                sub: tr('noe.dashboard.actionBlockHint'),
                 color: colors.danger,
                 onPress: () => { setChildSelectAction('block'); setChildSelectVisible(true); },
               },
               {
                 icon: 'notifications-active' as const,
                 title: tr('noe.dashboard.actionAlert'),
-                sub: tr('noe.dashboard.actionAlertHint'),
                 color: colors.warning,
                 onPress: () => { setChildSelectAction('alert'); setChildSelectVisible(true); },
               },
               {
                 icon: 'location-searching' as const,
                 title: tr('noe.dashboard.actionLocate'),
-                sub: tr('noe.dashboard.actionLocateHint'),
                 color: colors.success,
                 onPress: () => router.push('/location' as any),
               },
               {
                 icon: 'school' as const,
                 title: tr('noe.dashboard.actionStudy'),
-                sub: tr('noe.dashboard.actionStudyHint'),
                 color: colors.primary,
                 onPress: () => router.push('/rules/modo-estudio' as any),
               },
@@ -387,10 +386,10 @@ export default function DashboardScreen() {
                 onPress={data.children.length === 0 ? undefined : action.onPress}
               >
                 <View style={[styles.quickActionIcon, { backgroundColor: action.color + '18' }]}>
-                  <MaterialIcons name={action.icon} size={22} color={action.color} />
+                  <MaterialIcons name={action.icon} size={18} color={action.color} />
                 </View>
-                <Text style={styles.quickActionLabel}>{action.title}</Text>
-                <Text style={styles.quickActionSub}>{action.sub}</Text>
+                <Text style={styles.quickActionLabel} numberOfLines={1}>{action.title}</Text>
+                <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
               </Pressable>
             ))}
           </View>
@@ -454,9 +453,7 @@ export default function DashboardScreen() {
         </View>
 
         {/* ── Para reflexionar ── */}
-        {reflectVerse ? (
-          <VerseBanner verse={reflectVerse} title={tr('noe.dashboard.reflect')} />
-        ) : null}
+        {contentLoaded && (contentMode === 'educativo' ? <EduTipCard /> : contentMode === 'cristiano' && reflectVerse ? (<VerseBanner verse={reflectVerse} title={tr('noe.dashboard.reflect')} />) : null)}
 
         {/* ── Actividad reciente ── */}
         {hasAlerts && (
@@ -1107,18 +1104,18 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     marginTop: spacing.xs,
   },
   quickActionsRow: {
-    flexDirection: 'row',
+    flexDirection: 'column',
     gap: spacing.sm,
   },
   quickActionCard: {
-    flex: 1,
-    alignItems: 'flex-start',
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.background,
     borderRadius: radius.lg,
-    padding: spacing.md,
+    padding: spacing.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    gap: 4,
+    gap: spacing.sm,
     ...shadows.sm,
   },
   quickActionPressed: {
@@ -1167,13 +1164,14 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     opacity: 0.4,
   },
   quickActionIcon: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+    width: 24,
+    height: 24,
+    borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   quickActionLabel: {
+    flex: 1,
     fontSize: typography.fontSizes.caption,
     fontWeight: typography.fontWeights.semibold,
     color: colors.text,

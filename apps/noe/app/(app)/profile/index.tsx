@@ -14,6 +14,8 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { authService } from '@/features/auth/services/auth-service';
+import { EduTipCard } from '@/features/family/components/edu-tip-card';
+import { useContentMode } from '@/features/family/hooks/use-content-mode';
 import { familyService } from '@/features/family/services/family-service';
 import { profileService } from '@/features/profile/services/profile-service';
 import { APP_VERSION } from '@noe-arcakids/config';
@@ -45,6 +47,7 @@ export default function OtrosScreen() {
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const [blockInstalls, setBlockInstalls] = useState(false);
   const footerVerse = useRandomVerse(['gratitude', 'wisdom']);
+  const { mode: contentMode, loaded: contentLoaded } = useContentMode();
 
   const fetchBlockSetting = useCallback(async (): Promise<boolean> => {
     const my = await familyService.getMyFamily();
@@ -297,7 +300,7 @@ export default function OtrosScreen() {
         </Text>
       </Pressable>
 
-      {footerVerse ? <VerseBanner verse={footerVerse} /> : null}
+      {contentLoaded && (contentMode === 'educativo' ? <EduTipCard /> : contentMode === 'cristiano' && footerVerse ? <VerseBanner verse={footerVerse} /> : null)}
 
       <Text style={styles.version}>NOE v{APP_VERSION}</Text>
     </ScrollView>

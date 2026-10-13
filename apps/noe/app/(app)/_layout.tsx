@@ -10,6 +10,8 @@ import { useTheme, typography, spacing, radius, useRandomVerse, VerseBanner, typ
 import { useAuthStore } from '@/stores/auth-store';
 import { ROUTES, SETUP_PENDING_KEY } from '@/constants';
 import { pinService } from '@/features/pin/services/pin-service';
+import { EduTipCard } from '@/features/family/components/edu-tip-card';
+import { useContentMode } from '@/features/family/hooks/use-content-mode';
 import { biometricService } from '@/features/security/services/biometric-service';
 import { lockService } from '@/features/security/services/lock-service';
 import { FirstSteps } from '@/features/onboarding/components/first-steps';
@@ -33,6 +35,7 @@ export default function AppLayout() {
   const [bioEnabled, setBioEnabled] = useState(false);
   const [bioSupported, setBioSupported] = useState(false);
   const pinVerse = useRandomVerse(['hope']);
+  const { mode: contentMode, loaded: contentLoaded } = useContentMode();
   // Botón atrás del sistema: vuelve en la pila, doble-tap para salir en raíz.
   useSystemBackGuard();
 
@@ -186,11 +189,11 @@ export default function AppLayout() {
         >
           <Text style={styles.bioButtonText}>Desbloquear</Text>
         </Pressable>
-        {pinVerse ? (
+        {contentLoaded && (contentMode === 'educativo' ? <EduTipCard /> : contentMode === 'cristiano' && pinVerse ? (
           <View style={styles.pinGateVerse}>
             <VerseBanner verse={pinVerse} title={tr('common.verseOfDay')} />
           </View>
-        ) : null}
+        ) : null)}
       </View>
     );
   }
@@ -202,7 +205,7 @@ export default function AppLayout() {
   return (
     <Tabs
       initialRouteName="index"
-      backBehavior="history"
+      backBehavior="none"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
