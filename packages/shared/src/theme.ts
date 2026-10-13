@@ -18,14 +18,17 @@ const lightColors = {
   text: '#111827',
   textSecondary: '#374151',
   textMuted: '#6B7280',
+  textSoft: '#475569',
   border: '#E5E7EB',
   borderLight: '#F0F1F3',
   danger: '#DC2626',
   dangerLight: '#FEE2E2',
   success: '#059669',
   successLight: '#D1FAE5',
+  successDark: '#047857',
   warning: '#F59E0B',
   warningLight: '#FEF3C7',
+  warningDark: '#B45309',
   overlay: 'rgba(0,0,0,0.4)',
   inputBorder: '#CBD5E1',
   inputPlaceholder: '#94A3B8',
@@ -49,14 +52,17 @@ const noeLightColors = {
   text: '#0F172A',
   textSecondary: '#334155',
   textMuted: '#64748B',
+  textSoft: '#475569',
   border: '#E2E8F0',
   borderLight: '#EDF1F6',
   danger: '#DC2626',
   dangerLight: '#FEE2E2',
   success: '#059669',
   successLight: '#D1FAE5',
+  successDark: '#047857',
   warning: '#F59E0B',
   warningLight: '#FEF3C7',
+  warningDark: '#B45309',
   overlay: 'rgba(15, 23, 42, 0.45)',
   inputBorder: '#CBD5E1',
   inputPlaceholder: '#94A3B8',
@@ -78,14 +84,17 @@ const darkColors = {
   text: '#F8FAFC',
   textSecondary: '#CBD5E1',
   textMuted: '#94A3B8',
+  textSoft: '#94A3B8',
   border: '#334155',
   borderLight: '#1E293B',
   danger: '#F87171',
   dangerLight: '#450A0A',
   success: '#34D399',
   successLight: '#064E3B',
+  successDark: '#6EE7B7',
   warning: '#FBBF24',
   warningLight: '#451A03',
+  warningDark: '#FCD34D',
   overlay: 'rgba(0,0,0,0.6)',
   inputBorder: '#475569',
   inputPlaceholder: '#64748B',
@@ -116,12 +125,12 @@ export const radius = {
 } as const;
 
 export const typography = {
-  // Brand fonts (design-system MASTER.md): Lexend for headings, Source Sans 3 for body.
-  // When custom .ttf assets are added, load them via expo-font and point these names
-  // to the loaded family. Falls back to the platform default stack otherwise.
+  // Brand fonts: Lexend for headings/figures, Source Sans 3 for body.
+  // Loaded in apps/noe/app/_layout.tsx via expo-font (@expo-google-fonts/*)
+  // under these exact family names. Falls back to platform default if missing.
   fontFamily: {
-    heading: undefined as string | undefined,
-    body: undefined as string | undefined,
+    heading: 'Lexend' as string | undefined,
+    body: 'Source Sans 3' as string | undefined,
     mono: 'monospace',
   },
   fontSizes: {

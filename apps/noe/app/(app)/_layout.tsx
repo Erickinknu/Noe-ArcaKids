@@ -261,60 +261,48 @@ export default function AppLayout() {
         name="children"
         options={{
           title: tr('noe.tabs.children'),
-          tabBarIcon: ({ color, focused }) =>
-            focused ? (
-              <TabIcon name="family-restroom" color={color} focused={focused} styles={styles} />
-            ) : null,
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="family-restroom" color={color} focused={focused} styles={styles} />
+          ),
         }}
       />
       <Tabs.Screen
         name="rules"
         options={{
           title: tr('noe.tabs.control'),
-          tabBarIcon: ({ color, focused }) =>
-            focused ? (
-              <TabIcon name="shield" color={color} focused={focused} styles={styles} />
-            ) : null,
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="shield" color={color} focused={focused} styles={styles} />
+          ),
         }}
       />
       <Tabs.Screen
         name="index"
         options={{
           title: tr('noe.tabs.home'),
-          tabBarIcon: ({ color, focused }) =>
-            focused ? (
-              <TabIcon name="home" color={color} focused={focused} styles={styles} />
-            ) : null,
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="home" color={color} focused={focused} styles={styles} />
+          ),
         }}
       />
       <Tabs.Screen
         name="activity"
         options={{
           title: tr('noe.tabs.activity'),
-          tabBarIcon: ({ color, focused }) =>
-            focused ? (
-              <View style={styles.tabIconWrap}>
-                <TabIcon name="bar-chart" color={color} focused={focused} styles={styles} />
-                {hasActivityNews ? <View style={styles.activityDot} /> : null}
-              </View>
-            ) : null,
-          tabBarLabel: ({ focused, color, children }) =>
-            focused ? null : (
-              <View style={styles.tabLabelWrap}>
-                <Text style={[styles.tabBarLabel, { color }]}>{children}</Text>
-                {hasActivityNews ? <View style={styles.activityDot} /> : null}
-              </View>
-            ),
+          tabBarIcon: ({ color, focused }) => (
+            <View style={styles.tabIconWrap}>
+              <TabIcon name="bar-chart" color={color} focused={focused} styles={styles} />
+              {hasActivityNews ? <View style={styles.activityDot} /> : null}
+            </View>
+          ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Otros',
-          tabBarIcon: ({ color, focused }) =>
-            focused ? (
-              <TabIcon name="more-horiz" color={color} focused={focused} styles={styles} />
-            ) : null,
+          tabBarIcon: ({ color, focused }) => (
+            <TabIcon name="more-horiz" color={color} focused={focused} styles={styles} />
+          ),
         }}
       />
 
@@ -351,6 +339,7 @@ export default function AppLayout() {
       <Tabs.Screen name="activity/media" options={{ href: null }} />
       <Tabs.Screen name="activity/conversations" options={{ href: null }} />
       <Tabs.Screen name="activity/sitios" options={{ href: null }} />
+      <Tabs.Screen name="activity/alertas" options={{ href: null }} />
       <Tabs.Screen name="location/index" options={{ href: null }} />
     </Tabs>
   );
@@ -367,46 +356,43 @@ function TabIcon({
   focused: boolean;
   styles: ReturnType<typeof makeStyles>;
 }) {
-  return (
-    <MaterialIcons
-      name={name as any}
-      size={24}
-      color={color}
-      style={[styles.icon, focused && styles.iconActive]}
-    />
-  );
+  if (focused) {
+    return (
+      <View style={styles.tabIconActive}>
+        <MaterialIcons name={name as any} size={24} color={color} />
+      </View>
+    );
+  }
+  return <MaterialIcons name={name as any} size={22} color={color} />;
 }
 
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
   tabBarLabel: {
-    fontSize: typography.fontSizes.caption,
-    fontWeight: typography.fontWeights.medium,
+    fontSize: 11,
+    fontWeight: typography.fontWeights.semibold,
   },
   tabIconWrap: {
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  tabLabelWrap: {
-    position: 'relative',
+  tabIconActive: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
   },
   activityDot: {
     position: 'absolute',
     top: -2,
-    right: -10,
-    width: 8,
-    height: 8,
-    borderRadius: 4,
+    right: -6,
+    width: 10,
+    height: 10,
+    borderRadius: 5,
     backgroundColor: colors.danger,
-  },
-  icon: {
-    opacity: 0.6,
-  },
-  iconActive: {
-    opacity: 1,
   },
   pinGateWrap: {
     flex: 1,

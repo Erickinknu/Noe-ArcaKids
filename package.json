@@ -1,6 +1,6 @@
 {
     "name":  "noe-arcakids",
-    "version": "1.4.7",
+    "version": "1.4.8",
     "private":  true,
     "description":  "NOE + ARCA KIDS - parental control system (monorepo)",
     "workspaces":  [

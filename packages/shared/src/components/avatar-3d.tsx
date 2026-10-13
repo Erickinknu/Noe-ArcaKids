@@ -30,6 +30,14 @@ type HairStyle = (typeof HAIR_STYLES)[number];
 
 export const AVATAR_IDS = Array.from({ length: 24 }, (_, i) => `a${String(i + 1).padStart(2, '0')}`);
 
+/** Ids de preset (`a01`…`a24`): insensible a mayúsculas y a espacios. */
+const PRESET_PATTERN = /^a\d{2}$/i;
+
+export function isPresetAvatarId(id: string | undefined | null): boolean {
+  if (!id) return false;
+  return PRESET_PATTERN.test(id.trim());
+}
+
 function hashId(id: string): number {
   let h = 7;
   for (let i = 0; i < id.length; i += 1) h = (h * 31 + id.charCodeAt(i)) % 9973;
@@ -55,8 +63,9 @@ export function avatarParamsFor(id: string): AvatarParams {
 
 export function isLegacyEmojiAvatar(id: string | undefined | null): boolean {
   if (!id) return false;
-  if (/^a\d{2}$/.test(id)) return false;
-  return Array.from(id).length <= 3;
+  const trimmed = id.trim();
+  if (PRESET_PATTERN.test(trimmed)) return false;
+  return Array.from(trimmed).length <= 3;
 }
 
 function Hair({ style, color, uid }: { style: HairStyle; color: string; uid: string }) {
@@ -108,12 +117,20 @@ function Hair({ style, color, uid }: { style: HairStyle; color: string; uid: str
 export function Avatar3D({ id, size = 72 }: { id?: string | null; size?: number }) {
   const { colors } = useTheme();
   const styles = useMemo(() => makeStyles(colors), [colors]);
-  const safeId = id ?? 'a01';
+  const raw = (id ?? 'a01').trim() || 'a01';
+  // Un preset (p. ej. "a06", en cualquier capitalización) siempre dibuja el
+  // gráfico: el id crudo jamás se renderiza como texto.
+  const safeId = PRESET_PATTERN.test(raw) ? raw.toLowerCase() : raw;
 
   if (isLegacyEmojiAvatar(safeId)) {
+    // Los ids alfanuméricos cortos son restos de preset/ids técnicos: se
+    // muestra solo la inicial, nunca el id crudo. Los emojis se conservan.
+    const legacyText = /^[a-z0-9]+$/i.test(safeId) && safeId.length > 1
+      ? safeId.charAt(0).toUpperCase()
+      : safeId;
     return (
       <View style={[styles.legacyWrap, { width: size, height: size, borderRadius: size / 2 }]}>
-        <Text style={{ fontSize: size * 0.52 }}>{safeId}</Text>
+        <Text style={{ fontSize: size * 0.52 }}>{legacyText}</Text>
       </View>
     );
   }

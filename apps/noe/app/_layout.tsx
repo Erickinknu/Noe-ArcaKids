@@ -3,6 +3,8 @@ import { View, ActivityIndicator, Text } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import { useFonts, Lexend_600SemiBold } from '@expo-google-fonts/lexend';
+import { SourceSans3_400Regular } from '@expo-google-fonts/source-sans-3';
 
 import { initI18n } from '@/i18n';
 import { useAuthStore } from '@/stores/auth-store';
@@ -65,6 +67,12 @@ function RootNavigator() {
   const ready = status === 'authenticated' || status === 'unauthenticated';
   const [attempt, setAttempt] = useState(0);
 
+  // Fuentes de marca (Lexend títulos, Source Sans 3 texto). Bundled: carga local.
+  const [fontsLoaded] = useFonts({
+    Lexend: Lexend_600SemiBold,
+    'Source Sans 3': SourceSans3_400Regular,
+  });
+
   useEffect(() => {
     networkService.start();
 
@@ -126,13 +134,13 @@ function RootNavigator() {
   }, []);
 
   useEffect(() => {
-    if (ready) {
+    if (ready && fontsLoaded) {
       console.log('[RootLayout] Hiding splash, auth status:', useAuthStore.getState().status);
       SplashScreen.hideAsync().catch(() => {});
     }
-  }, [ready]);
+  }, [ready, fontsLoaded]);
 
-  if (!ready) {
+  if (!ready || !fontsLoaded) {
     return (
       <LoadingScreen
         message={initializationError ? 'Sin conexión. Reintentando…' : 'Conectando…'}
