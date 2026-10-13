@@ -16,9 +16,6 @@ create table if not exists public.analytics_events (
 
 alter table public.analytics_events enable row level security;
 
--- Permisos mínimos: solo INSERT para anon/authenticated (sin SELECT).
-grant insert on public.analytics_events to anon, authenticated;
-
 -- Usuarios autenticados: solo pueden insertar eventos a su propio nombre.
 drop policy if exists analytics_events_insert_own on public.analytics_events;
 create policy analytics_events_insert_own on public.analytics_events

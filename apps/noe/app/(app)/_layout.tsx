@@ -15,6 +15,8 @@ import { useContentMode } from '@/features/family/hooks/use-content-mode';
 import { biometricService } from '@/features/security/services/biometric-service';
 import { lockService } from '@/features/security/services/lock-service';
 import { FirstSteps } from '@/features/onboarding/components/first-steps';
+import { useUnreadNotificationCount } from '@/features/notifications/hooks/use-notifications';
+import { unlockRequestService } from '@/features/unlock-request/services/unlock-request-service';
 import { useSystemBackGuard } from '@/hooks/use-system-back';
 
 const TAB_BAR_BASE_HEIGHT = 54;
@@ -38,6 +40,36 @@ export default function AppLayout() {
   const { mode: contentMode, loaded: contentLoaded } = useContentMode();
   // Botón atrás del sistema: vuelve en la pila, doble-tap para salir en raíz.
   useSystemBackGuard();
+  const unreadCount = useUnreadNotificationCount();
+  const [pendingUnlockCount, setPendingUnlockCount] = useState(0);
+
+  // Novedades de Actividad = notificaciones sin leer O solicitudes de desbloqueo pendientes.
+  // Suscripción barata: una carga al montar + realtime, sin polling.
+  useEffect(() => {
+    let mounted = true;
+    let unsubscribe: (() => void) | undefined;
+    (async () => {
+      try {
+        const requests = await unlockRequestService.getPendingRequests();
+        if (mounted) setPendingUnlockCount(requests.length);
+      } catch {
+        /* sin novedades si falla la carga */
+      }
+      try {
+        unsubscribe = unlockRequestService.subscribeToPendingRequests((requests) => {
+          if (mounted) setPendingUnlockCount(requests.length);
+        });
+      } catch {
+        /* sin suscripción si falla el canal */
+      }
+    })();
+    return () => {
+      mounted = false;
+      unsubscribe?.();
+    };
+  }, []);
+
+  const hasActivityNews = unreadCount > 0 || pendingUnlockCount > 0;
 
   useEffect(() => {
     let mounted = true;
@@ -229,45 +261,60 @@ export default function AppLayout() {
         name="children"
         options={{
           title: tr('noe.tabs.children'),
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="family-restroom" color={color} focused={focused} styles={styles} />
-          ),
+          tabBarIcon: ({ color, focused }) =>
+            focused ? (
+              <TabIcon name="family-restroom" color={color} focused={focused} styles={styles} />
+            ) : null,
         }}
       />
       <Tabs.Screen
         name="rules"
         options={{
           title: tr('noe.tabs.control'),
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="shield" color={color} focused={focused} styles={styles} />
-          ),
+          tabBarIcon: ({ color, focused }) =>
+            focused ? (
+              <TabIcon name="shield" color={color} focused={focused} styles={styles} />
+            ) : null,
         }}
       />
       <Tabs.Screen
         name="index"
         options={{
           title: tr('noe.tabs.home'),
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="home" color={color} focused={focused} styles={styles} />
-          ),
+          tabBarIcon: ({ color, focused }) =>
+            focused ? (
+              <TabIcon name="home" color={color} focused={focused} styles={styles} />
+            ) : null,
         }}
       />
       <Tabs.Screen
         name="activity"
         options={{
           title: tr('noe.tabs.activity'),
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="bar-chart" color={color} focused={focused} styles={styles} />
-          ),
+          tabBarIcon: ({ color, focused }) =>
+            focused ? (
+              <View style={styles.tabIconWrap}>
+                <TabIcon name="bar-chart" color={color} focused={focused} styles={styles} />
+                {hasActivityNews ? <View style={styles.activityDot} /> : null}
+              </View>
+            ) : null,
+          tabBarLabel: ({ focused, color, children }) =>
+            focused ? null : (
+              <View style={styles.tabLabelWrap}>
+                <Text style={[styles.tabBarLabel, { color }]}>{children}</Text>
+                {hasActivityNews ? <View style={styles.activityDot} /> : null}
+              </View>
+            ),
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Otros',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="more-horiz" color={color} focused={focused} styles={styles} />
-          ),
+          tabBarIcon: ({ color, focused }) =>
+            focused ? (
+              <TabIcon name="more-horiz" color={color} focused={focused} styles={styles} />
+            ) : null,
         }}
       />
 
@@ -335,6 +382,25 @@ const makeStyles = (colors: ThemeColors) =>
   tabBarLabel: {
     fontSize: typography.fontSizes.caption,
     fontWeight: typography.fontWeights.medium,
+  },
+  tabIconWrap: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  tabLabelWrap: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  activityDot: {
+    position: 'absolute',
+    top: -2,
+    right: -10,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: colors.danger,
   },
   icon: {
     opacity: 0.6,

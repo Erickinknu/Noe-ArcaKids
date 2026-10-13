@@ -1,37 +1,65 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Alert,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   View,
-  RefreshControl,
-  Switch,
 } from 'react-native';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { Avatar } from '@/components/ui/avatar';
 import { EmptyState } from '@/components/ui/empty-state';
 import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
-import { TimeInput, DurationField } from '@/components/ui/time-picker';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { Card, useAsyncData } from '@noe-arcakids/shared';
-import type { ChildProfile, ParentalRules } from '@noe-arcakids/types';
+import { ROUTES } from '@/constants';
+import type { ChildProfile } from '@noe-arcakids/types';
+import { errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 import { childService } from '@/features/children/services/child-service';
 import { familyService } from '@/features/family/services/family-service';
 import { parentalService } from '@/features/parental/services/parental-service';
-import { errorMessage, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
+import { deviceControlService } from '@/features/device-control/services/device-control-service';
+import { studyModeService, type StudySchedule } from '@/features/study-mode/services/study-mode-service';
+import { controlService } from '@/features/control/services/control-service';
+import { ChildSelector } from '@/features/control/components/child-selector';
+import { FreeTimeCard } from '@/features/control/components/free-time-card';
+import { AppCategoryCard } from '@/features/control/components/app-category-card';
+import { AppSelectorModal } from '@/features/control/components/app-selector-modal';
+import { SchedulesCard } from '@/features/control/components/schedules-card';
+import { LocationMiniCard } from '@/features/control/components/location-mini-card';
+import {
+  type CategoryLists,
+  type ChildHeader,
+  type ControlCategory,
+  type TopFreeTime,
+} from '@/features/control/components/control-types';
 
 interface FamilyData {
   familyId: string;
   children: ChildProfile[];
 }
 
-type ViewMode = 'list' | 'child';
+interface BedtimeParts {
+  startH: number;
+  startM: number;
+  endH: number;
+  endM: number;
+}
+
+function parseTime(value: string | null, fallbackH: number, fallbackM: number): { h: number; m: number } {
+  if (!value) return { h: fallbackH, m: fallbackM };
+  const [h, m] = value.split(':').map((n) => parseInt(n, 10));
+  if (Number.isNaN(h) || Number.isNaN(m)) return { h: fallbackH, m: fallbackM };
+  return { h, m };
+}
+
+function formatTime(h: number, m: number) {
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
 
 export default function RulesScreen() {
   const { t: tr } = useTranslation();
@@ -39,22 +67,21 @@ export default function RulesScreen() {
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
   const router = useRouter();
   const screenPadding = useScreenPadding();
-  const [viewMode, setViewMode] = useState<ViewMode>('list');
-  const [selectedChild, setSelectedChild] = useState<ChildProfile | null>(null);
-  const [rules, setRules] = useState<ParentalRules | null>(null);
+
+  const [selectedChildId, setSelectedChildId] = useState<string | null>(null);
+  const [lists, setLists] = useState<CategoryLists | null>(null);
+  const [topFree, setTopFree] = useState<TopFreeTime | null>(null);
+  const [header, setHeader] = useState<ChildHeader | null>(null);
+  const [studyEnabled, setStudyEnabled] = useState(false);
+  const [studySchedule, setStudySchedule] = useState<StudySchedule | null>(null);
+  const [bedtimeOn, setBedtimeOn] = useState(false);
+  const [bedtime, setBedtime] = useState<BedtimeParts>({ startH: 21, startM: 0, endH: 7, endM: 0 });
+  const [location, setLocation] = useState<{ latitude: number; longitude: number; online: boolean } | null>(null);
   const [loadingChild, setLoadingChild] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
-  const [saving, setSaving] = useState(false);
-
-  // Rule states
-  const [dailyLimitMinutes, setDailyLimitMinutes] = useState(120);
-  const [bedtimeOn, setBedtimeOn] = useState(false);
-  const [bedtimeStartH, setBedtimeStartH] = useState(21);
-  const [bedtimeStartM, setBedtimeStartM] = useState(0);
-  const [bedtimeEndH, setBedtimeEndH] = useState(7);
-  const [bedtimeEndM, setBedtimeEndM] = useState(0);
-
-  // Custom schedules edición vive en /rules/horarios (única fuente).
+  const [savingRules, setSavingRules] = useState(false);
+  const [savingLimit, setSavingLimit] = useState(false);
+  const [selectorFor, setSelectorFor] = useState<ControlCategory | null>(null);
 
   const fetchFamily = useCallback(async (): Promise<FamilyData> => {
     const { family } = await familyService.getMyFamily();
@@ -63,11 +90,77 @@ export default function RulesScreen() {
   }, []);
   const { data, error, loading, reload } = useAsyncData(fetchFamily);
 
+  const loadChild = useCallback(async (childId: string) => {
+    setLoadingChild(true);
+    try {
+      const [listsRes, topRes, headerRes, rules, study, locations] = await Promise.all([
+        controlService.getCategoryLists(childId).catch(() => null),
+        controlService.getTopFreeTime(childId).catch(() => null),
+        controlService.getChildHeader(childId).catch(() => null),
+        parentalService.getRulesByChild(childId).catch(() => null),
+        studyModeService.getSchedule(childId).catch(() => null),
+        deviceControlService.getChildrenLocations().catch(() => []),
+      ]);
+      setLists(listsRes);
+      setTopFree(topRes);
+      const ringer = headerRes?.ringerMode;
+      setHeader(
+        headerRes
+          ? {
+              ...headerRes,
+              ringerMode: ringer === 'normal' || ringer === 'vibrate' || ringer === 'silent' ? ringer : null,
+            }
+          : null
+      );
+      if (rules) {
+        setBedtimeOn(rules.bedtimeEnabled);
+        const s = parseTime(rules.bedtimeStart, 21, 0);
+        const e = parseTime(rules.bedtimeEnd, 7, 0);
+        setBedtime({ startH: s.h, startM: s.m, endH: e.h, endM: e.m });
+      } else {
+        setBedtimeOn(false);
+      }
+      if (study) {
+        setStudyEnabled(study.enabled);
+        setStudySchedule(study);
+      } else {
+        setStudyEnabled(false);
+        setStudySchedule(null);
+      }
+      const loc = (locations ?? []).find((l) => l.childId === childId) ?? null;
+      setLocation(
+        loc && loc.latitude != null && loc.longitude != null
+          ? { latitude: loc.latitude, longitude: loc.longitude, online: loc.isOnline }
+          : null
+      );
+    } finally {
+      setLoadingChild(false);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       reload();
     }, [reload])
   );
+
+  // Hijo efectivo: el elegido si sigue en la lista, si no el primero.
+  // Derivado en render (sin setState en efectos).
+  const effectiveChildId = useMemo(() => {
+    if (!data || data.children.length === 0) return null;
+    if (selectedChildId && data.children.some((c) => c.id === selectedChildId)) {
+      return selectedChildId;
+    }
+    return data.children[0].id;
+  }, [data, selectedChildId]);
+
+  useEffect(() => {
+    if (!effectiveChildId) return;
+    // Diferido a microtarea: loadChild hace setState al arrancar y la regla
+    // react-hooks/set-state-in-effect exige no llamarlo síncrono en el efecto.
+    const id = effectiveChildId;
+    void Promise.resolve().then(() => loadChild(id));
+  }, [effectiveChildId, loadChild]);
 
   const handleRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -75,266 +168,273 @@ export default function RulesScreen() {
     setRefreshing(false);
   }, [reload]);
 
-  function formatTime(h: number, m: number) {
-    return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
-  }
+  const selectedChild = data?.children.find((c) => c.id === effectiveChildId) ?? null;
 
-  function formatDuration(totalMin: number) {
-    const h = Math.floor(totalMin / 60);
-    const m = totalMin % 60;
-    if (h === 0) return `${m}min`;
-    if (m === 0) return `${h}h`;
-    return `${h}h ${m}min`;
-  }
-
-  async function handleSelectChild(child: ChildProfile) {
-    setSelectedChild(child);
-    setLoadingChild(true);
+  async function handleEditLimit(minutes: number) {
+    if (!selectedChild) return;
+    setSavingLimit(true);
     try {
-      const r = await parentalService.getRulesByChild(child.id);
-      setRules(r);
-      setDailyLimitMinutes(r?.dailyLimitMinutes ?? 120);
-      setBedtimeOn(r?.bedtimeEnabled ?? false);
-      const sH = r?.bedtimeStart ? parseInt(r.bedtimeStart.split(':')[0], 10) : 21;
-      const sM = r?.bedtimeStart ? parseInt(r.bedtimeStart.split(':')[1], 10) : 0;
-      const eH = r?.bedtimeEnd ? parseInt(r.bedtimeEnd.split(':')[0], 10) : 7;
-      const eM = r?.bedtimeEnd ? parseInt(r.bedtimeEnd.split(':')[1], 10) : 0;
-      setBedtimeStartH(sH);
-      setBedtimeStartM(sM);
-      setBedtimeEndH(eH);
-      setBedtimeEndM(eM);
-    } catch {
-      setRules(null);
-      setDailyLimitMinutes(120);
-      setBedtimeOn(false);
-      setBedtimeStartH(21);
-      setBedtimeStartM(0);
-      setBedtimeEndH(7);
-      setBedtimeEndM(0);
-    } finally {
-      setLoadingChild(false);
-    }
-    setViewMode('child');
-  }
-
-  async function saveRules(partial: Partial<ParentalRules>) {
-    if (!selectedChild || !data) return;
-    setSaving(true);
-    try {
-      const updated = await parentalService.saveRules(data.familyId, selectedChild.id, partial);
-      setRules(updated);
-      Alert.alert('Guardado', 'Los cambios se han aplicado.');
+      await controlService.setLimit(selectedChild.id, 'tiempo_libre', minutes);
+      await loadChild(selectedChild.id);
     } catch (cause) {
-      Alert.alert('Error', errorMessage(cause));
+      Alert.alert(errorMessage(cause));
     } finally {
-      setSaving(false);
+      setSavingLimit(false);
     }
   }
 
-  // La edición de horarios personalizados vive en /rules/horarios.
+  async function handleBlockNow() {
+    if (!selectedChild) return;
+    try {
+      await controlService.blockFreeTimeNow(selectedChild.id);
+      await loadChild(selectedChild.id);
+    } catch (cause) {
+      Alert.alert(errorMessage(cause));
+    }
+  }
 
-  // ── Loading / Error ──
-  if (loading) {
-    return <View style={styles.screen}><LoadingState text={tr('noe.rules.loading')} /></View>;
+  async function handleToggleMaster(value: boolean) {
+    if (!selectedChild || !data) return;
+    setSavingRules(true);
+    try {
+      const schedule = studySchedule ?? { enabled: false, days: [], hours: {} };
+      await studyModeService.saveSchedule({ ...schedule, enabled: value }, selectedChild.id);
+      const start = formatTime(bedtime.startH, bedtime.startM);
+      const end = formatTime(bedtime.endH, bedtime.endM);
+      const updated = await parentalService.saveRules(
+        data.familyId,
+        selectedChild.id,
+        value ? { bedtimeEnabled: true, bedtimeStart: start, bedtimeEnd: end } : { bedtimeEnabled: false }
+      );
+      setStudyEnabled(value);
+      setBedtimeOn(updated.bedtimeEnabled);
+    } catch (cause) {
+      Alert.alert(errorMessage(cause));
+    } finally {
+      setSavingRules(false);
+    }
+  }
+
+  async function handleToggleBedtime(value: boolean) {
+    if (!selectedChild || !data) return;
+    setSavingRules(true);
+    try {
+      const updated = await parentalService.saveRules(
+        data.familyId,
+        selectedChild.id,
+        value
+          ? {
+              bedtimeEnabled: true,
+              bedtimeStart: formatTime(bedtime.startH, bedtime.startM),
+              bedtimeEnd: formatTime(bedtime.endH, bedtime.endM),
+            }
+          : { bedtimeEnabled: false }
+      );
+      setBedtimeOn(updated.bedtimeEnabled);
+    } catch (cause) {
+      Alert.alert(errorMessage(cause));
+    } finally {
+      setSavingRules(false);
+    }
+  }
+
+  async function handleSaveBedtime() {
+    if (!selectedChild || !data) return;
+    setSavingRules(true);
+    try {
+      const updated = await parentalService.saveRules(data.familyId, selectedChild.id, {
+        bedtimeEnabled: true,
+        bedtimeStart: formatTime(bedtime.startH, bedtime.startM),
+        bedtimeEnd: formatTime(bedtime.endH, bedtime.endM),
+      });
+      setBedtimeOn(updated.bedtimeEnabled);
+    } catch (cause) {
+      Alert.alert(errorMessage(cause));
+    } finally {
+      setSavingRules(false);
+    }
+  }
+
+  const candidates = useMemo(() => {
+    if (!lists) return [];
+    const seen = new Set<string>();
+    const out: CategoryLists['sinClasificar'] = [];
+    for (const app of [...lists.tiempoLibre, ...lists.siempre, ...lists.noPermitidas, ...lists.sinClasificar]) {
+      if (!app || seen.has(app.packageName)) continue;
+      seen.add(app.packageName);
+      out.push(app);
+    }
+    return out;
+  }, [lists]);
+
+  const selectorSelected = useMemo(() => {
+    if (!lists || !selectorFor) return [];
+    const source =
+      selectorFor === 'tiempo_libre' ? lists.tiempoLibre : selectorFor === 'siempre' ? lists.siempre : lists.noPermitidas;
+    return (source ?? []).map((a) => a.packageName);
+  }, [lists, selectorFor]);
+
+  const selectorTitle =
+    selectorFor === 'tiempo_libre'
+      ? tr('noe.control.freeTime')
+      : selectorFor === 'siempre'
+        ? tr('noe.control.always')
+        : tr('noe.control.blocked');
+
+  if (loading && !data) {
+    return (
+      <View style={styles.screen}>
+        <LoadingState text={tr('common.loading')} />
+      </View>
+    );
   }
   if (error || !data) {
-    return <View style={styles.screen}><ErrorState message={error ?? 'Algo salió mal'} onRetry={reload} /></View>;
+    return (
+      <View style={styles.screen}>
+        <ErrorState message={error ?? 'Algo salió mal'} onRetry={reload} />
+      </View>
+    );
   }
 
-  // ── Child control panel ──
-  if (viewMode === 'child' && selectedChild) {
+  if (data.children.length === 0) {
     return (
-      <ScrollView
-        contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]}
-        keyboardShouldPersistTaps="handled"
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-      >
-        {/* Back */}
-        <Pressable style={styles.backRow} onPress={() => setViewMode('list')}>
-          <MaterialIcons name="arrow-back" size={22} color={colors.primary} />
-          <Text style={styles.backText}>Cambiar hijo</Text>
+      <ScrollView contentContainerStyle={[styles.scroll, { paddingTop: screenPadding.paddingTop }]}>
+        <Text style={styles.title}>{tr('noe.control.title')}</Text>
+        <Text style={styles.subtitle}>{tr('noe.control.subtitle')}</Text>
+        <EmptyState
+          icon={<MaterialIcons name="child-care" size={48} color={colors.textMuted} />}
+          title={tr('noe.control.noChildren')}
+          description={tr('noe.control.subtitle')}
+        />
+        <Pressable
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.addChildBtn, pressed && styles.addChildBtnPressed]}
+          onPress={() => router.push(ROUTES.children as any)}
+        >
+          <MaterialIcons name="add" size={20} color={colors.onPrimary} />
+          <Text style={styles.addChildText}>{tr('noe.control.addChild')}</Text>
         </Pressable>
-
-        {/* Child header */}
-        <View style={styles.childHeader}>
-          <Avatar name={selectedChild.displayName} emoji={selectedChild.avatarUrl ?? undefined} size={56} />
-          <View>
-            <Text style={styles.childName}>{selectedChild.displayName}</Text>
-            <Text style={styles.childStatus}>
-              {loadingChild ? 'Cargando...' : rules ? 'Reglas activas' : 'Sin reglas aún'}
-            </Text>
-          </View>
-        </View>
-
-        {/* ── Límite diario ── */}
-        <Card style={styles.card}>
-          <View style={styles.ruleHeader}>
-            <View style={[styles.ruleIcon, { backgroundColor: '#6366F118' }]}>
-              <MaterialIcons name="timer" size={22} color="#6366F1" />
-            </View>
-            <View style={styles.ruleInfo}>
-              <Text style={styles.ruleTitle}>Límite diario</Text>
-              <Text style={styles.ruleValue}>{formatDuration(dailyLimitMinutes)}</Text>
-            </View>
-          </View>
-          <DurationField totalMinutes={dailyLimitMinutes} onChange={setDailyLimitMinutes} label="Límite diario" />
-          <Pressable
-            style={({ pressed }) => [styles.saveBtn, pressed && styles.saveBtnPressed]}
-            onPress={() => saveRules({ dailyLimitMinutes })}
-            disabled={saving}
-          >
-            <Text style={styles.saveBtnText}>{saving ? 'Guardando...' : 'Guardar límite'}</Text>
-          </Pressable>
-          <Pressable
-            style={({ pressed }) => [styles.removeBtn, pressed && styles.saveBtnPressed]}
-            onPress={() => saveRules({ dailyLimitMinutes: null })}
-            disabled={saving}
-          >
-            <Text style={styles.removeBtnText}>Quitar límite</Text>
-          </Pressable>
-        </Card>
-
-        {/* ── Horario de sueño ── */}
-        <Card style={styles.card}>
-          <View style={styles.ruleHeader}>
-            <View style={[styles.ruleIcon, { backgroundColor: '#8B5CF618' }]}>
-              <MaterialIcons name="bedtime" size={22} color="#8B5CF6" />
-            </View>
-            <View style={styles.ruleInfo}>
-              <Text style={styles.ruleTitle}>Horario de sueño</Text>
-              <Text style={styles.ruleValue}>
-                {bedtimeOn ? `${formatTime(bedtimeStartH, bedtimeStartM)} – ${formatTime(bedtimeEndH, bedtimeEndM)}` : 'Desactivado'}
-              </Text>
-            </View>
-            <Switch
-              value={bedtimeOn}
-              onValueChange={(v) => {
-                setBedtimeOn(v);
-                saveRules({ bedtimeEnabled: v, bedtimeStart: formatTime(bedtimeStartH, bedtimeStartM), bedtimeEnd: formatTime(bedtimeEndH, bedtimeEndM) });
-              }}
-              trackColor={{ false: colors.border, true: '#8B5CF6' }}
-            />
-          </View>
-          {bedtimeOn && (
-            <>
-              <Text style={styles.timeSectionLabel}>Dormir</Text>
-              <TimeInput hours={bedtimeStartH} minutes={bedtimeStartM} onHoursChange={setBedtimeStartH} onMinutesChange={setBedtimeStartM} label="" />
-              <Text style={styles.timeSectionLabel}>Despertar</Text>
-              <TimeInput hours={bedtimeEndH} minutes={bedtimeEndM} onHoursChange={setBedtimeEndH} onMinutesChange={setBedtimeEndM} label="" />
-              <Pressable
-                style={({ pressed }) => [styles.saveBtn, pressed && styles.saveBtnPressed]}
-                onPress={() => saveRules({ bedtimeEnabled: true, bedtimeStart: formatTime(bedtimeStartH, bedtimeStartM), bedtimeEnd: formatTime(bedtimeEndH, bedtimeEndM) })}
-                disabled={saving}
-              >
-                <Text style={styles.saveBtnText}>{saving ? 'Guardando...' : 'Guardar horario'}</Text>
-              </Pressable>
-            </>
-          )}
-        </Card>
-
-        {/* ── Accesos rápidos ── */}
-        <Text style={styles.sectionLabel}>Control avanzado</Text>
-        <View style={styles.quickGrid}>
-          {[
-            { icon: 'schedule' as const, title: 'Horarios', color: '#6366F1', path: '/rules/horarios' },
-            { icon: 'school' as const, title: 'Modo estudio', color: '#059669', path: '/rules/modo-estudio' },
-            { icon: 'location-on' as const, title: 'Zonas seguras', color: '#D97706', path: '/rules/geofencing' },
-            { icon: 'language' as const, title: 'Filtrado web', color: '#DC2626', path: '/rules/filtrado-web' },
-            { icon: 'apps' as const, title: 'Control de apps', color: '#EA580C', path: '/rules/apps' },
-          ].map((item) => (
-            <Pressable
-              key={item.title}
-              style={({ pressed }) => [styles.quickCard, pressed && styles.quickCardPressed]}
-              onPress={() => router.push({ pathname: item.path as any, params: item.path === '/rules/apps' && selectedChild ? { childId: selectedChild.id } : undefined })}
-            >
-              <View style={[styles.quickIcon, { backgroundColor: item.color + '18' }]}>
-                <MaterialIcons name={item.icon} size={24} color={item.color} />
-              </View>
-              <Text style={styles.quickTitle}>{item.title}</Text>
-              <MaterialIcons name="chevron-right" size={16} color={colors.textMuted} />
-            </Pressable>
-          ))}
-        </View>
       </ScrollView>
     );
   }
 
-  // ── Children list ──
   return (
-    <ScrollView
-      contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]}
-      keyboardShouldPersistTaps="handled"
-      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />}
-    >
-      <Text style={styles.title}>Control parental</Text>
-      <Text style={styles.subtitle}>Selecciona un hijo para configurar sus reglas</Text>
+    <View style={styles.screen}>
+      <ScrollView
+        style={styles.screen}
+        contentContainerStyle={[styles.scroll, { paddingTop: screenPadding.paddingTop }]}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} colors={[colors.primary]} tintColor={colors.primary} />
+        }
+      >
+        <Text style={styles.title}>{tr('noe.control.title')}</Text>
+        <Text style={styles.subtitle}>{tr('noe.control.subtitle')}</Text>
 
-      {data.children.length === 0 ? (
-        <EmptyState icon={<MaterialIcons name="child-care" size={48} color={colors.textMuted} />} title="Agrega un hijo primero" description="Ve a la pestaña Hijos para agregar un perfil" />
-      ) : (
-        <View style={styles.childList}>
-          {data.children.map((child) => (
-            <Pressable
-              key={child.id}
-              style={({ pressed }) => [styles.childCard, pressed && styles.childCardPressed]}
-              onPress={() => handleSelectChild(child)}
-            >
-              <Avatar name={child.displayName} emoji={child.avatarUrl ?? undefined} size={48} />
-              <View style={styles.childCardInfo}>
-                <Text style={styles.childCardName}>{child.displayName}</Text>
-                <Text style={styles.childCardMeta}>Toca para configurar</Text>
-              </View>
-              <MaterialIcons name="chevron-right" size={22} color={colors.textMuted} />
-            </Pressable>
-          ))}
-        </View>
-      )}
-    </ScrollView>
+        <ChildSelector
+          childList={data.children}
+          selectedId={effectiveChildId}
+          onSelect={setSelectedChildId}
+          header={header}
+        />
+
+        {loadingChild && !lists ? (
+          <LoadingState text={tr('common.loading')} />
+        ) : (
+          <>
+            <FreeTimeCard
+              data={topFree}
+              childName={selectedChild?.displayName ?? ''}
+              savingLimit={savingLimit}
+              onOpenMore={() => setSelectorFor('tiempo_libre')}
+              onEditLimit={handleEditLimit}
+              onBlockNow={handleBlockNow}
+            />
+
+            <AppCategoryCard
+              icon="check-circle"
+              accent={colors.success}
+              title={tr('noe.control.always')}
+              apps={lists?.siempre ?? []}
+              maxShown={5}
+              actionLabel={tr('noe.control.moreApps', { n: (lists?.siempre.length ?? 0) - 5 })}
+              actionVisible={(lists?.siempre.length ?? 0) > 5}
+              onAction={() => setSelectorFor('siempre')}
+            />
+
+            <AppCategoryCard
+              icon="block"
+              accent={colors.danger}
+              title={tr('noe.control.blocked')}
+              apps={[]}
+              showList={false}
+              actionLabel={tr('noe.control.chooseApps')}
+              onAction={() => setSelectorFor('no_permitida')}
+            />
+
+            <SchedulesCard
+              masterOn={studyEnabled && bedtimeOn}
+              studyEnabled={studyEnabled}
+              bedtimeOn={bedtimeOn}
+              bedtime={bedtime}
+              saving={savingRules}
+              onToggleMaster={handleToggleMaster}
+              onToggleBedtime={handleToggleBedtime}
+              onBedtimeTime={(field, value) => setBedtime((prev) => ({ ...prev, [field]: value }))}
+              onSaveBedtime={handleSaveBedtime}
+              onOpenStudy={() => router.push('/rules/modo-estudio' as any)}
+              onOpenRest={() => router.push('/rules/horarios' as any)}
+            />
+
+            {selectedChild ? (
+              <LocationMiniCard
+                childName={selectedChild.displayName}
+                latitude={location?.latitude ?? null}
+                longitude={location?.longitude ?? null}
+                online={location?.online ?? header?.online ?? false}
+                onOpenMap={() => router.push('/location' as any)}
+              />
+            ) : null}
+          </>
+        )}
+      </ScrollView>
+
+      {selectedChild && selectorFor ? (
+        <AppSelectorModal
+          key={`${selectedChild.id}-${selectorFor}`}
+          visible
+          title={selectorTitle}
+          childId={selectedChild.id}
+          category={selectorFor}
+          candidates={candidates}
+          initialSelected={selectorSelected}
+          onClose={() => setSelectorFor(null)}
+          onSaved={() => loadChild(selectedChild.id)}
+        />
+      ) : null}
+    </View>
   );
 }
 
-const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
+const makeStyles = (colors: ThemeColors, _shadows: ThemeShadows) =>
   StyleSheet.create({
-  screen: { padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
-  title: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
-  subtitle: { fontSize: typography.fontSizes.body, color: colors.textMuted, lineHeight: 22 },
-  card: { ...shadows.sm },
-
-  // Child list
-  childList: { gap: spacing.sm },
-  childCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.background, borderRadius: radius.lg, padding: spacing.md, gap: spacing.md, borderWidth: 1, borderColor: colors.border, ...shadows.sm },
-  childCardPressed: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
-  childCardInfo: { flex: 1 },
-  childCardName: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.text },
-  childCardMeta: { fontSize: typography.fontSizes.caption, color: colors.textMuted },
-
-  // Back + header
-  backRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
-  backText: { fontSize: typography.fontSizes.body, color: colors.primary, fontWeight: typography.fontWeights.medium },
-  childHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, backgroundColor: colors.background, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border, ...shadows.sm },
-  childName: { fontSize: typography.fontSizes.title, fontWeight: typography.fontWeights.bold, color: colors.text },
-  childStatus: { fontSize: typography.fontSizes.caption, color: colors.textMuted },
-
-  // Rule rows
-  ruleHeader: { flexDirection: 'row', alignItems: 'center', gap: spacing.md },
-  ruleIcon: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
-  ruleInfo: { flex: 1 },
-  ruleTitle: { fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold, color: colors.text },
-  ruleValue: { fontSize: typography.fontSizes.caption, color: colors.textMuted, marginTop: 2 },
-  timeSectionLabel: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1, marginTop: spacing.md, marginBottom: spacing.xs },
-
-  // Save
-  saveBtn: { backgroundColor: colors.primary, borderRadius: radius.md, paddingVertical: spacing.md, alignItems: 'center', marginTop: spacing.md },
-  saveBtnPressed: { opacity: 0.85 },
-  saveBtnText: { color: colors.onPrimary, fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.semibold },
-  removeBtn: { borderWidth: 1, borderColor: colors.danger, borderRadius: radius.md, paddingVertical: spacing.sm, alignItems: 'center', marginTop: spacing.sm },
-  removeBtnText: { color: colors.danger, fontSize: typography.fontSizes.body, fontWeight: typography.fontWeights.medium },
-
-  // Quick grid
-  sectionLabel: { fontSize: typography.fontSizes.caption, fontWeight: typography.fontWeights.medium, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: 1 },
-  quickGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  quickCard: { width: '48%', flexGrow: 1, backgroundColor: colors.background, borderRadius: radius.lg, padding: spacing.md, borderWidth: 1, borderColor: colors.border, ...shadows.sm },
-  quickCardPressed: { borderColor: colors.primary },
-  quickIcon: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginBottom: spacing.sm },
-  quickTitle: { fontSize: typography.fontSizes.subtitle, fontWeight: typography.fontWeights.medium, color: colors.text, marginBottom: spacing.xs },
-});
+    screen: { flex: 1, backgroundColor: colors.surface },
+    scroll: { padding: spacing.lg, backgroundColor: colors.surface, gap: spacing.md },
+    title: { fontSize: typography.fontSizes.heading, fontWeight: typography.fontWeights.bold, color: colors.text },
+    subtitle: { fontSize: typography.fontSizes.body, color: colors.textMuted, lineHeight: 22 },
+    addChildBtn: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: spacing.sm,
+      backgroundColor: colors.primary,
+      borderRadius: radius.md,
+      paddingVertical: spacing.md,
+    },
+    addChildBtnPressed: { opacity: 0.85 },
+    addChildText: {
+      color: colors.onPrimary,
+      fontSize: typography.fontSizes.body,
+      fontWeight: typography.fontWeights.semibold,
+    },
+  });

@@ -1,0 +1,57 @@
+SESION 13-OCT-2026 — Uso en vivo NOE 1.4.7/vc19 (PID 23577 -> 31428 -> 31573)
+Usuario: recorrió tab Home presionando botones; luego Linking.
+
+LINEA DE TIEMPO (logcat, hora dispositivo)
+- 10:09:01 install -r NOE-1.4.7-release.apk (vc19, cert 421ef0...). Launch OK, pantalla PIN.
+- 10:09–10:19 uso Home. App genera tráfico de red (WifiNetworkStatsMonitor com.noe.parent activo).
+- 10:19:12 W Reanimated: RetryableMountingLayerException "Unable to find SurfaceMountingManager for tag: [10166]" (transitorio, benigno).
+- 10:19:17 FATAL PID 23577: IllegalStateException addViewAt "failed to insert view [236] into parent [96] at index 0" (SurfaceMountingManager.kt:384, vía IntBufferBatchMountItem/MountItemDispatcher).
+- 10:19:23 FATAL PID 31428: IDENTICO (mismos tags [236]->[96] idx 0, 6 s después del relanzamiento).
+- 10:20:04 E ReactNativeJS (PID 31573, LinkingScreen): "The amount of data is too big to be stored in a QR Code" en <QRCode>, atrapado por ErrorBoundary (sin crash; QR no se muestra).
+- 10:20:47 últimos toques registrados. Sin 401/AuthError/Network request failed en el log.
+
+HALLAZGOS
+1. [P0] QR modo DPC revienta: linking/index.tsx:191 <QRCode ecl="H"> con JSON DPC ~1897 bytes > capacidad H (~1273). Causa raíz confirmada. Fix: ecl M en modo DPC (cap ~2331) + guarda por longitud con fallback a compacto + i18n qrTooBig (es/en).
+2. [P0] Crash Fabric addViewAt SIGUE en 1.4.7 con tags idénticos en 2 runs seguidos => el "fix" d4822ff (postpone setState ChildSelectModal) es INSUFICIENTE / hipótesis debilitada. El crash es determinista en algún flujo del Home. Falta: saber qué botón/pantalla se tocó a las 10:19 para acotar el componente (tags Fabric son por sesión; [236]/[96] recurrentes = mismo flujo).
+3. [P1?] .env trae anon key distinta de las reales (sb_publishab… 46 chars vs publishable/legacy reales). En log NO hay 401; la app sí cursó red. Pregunta abierta: ¿la key del .env es válida? Si Perfil/Suscripción cargan datos, sí.
+4. Warnings benignos: REASharedTransitionBoundaryManager setter (reanimated, esperado), Input channel disposed (transición de activity).
+
+EVIDENCIA: logcat dumps 10:18–10:22 (buffer rotó; stacks FATAL completos capturados 10:19:17/23).
+
+---
+SEGUNDA RONDA 13-OCT (~10:35-10:45) — 4 fallas reportadas por el usuario + fixes con subagentes.
+Trabajo delegado en paralelo (archivos distintos, sin conflictos):
+- Subagente A: apps/noe/app/(app)/index.tsx (quitar campana + tile Alertas→Actividad + KpiTile compacto). Gates OK.
+- Subagente B: apps/noe/app/(app)/_layout.tsx (backBehavior="history"). Typecheck OK.
+- Subagente C: packages/shared/src/hooks/use-async-data.ts (errorMessage capta {message,code} planos). Typecheck OK.
+Gates centrales: typecheck limpio (todos los workspaces), tests NOE 128/128.
+Commit 266a6c9 (3 archivos, +26/−22) → push main OK.
+Build incremental 3m03s OK; cert 421ef0 verificado manual; APK copiado a APKs_para_instalar/NOE-1.4.7-release.apk; install -r Success; PID 2527; log limpio.
+
+Detalle fallas:
+1. Atrás→Hijos: causa = Tabs sin backBehavior (default firstRoute → primer tab declarado = children). Fix 1 línea.
+2. Campana: sin causa de código (pantalla+hook sanos); decisión usuario = ELIMINAR. Campana fuera; tile Alertas→Actividad. Si la pantalla notificaciones era la que crasheaba, queda sin ruta visible.
+3. Monitoreo detallado (fallan LOS 7): causa = error Supabase enmascarado por errorMessage genérico. Grants SELECT OK en usage_reports/web_visits; policies existen. Fix: errorMessage revela message+code → el usuario leerá la causa real en el próximo ciclo.
+4. KPI grandes: kpiRow ya era fila; el alto venía del contenido vertical. KpiTile compacto horizontal.
+Pendiente próximo ciclo: mensaje real de (3) leído en el teléfono + causa crash addViewAt + qué se tocó a las 10:36:41 (tormenta Reanimated).
+
+---
+TERCERA RONDA 13-OCT (~11:00) — 4 pedidos nuevos, 4 subagentes en paralelo.
+- SubA: index.tsx (acciones rápidas compactas 1 línea sin subtítulos + gate versos reflect con useContentMode/EduTipCard).
+- SubD: atrás jerárquico (use-system-back.ts reescrito: sub→router.back, tab→navigate ROUTES.app, Inicio→doble-tap; _layout backBehavior history→none).
+- SubB: saludo (dashboard-repository 2 ramas: metadata display_name primero; trigger handle_new_user SÍ copia display_name → sin migración).
+- SubC: modo contenido (hook use-content-mode + EduTipCard + i18n eduTips tip1..8 es/en + gates en profile/linking/activity/_layout PIN).
+Fix propio: lint set-state-in-effect en use-content-mode (rama caché redundante eliminada).
+Gates: typecheck limpio, lint 0 errores, tests 128/128.
+Commit 218eb8c (11 archivos + 2 nuevos) → push main OK.
+Build incremental 3m17s OK; cert verificado manual; APK → APKs_para_instalar/NOE-1.4.7-release.apk; install Success; PID 15284; sin FATAL/JS errors al abrir.
+NOTA: tu families.mode actual es 'general' (default) → al abrir verás CERO versículos hasta que pongas Cristiano en Otros→Familia. Tips Educativo ya incluidos (ver resumen).
+
+---
+FASE A CONDICIONAL (5 puntos verificados, sin cambios a prod salvo lo ya aprobado):
+1. UI instalada escribe 'limited'/'blocked' (apps.tsx:139,167,196 + presets) → nuevo CHECK los rechaza (400 visible). 'free' (:223, sync) sigue válido. PROPUESTA pendiente de OK: mapear viejos→nuevos en upsert_app_category (SQL listo, sin aplicar).
+2. RPC firma: 7 columnas viejas intactas (mismo nombre/tipo/orden) + 3 aditivas. ARCA instalada lee por nombre (JS mapRules + nativo por clave) → ignora extras. Enforcement preservado (unión).
+3. Alineado: renombres locales a versiones remotas (20261012052151 analytics, 20261013151311 grant-insert nuevo, 20261013195524 control) + historial remoto confirmado por query.
+4. Rollback entregado en supabase/rollback/ (fuera de migrations/) y PROBADO en txn con ROLLBACK: CHECK viejo + tabla/RPCs fuera + RPC 7 col + sonda 'limited' OK (sonda_ok=1). Lección: pronargs solo cuenta IN (usar array_length(proargmodes)).
+5. Happy-path con claims simulados en txn+ROLLBACK: padre fam.A set/get → (tiempo_libre,60) OK; padre fam.B → NOT_AUTHORIZED; residuos 0. Prod intacta (CHECK nuevo, 0 sondas, 2 RPCs).
+Sin push/version/build. Commit local 7a1db5f (FASE A) pendiente de push junto al resto cuando autorices.
