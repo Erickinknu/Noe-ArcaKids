@@ -45,7 +45,6 @@ import { familyService } from '@/features/family/services/family-service';
 import { parentalService } from '@/features/parental/services/parental-service';
 import { deviceControlService } from '@/features/device-control/services/device-control-service';
 import { pinSyncService } from '@/features/pin/services/pin-sync-service';
-import { useUnreadNotificationCount } from '@/features/notifications/hooks/use-notifications';
 import { ROUTES } from '@/constants';
 
 const FETCH_TIMEOUT_MS = 10_000;
@@ -58,7 +57,6 @@ export default function DashboardScreen() {
   const screenPadding = useScreenPadding();
   const { isOnline } = useNetworkStatus();
   const reflectVerse = useVerseOfDay();
-  const unreadNotifications = useUnreadNotificationCount();
 
   const [data, setData] = useState<FamilySummary | null>(null);
   const [alerts, setAlerts] = useState<AlertItem[]>([]);
@@ -318,17 +316,6 @@ export default function DashboardScreen() {
             </View>
             <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
           </Pressable>
-          <Pressable
-            style={styles.notificationBell}
-            onPress={() => router.push(ROUTES.notifications as any)}
-          >
-            <MaterialIcons name="notifications" size={22} color={colors.text} />
-            {unreadNotifications > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>{unreadNotifications}</Text>
-              </View>
-            )}
-          </Pressable>
         </View>
 
         {/* ── Resumen del día: KPIs ── */}
@@ -352,7 +339,7 @@ export default function DashboardScreen() {
             value={String(data.alertsCount)}
             label={tr('noe.dashboard.alerts')}
             color={data.alertsCount > 0 ? colors.warning : colors.success}
-            onPress={() => router.push(ROUTES.notifications as any)}
+            onPress={() => router.push(ROUTES.activity as any)}
           />
         </View>
 
@@ -545,8 +532,10 @@ function KpiTile({
       <View style={[styles.kpiIconWrap, { backgroundColor: color + '18' }]}>
         <MaterialIcons name={icon as any} size={18} color={color} />
       </View>
-      <Text style={styles.kpiValue}>{value}</Text>
-      <Text style={styles.kpiLabel}>{label}</Text>
+      <View style={styles.kpiTextCol}>
+        <Text style={styles.kpiValue}>{value}</Text>
+        <Text style={styles.kpiLabel} numberOfLines={1}>{label}</Text>
+      </View>
     </Pressable>
   );
 }
@@ -932,12 +921,14 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
   },
   kpiTile: {
     flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: colors.background,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    padding: spacing.md,
-    gap: 4,
+    padding: spacing.sm,
+    gap: spacing.sm,
     ...shadows.sm,
   },
   kpiTilePressed: {
@@ -945,16 +936,18 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     backgroundColor: colors.primaryLight,
   },
   kpiIconWrap: {
-    width: 30,
-    height: 30,
+    width: 24,
+    height: 24,
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 2,
+  },
+  kpiTextCol: {
+    flex: 1,
   },
   kpiValue: {
     fontFamily: typography.fontFamily.heading,
-    fontSize: typography.fontSizes.title,
+    fontSize: typography.fontSizes.subtitle,
     fontWeight: typography.fontWeights.bold,
     color: colors.text,
     letterSpacing: -0.3,

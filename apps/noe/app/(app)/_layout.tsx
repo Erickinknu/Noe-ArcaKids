@@ -202,6 +202,7 @@ export default function AppLayout() {
   return (
     <Tabs
       initialRouteName="index"
+      backBehavior="history"
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
