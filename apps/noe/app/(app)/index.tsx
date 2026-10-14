@@ -617,7 +617,12 @@ function ChildSelectModal({
             data={childList}
             keyExtractor={(item) => item.id}
             renderItem={({ item }) => (
-              <Pressable style={styles.modalChildRow} onPress={() => onSelect(item.id)}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={item.displayName}
+                style={styles.modalChildRow}
+                onPress={() => onSelect(item.id)}
+              >
                 <Avatar3D id={item.avatarUrl ?? undefined} size={40} />
                 <Text style={styles.modalChildName}>{item.displayName}</Text>
                 <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
@@ -625,7 +630,12 @@ function ChildSelectModal({
             )}
             ItemSeparatorComponent={() => <View style={styles.modalSeparator} />}
           />
-          <Pressable style={styles.modalCancelButton} onPress={onClose}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={tr('common.cancel')}
+            style={styles.modalCancelButton}
+            onPress={onClose}
+          >
             <Text style={styles.modalCancelText}>{tr('common.cancel')}</Text>
           </Pressable>
         </Pressable>
@@ -675,7 +685,12 @@ function AddTimeModal({
               </Text>
             </Pressable>
           ))}
-          <Pressable style={styles.modalCancelButton} onPress={onClose}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={tr('common.cancel')}
+            style={styles.modalCancelButton}
+            onPress={onClose}
+          >
             <Text style={styles.modalCancelText}>{tr('common.cancel')}</Text>
           </Pressable>
         </Pressable>
@@ -815,6 +830,7 @@ function OnlineChildCard({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={tr('noe.home.addTime')}
+          hitSlop={{ top: 4, bottom: 4 }}
           style={({ pressed }) => [styles.addTimeBtn, pressed && styles.pressed]}
           onPress={() => onAddTime(child)}
         >
@@ -823,6 +839,7 @@ function OnlineChildCard({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={tr('noe.home.details')}
+          hitSlop={{ top: 4, bottom: 4 }}
           style={({ pressed }) => [styles.detailsBtn, pressed && styles.pressed]}
           onPress={() => onDetail(child.id)}
         >

@@ -89,6 +89,8 @@ export default function AlertasScreen() {
             return (
               <Pressable
                 key={item.id}
+                accessibilityRole="button"
+                accessibilityLabel={item.title}
                 onPress={() => handlePress(item)}
                 style={({ pressed }) => [
                   styles.row,

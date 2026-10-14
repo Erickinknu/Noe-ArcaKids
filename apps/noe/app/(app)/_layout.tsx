@@ -261,6 +261,7 @@ export default function AppLayout() {
         name="children"
         options={{
           title: tr('noe.tabs.children'),
+          tabBarAccessibilityLabel: tr('noe.tabs.children'),
           tabBarIcon: ({ color, focused }) => (
             <TabIcon name="family-restroom" color={color} focused={focused} styles={styles} />
           ),
@@ -270,6 +271,7 @@ export default function AppLayout() {
         name="rules"
         options={{
           title: tr('noe.tabs.control'),
+          tabBarAccessibilityLabel: tr('noe.tabs.control'),
           tabBarIcon: ({ color, focused }) => (
             <TabIcon name="shield" color={color} focused={focused} styles={styles} />
           ),
@@ -279,6 +281,7 @@ export default function AppLayout() {
         name="index"
         options={{
           title: tr('noe.tabs.home'),
+          tabBarAccessibilityLabel: tr('noe.tabs.home'),
           tabBarIcon: ({ color, focused }) => (
             <TabIcon name="home" color={color} focused={focused} styles={styles} />
           ),
@@ -288,6 +291,7 @@ export default function AppLayout() {
         name="activity"
         options={{
           title: tr('noe.tabs.activity'),
+          tabBarAccessibilityLabel: tr('noe.tabs.activity'),
           tabBarIcon: ({ color, focused }) => (
             <View style={styles.tabIconWrap}>
               <TabIcon name="bar-chart" color={color} focused={focused} styles={styles} />
@@ -300,6 +304,7 @@ export default function AppLayout() {
         name="profile"
         options={{
           title: 'Otros',
+          tabBarAccessibilityLabel: 'Otros',
           tabBarIcon: ({ color, focused }) => (
             <TabIcon name="more-horiz" color={color} focused={focused} styles={styles} />
           ),
