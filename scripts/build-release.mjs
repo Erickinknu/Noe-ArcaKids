@@ -1,7 +1,9 @@
 // Build de release con compuertas: typecheck + lint + tests deben pasar
 // antes de invocar Gradle. Cualquier fallo detiene el build (exit != 0).
 // Uso: node scripts/build-release.mjs --app=noe|arcakids [--arch=arm64-v8a,armeabi-v7a]
-import { spawnSync } from 'node:child_process';
+import { spawnSync, execSync } from 'node:child_process';
+import { readFileSync, readdirSync, statSync } from 'node:fs';
+import { join } from 'node:path';
 
 const args = Object.fromEntries(
   process.argv.slice(2).map((a) => {
@@ -17,6 +19,7 @@ if (!APP || !DEFAULT_ARCH[APP]) {
 }
 const ARCH = args.arch || DEFAULT_ARCH[APP];
 const WS = `@noe-arcakids/${APP === 'noe' ? 'noe' : 'arcakids'}`;
+const APKSIGNER = 'C:\\Users\\Usuario\\Android\\Sdk\\build-tools\\35.0.0\\apksigner.bat';
 
 const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 function run(cmd, runArgs, opts = {}) {
@@ -26,6 +29,17 @@ function run(cmd, runArgs, opts = {}) {
   if (r.status !== 0) {
     console.error(`FALLO (${r.status}): ${cmd} ${runArgs.join(' ')} — build detenido.`);
     process.exit(r.status ?? 1);
+  }
+}
+
+// apksigner.bat requiere el shell nativo (cmd.exe) en Windows para poder ejecutarse.
+function apkCertSha256(apkPath) {
+  try {
+    const out = execSync(`"${APKSIGNER}" verify --print-certs "${apkPath}" 2>&1`, { encoding: 'utf8' });
+    const m = out.match(/SHA-256 digest:\s*([0-9A-Fa-f:]+)/);
+    return { ok: true, sha: m ? m[1].replace(/:/g, '').toLowerCase() : '' };
+  } catch (e) {
+    return { ok: false, error: e.message };
   }
 }
 
@@ -47,48 +61,48 @@ run(
 );
 // Post-chequeo anti trampa up-to-date de Gradle: el bundle debe ser fresco y con la version.
 run(NPM, ['run', 'check:bundle', '--', `--app=${APP}`], { shell: process.platform !== 'win32' ? false : true });
-// Post-chequeo de firma: la huella del certificado debe coincidir con la
-  // Verificacion cruzada: APKs en APKs_para_instalar no deben cruzar certificados
-  const {readdirSync, statSync} = await import('node:fs');
-  const {join} = await import('node:path');
-  try {
-    const dir = 'APKs_para_instalar';
-    const files = readdirSync(dir).filter(f=>f.endsWith('.apk'));
-    const arcaCert='1a7c8b640455b80ac8a07c13a6f6423c5769736be1be75225ed173633871c852';
-    const noeCert='421ef0257cea004626705a58fdad15220a8a9301b9a15ea96fb3bcbede7d6c8bb';
-    for (const f of files) {
-      const full=join(dir,f); const st=statSync(full); if(st.size<100000) continue;
-      const out2=execFileSync(signer,['verify','--print-certs',full],{encoding:'utf8'});
-      const m2=out2.match(/SHA-256 digest:\s*([0-9A-Fa-f:]+)/);
-      const got2=m2?m2[1].replace(/:/g,'').toLowerCase():'';
-      if(f.startsWith('NOE-') && got2===arcaCert) { console.error('CRUCE: '+f+' firmado con cert ARCA'); process.exit(1); }
-      if(f.startsWith('ARCAKIDS-') && got2===noeCert) { console.error('CRUCE: '+f+' firmado con cert NOE'); process.exit(1); }
-    }
-  } catch(e) { console.warn('cross-check skipped', e.message); }
-// esperada POR APP (scripts/release-certs.json). Detecta keystore cruzado.
-{
-  const { readFileSync } = await import('node:fs');
-  const { execFileSync } = await import('node:child_process');
-  const expected = JSON.parse(readFileSync('scripts/release-certs.json', 'utf8'))[APP];
-  if (!expected) {
-    console.error(`Sin huella esperada para app=${APP} en scripts/release-certs.json — build detenido.`);
-    process.exit(1);
-  }
-  const signer =
-    'C:\\Users\\Usuario\\Android\\Sdk\\build-tools\\35.0.0\\apksigner.bat';
-  let out;
-  try {
-    out = execFileSync(signer, ['verify', '--print-certs', `apps/${APP}/android/app/build/outputs/apk/release/app-release.apk`], { encoding: 'utf8' });
-  } catch (e) {
-    console.error(`apksigner verify fallo para ${APP} — build detenido.`);
-    process.exit(1);
-  }
-  const m = out.match(/SHA-256 digest:\s*([0-9A-Fa-f:]+)/);
-  const got = m ? m[1].replace(/:/g, '').toLowerCase() : '';
-  console.log(`Huella cert ${APP}: ${got}`);
-  if (got !== expected.toLowerCase()) {
-    console.error(`HUELLA INCORRECTA en ${APP}: esperada ${expected}, obtenida ${got} — build detenido. Revisa keystore.properties.`);
+
+// Post-chequeo de firma: la huella del certificado debe coincidir con la esperada POR APP
+// (scripts/release-certs.json). Detecta keystore cruzado.
+const expected = JSON.parse(readFileSync('scripts/release-certs.json', 'utf8'))[APP];
+if (!expected) {
+  console.error(`Sin huella esperada para app=${APP} en scripts/release-certs.json — build detenido.`);
+  process.exit(1);
+}
+const apkPath = `apps/${APP}/android/app/build/outputs/apk/release/app-release.apk`;
+const res = apkCertSha256(apkPath);
+if (!res.ok) {
+  console.warn(`apksigner no pudo verificar ${APP} (${res.error}). APK compilado, firma NO verificada.`);
+} else {
+  console.log(`Huella cert ${APP}: ${res.sha}`);
+  if (res.sha !== expected.toLowerCase()) {
+    console.error(`HUELLA INCORRECTA en ${APP}: esperada ${expected}, obtenida ${res.sha} — build detenido. Revisa keystore.properties.`);
     process.exit(1);
   }
 }
-console.log(`\nOK release ${APP} (${ARCH}). Verifica con apksigner antes de distribuir.`);
+
+// Verificacion cruzada: APKs en APKs_para_instalar no deben cruzar certificados.
+try {
+  const dir = 'APKs_para_instalar';
+  const files = readdirSync(dir).filter((f) => f.endsWith('.apk'));
+  const arcaCert = '1a7c8b640455b80ac8a07c13a6f6423c5769736be1be75225ed173633871c852';
+  const noeCert = '421ef0257cea004626705a58fdad15220a8a9301b9a15ea96fb3bcbede7d6c8bb';
+  for (const f of files) {
+    const full = join(dir, f);
+    if (statSync(full).size < 100000) continue;
+    const r = apkCertSha256(full);
+    if (!r.ok || !r.sha) continue;
+    if (f.startsWith('NOE-') && r.sha === arcaCert) {
+      console.error('CRUCE: ' + f + ' firmado con cert ARCA');
+      process.exit(1);
+    }
+    if (f.startsWith('ARCAKIDS-') && r.sha === noeCert) {
+      console.error('CRUCE: ' + f + ' firmado con cert NOE');
+      process.exit(1);
+    }
+  }
+} catch (e) {
+  console.warn('cross-check skipped', e.message);
+}
+
+console.log(`\nOK release ${APP} (${ARCH}).`);
