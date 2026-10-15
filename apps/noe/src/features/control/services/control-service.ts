@@ -80,7 +80,7 @@ async function getLimits(childId: string): Promise<CategoryLimits> {
   const client = requireSupabaseClient();
   const { data, error } = await client.rpc('get_category_limits', { p_child_id: childId });
   if (error) throw error;
-  const rows = (data ?? []) as Array<{ category: string; daily_limit_minutes: number | null }>;
+  const rows = (data ?? []) as { category: string; daily_limit_minutes: number | null }[];
   const limits: CategoryLimit[] = rows
     .filter((row) => isControlCategory(row.category))
     .map((row) => ({

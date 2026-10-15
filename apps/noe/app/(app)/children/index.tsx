@@ -17,6 +17,11 @@ import {
   usePressAnimation,
 } from '@/features/children/motion/use-children-motion';
 import { ageFromBirthDate, birthDateForAge } from '@/features/children/utils/child-age';
+import { familyService } from '@/features/family/services/family-service';
+import { parentalService } from '@/features/parental/services/parental-service';
+import { deviceControlService } from '@/features/device-control/services/device-control-service';
+import { useScreenPadding } from '@/hooks/use-screen-padding';
+import { Avatar3D, AVATAR_IDS, CalendarPicker, Card, Input, PlanLimitError, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 /** Rango permitido: 3 a 17 años. */
 function maxChildBirthDate(): Date {
@@ -29,12 +34,6 @@ function minChildBirthDate(): Date {
   d.setFullYear(d.getFullYear() - 18);
   return d;
 }
-import { familyService } from '@/features/family/services/family-service';
-import { parentalService } from '@/features/parental/services/parental-service';
-import { deviceControlService } from '@/features/device-control/services/device-control-service';
-import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { Avatar3D, AVATAR_IDS, CalendarPicker, Card, Input, PlanLimitError, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
-
 interface ChildCardProps {
   child: ChildProfile;
   index: number;

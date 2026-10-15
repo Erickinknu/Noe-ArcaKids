@@ -3,7 +3,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { MaterialIcons } from '@expo/vector-icons';
 
-import { Card, radius, spacing, typography, useTheme, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
+import { Card, spacing, typography, useTheme, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 import type { ControlApp } from './control-types';
 

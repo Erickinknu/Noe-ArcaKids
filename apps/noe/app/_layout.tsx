@@ -9,7 +9,7 @@ import { SourceSans3_400Regular } from '@expo-google-fonts/source-sans-3';
 import { initI18n } from '@/i18n';
 import { useAuthStore } from '@/stores/auth-store';
 import { pushNotificationService } from '@/features/notifications/services/push-notification-service';
-import { ThemeProvider, useTheme, networkService, ErrorBoundary, sentryService } from '@noe-arcakids/shared';
+import { ThemeProvider, useTheme, networkService, ErrorBoundary, sentryService, logger } from '@noe-arcakids/shared';
 
 SplashScreen.preventAutoHideAsync().catch(() => {});
 sentryService.init();
@@ -91,7 +91,7 @@ function RootNavigator() {
     }
     const delay = AUTH_RETRY_DELAYS_MS[Math.min(attempt, AUTH_RETRY_DELAYS_MS.length - 1)];
     const id = setTimeout(() => {
-      console.log('[RootLayout] Session unresolved, retrying auth init');
+      logger.info('[RootLayout] Session unresolved, retrying auth init');
       retryInitialization();
       setAttempt((n) => n + 1);
     }, delay);
@@ -135,7 +135,7 @@ function RootNavigator() {
 
   useEffect(() => {
     if (ready && fontsLoaded) {
-      console.log('[RootLayout] Hiding splash, auth status:', useAuthStore.getState().status);
+      logger.info('[RootLayout] Hiding splash, auth status:', useAuthStore.getState().status);
       SplashScreen.hideAsync().catch(() => {});
     }
   }, [ready, fontsLoaded]);

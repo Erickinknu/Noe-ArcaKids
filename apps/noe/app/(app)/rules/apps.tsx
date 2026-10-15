@@ -33,6 +33,7 @@ import {
 import { familyService } from '@/features/family/services/family-service';
 import { childService } from '@/features/children/services/child-service';
 import { ageFromBirthDate, AGE_GROUPS, birthDateToAgeGroup } from '@/features/children/utils/child-age';
+import { formatDuration } from '@/features/dashboard/services/dashboard-service';
 
 type Tab = 'limited' | 'blocked' | 'free';
 
@@ -41,15 +42,6 @@ const TAB_CONFIG: { key: Tab; label: string; colorKey: 'warning' | 'danger' | 's
   { key: 'blocked', label: 'Bloqueadas', colorKey: 'danger', icon: 'block' },
   { key: 'free', label: 'Libres', colorKey: 'success', icon: 'check-circle' },
 ];
-
-function formatDuration(minutes: number): string {
-  if (minutes <= 0) return '0 min';
-  const h = Math.floor(minutes / 60);
-  const m = minutes % 60;
-  if (h === 0) return `${m} min`;
-  if (m === 0) return `${h}h`;
-  return `${h}h ${m}min`;
-}
 
 export default function AppsControlScreen() {
   const router = useRouter();
