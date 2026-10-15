@@ -1,8 +1,5 @@
 import { t } from 'i18next';
 
-import type { ChildSummary, FamilySummary } from '../types';
-import { dashboardRepository } from '../repositories/dashboard-repository';
-
 export function formatDuration(minutes: number): string {
   if (minutes <= 0) return '0 min';
   const h = Math.floor(minutes / 60);
@@ -23,17 +20,3 @@ export function relativeTime(isoString: string | null): string {
   const days = Math.floor(hours / 24);
   return t('common.daysAgo', { days });
 }
-
-export const dashboardService = {
-  getFamilySummary(): Promise<FamilySummary> {
-    return dashboardRepository.getFamilySummary();
-  },
-
-  getConnectedCount(children: ChildSummary[]): number {
-    return children.filter((c) => c.isOnline).length;
-  },
-
-  getTotalMinutesToday(children: ChildSummary[]): number {
-    return children.reduce((sum, c) => sum + c.minutesToday, 0);
-  },
-};
