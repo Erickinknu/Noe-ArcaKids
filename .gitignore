@@ -47,6 +47,9 @@ DerivedData/
 .cache/
 tmp/
 *.log
+*.pid
+# capturas temporales de diagnostico en raiz
+temp-capture/
 # test
 coverage/
 # supabase (local)
