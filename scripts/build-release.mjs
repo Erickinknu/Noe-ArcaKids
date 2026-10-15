@@ -25,7 +25,9 @@ const NPM = process.platform === 'win32' ? 'npm.cmd' : 'npm';
 function run(cmd, runArgs, opts = {}) {
   console.log(`\n### ${cmd} ${runArgs.join(' ')}`);
   const shell = opts.shell ?? (process.platform === 'win32' && cmd !== 'cmd.exe');
-  const r = spawnSync(cmd, runArgs, { stdio: 'inherit', shell, ...opts });
+  const r = shell
+    ? spawnSync(`${cmd} ${runArgs.join(' ')}`.trim(), { stdio: 'inherit', ...opts, shell: true })
+    : spawnSync(cmd, runArgs, { stdio: 'inherit', ...opts });
   if (r.status !== 0) {
     console.error(`FALLO (${r.status}): ${cmd} ${runArgs.join(' ')} — build detenido.`);
     process.exit(r.status ?? 1);
@@ -85,8 +87,9 @@ if (!res.ok) {
 try {
   const dir = 'APKs_para_instalar';
   const files = readdirSync(dir).filter((f) => f.endsWith('.apk'));
-  const arcaCert = '1a7c8b640455b80ac8a07c13a6f6423c5769736be1be75225ed173633871c852';
-  const noeCert = '421ef0257cea004626705a58fdad15220a8a9301b9a15ea96fb3bcbede7d6c8bb';
+  const certs = JSON.parse(readFileSync('scripts/release-certs.json', 'utf8'));
+  const noeCert = (certs.noe ?? '').toLowerCase();
+  const arcaCert = (certs.arcakids ?? '').toLowerCase();
   for (const f of files) {
     const full = join(dir, f);
     if (statSync(full).size < 100000) continue;
