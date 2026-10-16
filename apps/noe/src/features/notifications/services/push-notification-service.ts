@@ -1,3 +1,4 @@
+import { logger } from '@noe-arcakids/shared';
 import { Platform } from 'react-native';
 import * as Notifications from 'expo-notifications';
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
@@ -22,7 +23,7 @@ export const pushNotificationService = {
       }
       return false;
     } catch (error) {
-      console.error('Failed to request notification permissions:', error);
+      logger.error('Failed to request notification permissions:', error);
       return false;
     }
   },
@@ -33,7 +34,7 @@ export const pushNotificationService = {
       const { data } = await Notifications.getExpoPushTokenAsync();
       return data ?? null;
     } catch (error) {
-      console.error('Failed to get push token:', error);
+      logger.error('Failed to get push token:', error);
       return null;
     }
   },
@@ -57,12 +58,12 @@ export const pushNotificationService = {
         );
 
       if (error) {
-        console.error('Failed to register push token:', error);
+        logger.error('Failed to register push token:', error);
         return false;
       }
       return true;
     } catch (error) {
-      console.error('Error registering push token:', error);
+      logger.error('Error registering push token:', error);
       return false;
     }
   },
@@ -75,7 +76,7 @@ export const pushNotificationService = {
       const client = requireSupabaseClient();
       await client.from('push_tokens').delete().eq('token', token);
     } catch (error) {
-      console.error('Error removing push token:', error);
+      logger.error('Error removing push token:', error);
     }
   },
 
@@ -105,3 +106,4 @@ export const pushNotificationService = {
     };
   },
 };
+

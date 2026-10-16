@@ -14,7 +14,7 @@ import { deviceControlService } from '@/features/device-control/services/device-
 import { appCategoryService } from '@/features/app-categories/services/app-category-service';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { ROUTES } from '@/constants';
-import { Card, Input, errorMessage, useAsyncData, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
+import { Card, Input, errorMessage, useAsyncData, useTheme, logger, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 import { Avatar3D, AVATAR_IDS, CalendarPicker } from '@noe-arcakids/shared';
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
 import type { InstalledApp } from '@noe-arcakids/types';
@@ -145,7 +145,7 @@ export default function ChildDetailScreen() {
     } catch {
       // Transient network/RLS errors must NOT clear the last known device
       // status; only the successful "definitively no device" path resets it.
-      console.warn('fetchDevice failed; keeping previous status');
+      logger.warn('fetchDevice failed; keeping previous status');
     }
   }, [childId]);
 

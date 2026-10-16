@@ -76,8 +76,8 @@ function RootNavigator() {
   useEffect(() => {
     networkService.start();
 
-    initI18n().catch((e) => console.warn('[RootLayout] i18n error:', e?.message));
-    initialize().catch((e) => console.warn('[RootLayout] auth error:', e?.message));
+    initI18n().catch((e) => logger.warn('[RootLayout] i18n error:', e?.message));
+    initialize().catch((e) => logger.warn('[RootLayout] auth error:', e?.message));
 
     return () => {
       networkService.stop();
