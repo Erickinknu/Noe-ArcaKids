@@ -30,10 +30,10 @@ export const childService = {
       );
     }
     const validatedBirthDate = birthDate ? this.validateBirthDate(birthDate) : null;
-    const plan = await billingService.getCurrentPlan();
-    if (plan === 'free') {
+    const limits = await billingService.getPlanLimits();
+    if (limits) {
       const existing = await childRepository.listChildren(familyId);
-      billingService.assertUnderChildLimit(existing.length);
+      billingService.assertUnderChildLimit(limits.maxChildren, existing.length);
     }
     const created = await childRepository.addChild(
       familyId,

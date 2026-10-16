@@ -546,6 +546,8 @@ export const en = {
       childLimit: 'The free plan includes {{max}} child. Upgrade to add more children.',
       appLimit:
         'The free plan allows {{max}} blocked apps. Upgrade to add more.',
+      tutorLimit:
+        'Your current plan does not allow more tutors. Upgrade to invite more people.',
     },
     rules: {
       title: 'Parental rules',

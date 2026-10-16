@@ -18,6 +18,7 @@ function inviteError(message: string): string {
     'no profile': t('noe.familyInvites.joinError'),
     'not authenticated': t('auth.notAuthenticated'),
     'not allowed': t('noe.familyInvites.joinError'),
+    'tutor limit reached': t('noe.planErrors.tutorLimit'),
   };
   const firstLine = message.split('\n')[0].trim();
   return map[firstLine] ?? t('noe.familyInvites.joinError');

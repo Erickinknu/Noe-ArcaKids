@@ -558,6 +558,8 @@ export const es = {
       childLimit: 'El plan gratuito incluye {{max}} hijo. Mejora tu plan para agregar m\u00e1s hijos.',
       appLimit:
         'El plan gratuito permite {{max}} apps bloqueadas. Mejora tu plan para agregar m\u00e1s.',
+      tutorLimit:
+        'Tu plan actual no permite m\u00e1s tutores. Mejora tu plan para invitar a m\u00e1s personas.',
     },
     rules: {
       title: 'Reglas parentales',

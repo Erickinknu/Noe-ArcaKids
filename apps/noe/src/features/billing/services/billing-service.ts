@@ -4,7 +4,7 @@ import { analyticsService } from '@/features/analytics/services/analytics-servic
 import { familyService } from '@/features/family/services/family-service';
 
 import { billingRepository } from '../repositories/billing-repository';
-import { DEFAULT_PLAN, FREE_MAX_BLOCKED_APPS, FREE_MAX_CHILDREN, type PlanId, type PlanLimits, type SubscriptionStatus } from '../plans';
+import { DEFAULT_PLAN, FREE_MAX_BLOCKED_APPS, type PlanId, type PlanLimits, type SubscriptionStatus } from '../plans';
 
 interface PlanCache {
   plan: PlanId;
@@ -61,11 +61,10 @@ export const billingService = {
     cache = null;
   },
 
-  assertUnderChildLimit(childCount: number): void {
-    const plan = cache?.plan ?? DEFAULT_PLAN;
-    if (plan === 'free' && childCount >= FREE_MAX_CHILDREN) {
+  assertUnderChildLimit(maxChildren: number | null, childCount: number): void {
+    if (maxChildren != null && childCount >= maxChildren) {
       throw new PlanLimitError(
-        t('noe.planErrors.childLimit', { max: FREE_MAX_CHILDREN }),
+        t('noe.planErrors.childLimit', { max: maxChildren }),
         { code: 'PLAN_CHILD_LIMIT' }
       );
     }

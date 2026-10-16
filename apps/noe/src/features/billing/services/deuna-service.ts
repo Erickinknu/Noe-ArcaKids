@@ -2,6 +2,8 @@ import { DatabaseError } from '@noe-arcakids/shared';
 import { requireSupabaseClient } from '@noe-arcakids/supabase';
 import { familyService } from '@/features/family/services/family-service';
 
+import { billingService } from './billing-service';
+
 export type DeunaOrderStatus = 'pending' | 'verified' | 'rejected';
 
 export interface DeunaOrder {
@@ -38,6 +40,8 @@ export const deunaService = {
         'No se pudo registrar el pago. Verifica tu conexión e intenta de nuevo.'
       );
     }
+    // El plan puede activarse al verificar el pago: descarta el cache local.
+    billingService.invalidate();
     return {
       id: String(data.id),
       status: data.status as DeunaOrderStatus,
