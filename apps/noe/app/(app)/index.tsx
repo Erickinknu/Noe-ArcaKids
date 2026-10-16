@@ -114,7 +114,7 @@ export default function HomeScreen() {
         notificationsService.list().catch((): Notification[] => []),
       ]);
       setLocationRows(locs);
-      setAlertItems(notifs.filter((n) => n.type === 'sos' || n.type === 'geofence'));
+      setAlertItems(notifs.filter((n) => n.type === 'sos'));
 
       const locMap = new Map(locs.map((l) => [l.childId, l]));
       const entries = await Promise.all(

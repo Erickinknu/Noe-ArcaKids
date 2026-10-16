@@ -345,7 +345,7 @@ export const es = {
       actionsDisabledNote: 'Se activan al vincular el primer teléfono.',
       alertsTitle: 'Alertas',
       alertsEmptyTitle: 'Sin alertas',
-      alertsEmptyDesc: 'Aquí verás los avisos de SOS, zonas seguras y peligros.',
+      alertsEmptyDesc: 'Aquí verás los avisos de SOS y peligros.',
       alertsLoading: 'Cargando alertas...',
     },
     tabs: {
@@ -501,7 +501,7 @@ export const es = {
       title: 'Notificaciones',
       emptyTitle: 'Sin notificaciones',
       emptyDescription:
-        'Aqu\u00ed ver\u00e1s los avisos de desbloqueo, zonas seguras, SOS y m\u00e1s.',
+        'Aqu\u00ed ver\u00e1s los avisos de desbloqueo, SOS y m\u00e1s.',
       markAllRead: 'Marcar todo le\u00eddo',
       loading: 'Cargando notificaciones...',
       error: 'No pudimos cargar las notificaciones',
@@ -509,7 +509,6 @@ export const es = {
       unread: 'sin leer',
       types: {
         unlock_request: 'Solicitud de desbloqueo',
-        geofence: 'Zona segura',
         sos: 'Alerta SOS',
         offline: 'Dispositivo desconectado',
         time_goal: 'Tiempo de pantalla',

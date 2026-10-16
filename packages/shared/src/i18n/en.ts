@@ -336,7 +336,7 @@ export const en = {
       actionsDisabledNote: 'They activate once you link the first phone.',
       alertsTitle: 'Alerts',
       alertsEmptyTitle: 'No alerts',
-      alertsEmptyDesc: 'SOS, safe-zone and danger alerts will show up here.',
+      alertsEmptyDesc: 'SOS and danger alerts will show up here.',
       alertsLoading: 'Loading alerts...',
     },
     tabs: {
@@ -489,7 +489,7 @@ export const en = {
       title: 'Notifications',
       emptyTitle: 'No notifications',
       emptyDescription:
-        'Unlock alerts, safe zones, SOS and more will show up here.',
+        'Unlock alerts, SOS and more will show up here.',
       markAllRead: 'Mark all read',
       loading: 'Loading notifications...',
       error: 'We could not load your notifications',
@@ -497,7 +497,6 @@ export const en = {
       unread: 'unread',
       types: {
         unlock_request: 'Unlock request',
-        geofence: 'Safe zone',
         sos: 'SOS alert',
         offline: 'Device offline',
         time_goal: 'Screen time',

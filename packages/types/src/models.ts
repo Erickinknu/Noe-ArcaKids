@@ -166,44 +166,6 @@ export interface DeviceOwnerState {
   canSuspendPackages: boolean;
 }
 
-// ── Geofencing (FASE 5) ──
-
-export interface Geofence {
-  id: string;
-  familyId: string;
-  childId: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-  radius: number;
-  enabled: boolean;
-  createdAt: string;
-  triggered?: boolean;
-  triggeredAt?: number | null;
-}
-
-export interface GeofenceEvent {
-  geofenceId: string;
-  childId: string;
-  type: 'enter' | 'exit';
-  timestamp: string;
-  latitude: number;
-  longitude: number;
-}
-
-export interface GeofenceEventRecord {
-  id: string;
-  familyId: string;
-  childId: string;
-  geofenceId: string | null;
-  geofenceName: string | null;
-  deviceUuid: string | null;
-  type: 'enter' | 'exit';
-  latitude: number | null;
-  longitude: number | null;
-  createdAt: string;
-}
-
 // ── Push & Unlock (FASE 6) ──
 
 export interface PushToken {
@@ -229,7 +191,6 @@ export interface UnlockRequest {
 
 export type NotificationType =
   | 'unlock_request'
-  | 'geofence'
   | 'sos'
   | 'offline'
   | 'time_goal'

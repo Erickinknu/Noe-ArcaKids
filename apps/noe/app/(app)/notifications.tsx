@@ -25,17 +25,9 @@ import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { relativeTime } from '@/features/dashboard/services/dashboard-service';
+import { NOTIFICATION_ICON } from '@/features/notifications/constants/notification-icons';
 import { useNotifications } from '@/features/notifications/hooks/use-notifications';
 import { ROUTES } from '@/constants';
-
-const TYPE_ICON: Record<NotificationType, keyof typeof MaterialIcons.glyphMap> = {
-  unlock_request: 'lock-open',
-  geofence: 'place',
-  sos: 'warning',
-  offline: 'wifi-off',
-  time_goal: 'timer',
-  system: 'notifications',
-};
 
 export default function NotificationsCenterScreen() {
   const { t: tr } = useTranslation();
@@ -53,8 +45,6 @@ export default function NotificationsCenterScreen() {
       case 'offline':
       case 'time_goal':
         return colors.warning;
-      case 'geofence':
-        return colors.primary;
       case 'unlock_request':
         return colors.success;
       default:
@@ -118,7 +108,7 @@ export default function NotificationsCenterScreen() {
                 ]}
               >
                 <View style={[styles.iconBadge, { backgroundColor: accent + '18' }]}>
-                  <MaterialIcons name={TYPE_ICON[item.type]} size={20} color={accent} />
+                  <MaterialIcons name={NOTIFICATION_ICON[item.type]} size={20} color={accent} />
                 </View>
                 <View style={styles.rowInfo}>
                   <Text style={styles.rowTitle}>{item.title}</Text>

@@ -34,7 +34,6 @@ export const PLAN_CATALOG: PlanCatalogEntry[] = [
       'Control avanzado',
       'Apps ilimitadas',
       'Reportes diarios',
-      'Zonas seguras',
       'Modo estudio',
     ],
     maxChildren: null,
