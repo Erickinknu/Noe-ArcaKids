@@ -25,6 +25,7 @@ let started = false;
 let unsubscribe: (() => void) | null = null;
 let syncTimer: ReturnType<typeof setInterval> | null = null;
 let appStateSub: { remove: () => void } | null = null;
+let sessionReady = false;
 
 async function apply(cmd: DeviceCommand): Promise<void> {
   if (processed.has(cmd.id)) return;
@@ -42,6 +43,9 @@ async function apply(cmd: DeviceCommand): Promise<void> {
 
 async function syncNow(): Promise<void> {
   try {
+    if (!sessionReady) {
+      sessionReady = await identityService.ensureDeviceSession();
+    }
     const device = await identityService.getLocalDevice();
     const pending = await deviceControlService.syncPendingCommands(device.deviceUuid);
     await Promise.all(pending.map((cmd) => apply(cmd).catch(() => undefined)));
@@ -56,6 +60,9 @@ export function startRemoteControl(): void {
 
   void (async () => {
     try {
+      // Authenticate as the paired device before subscribing: the realtime
+      // channel and the command-polling RPC both authorize on the device JWT.
+      sessionReady = await identityService.ensureDeviceSession();
       const device = await identityService.getLocalDevice();
       unsubscribe = subscribeToCommands(device.deviceUuid, (cmd) => apply(cmd)).unsubscribe;
     } catch {
@@ -78,5 +85,6 @@ export function stopRemoteControl(): void {
   syncTimer = null;
   appStateSub?.remove();
   appStateSub = null;
+  sessionReady = false;
   processed.clear();
 }

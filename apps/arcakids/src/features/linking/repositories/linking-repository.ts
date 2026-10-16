@@ -3,11 +3,17 @@ import { requireSupabaseClient } from '@noe-arcakids/supabase';
 
 import type { LocalDevice } from '../../identity/repositories/identity-repository';
 
+export interface DeviceAuth {
+  email: string;
+  password: string;
+}
+
 export interface RedeemResult {
   childId: string;
   displayName: string;
   avatarUrl: string | null;
   familyId: string;
+  deviceAuth: DeviceAuth | null;
 }
 
 export const linkingRepository = {
@@ -41,11 +47,18 @@ export const linkingRepository = {
     if (!data || typeof data !== 'object') {
       throw new DatabaseError('The code could not be redeemed.');
     }
+    const rawAuth = (data as { deviceAuth?: unknown }).deviceAuth;
+    const authObj = rawAuth && typeof rawAuth === 'object' ? (rawAuth as Record<string, unknown>) : null;
+    const deviceAuth: DeviceAuth | null =
+      authObj && typeof authObj.email === 'string' && typeof authObj.password === 'string'
+        ? { email: authObj.email, password: authObj.password }
+        : null;
     return {
       childId: String(data.childId ?? ''),
       displayName: String(data.displayName ?? ''),
       avatarUrl: data.avatarUrl == null ? null : String(data.avatarUrl),
       familyId: String(data.familyId ?? ''),
+      deviceAuth,
     };
   },
 };

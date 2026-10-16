@@ -137,6 +137,12 @@ export const linkingService = {
     }
     validatePayloadMatchesRedeem(provision?.payload ?? null, result);
 
+    // Pairing provisioned a per-device Supabase identity; adopt it immediately so
+    // the device becomes `authenticated` for every claim-guarded device RPC.
+    if (result.deviceAuth) {
+      await identityService.registerDeviceAuth(result.deviceAuth);
+    }
+
     await identityService.saveChildLink({
       childId: result.childId,
       familyId: result.familyId,

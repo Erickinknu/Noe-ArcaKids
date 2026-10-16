@@ -5,7 +5,13 @@ import { storage } from '@noe-arcakids/storage';
 
 const CHILD_INFO_KEY = 'arcakids/child-info';
 const DEVICE_UUID_KEY = 'arcakids/device-uuid';
+const DEVICE_CREDENTIALS_KEY = 'arcakids/device-credentials';
 const DEVICE_NAME = 'ARCA KIDS device';
+
+export interface DeviceCredentials {
+  email: string;
+  password: string;
+}
 
 const FAMILY_MODES: FamilyMode[] = ['general', 'cristiano', 'educativo'];
 
@@ -35,6 +41,28 @@ export const identityRepository = {
       name: DEVICE_NAME,
       platform: 'android',
     };
+  },
+
+  async getDeviceCredentials(): Promise<DeviceCredentials | null> {
+    const raw = await storage.get(DEVICE_CREDENTIALS_KEY);
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw) as Partial<DeviceCredentials>;
+      if (typeof parsed.email !== 'string' || typeof parsed.password !== 'string') {
+        return null;
+      }
+      return { email: parsed.email, password: parsed.password };
+    } catch {
+      return null;
+    }
+  },
+
+  async saveDeviceCredentials(credentials: DeviceCredentials): Promise<void> {
+    await storage.save(DEVICE_CREDENTIALS_KEY, JSON.stringify(credentials));
+  },
+
+  async clearDeviceCredentials(): Promise<void> {
+    await storage.remove(DEVICE_CREDENTIALS_KEY);
   },
 
   async getChildInfo(): Promise<ChildInfo | null> {
