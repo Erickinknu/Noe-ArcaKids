@@ -24,11 +24,6 @@ interface SchedulesCardProps {
   onBedtimeTime: (field: keyof BedtimeParts, value: number) => void;
   onSaveBedtime: () => void;
   onOpenStudy: () => void;
-  onOpenRest: () => void;
-}
-
-function pad(n: number) {
-  return String(n).padStart(2, '0');
 }
 
 export function SchedulesCard({
@@ -42,13 +37,10 @@ export function SchedulesCard({
   onBedtimeTime,
   onSaveBedtime,
   onOpenStudy,
-  onOpenRest,
 }: SchedulesCardProps) {
   const { t: tr } = useTranslation();
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
-
-  const bedtimeRange = `${pad(bedtime.startH)}:${pad(bedtime.startM)} – ${pad(bedtime.endH)}:${pad(bedtime.endM)}`;
 
   return (
     <Card style={styles.card}>
@@ -75,20 +67,7 @@ export function SchedulesCard({
         <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
       </Pressable>
 
-      <Pressable
-        accessibilityRole="button"
-        style={({ pressed }) => [styles.navRow, pressed && styles.navRowPressed]}
-        onPress={onOpenRest}
-      >
-        <View style={[styles.dot, { backgroundColor: bedtimeOn ? colors.success : colors.border }]} />
-        <Text style={styles.navTitle}>{tr('noe.control.rest')}</Text>
-        <Text style={styles.navDetail} numberOfLines={1}>
-          {bedtimeOn ? bedtimeRange : tr('noe.control.noData')}
-        </Text>
-        <MaterialIcons name="chevron-right" size={20} color={colors.textMuted} />
-      </Pressable>
-
-      {/* Descanso (bedtime) se edita inline aquí: rules/horarios no lo persiste. */}
+      {/* Descanso (bedtime) se edita inline aquí. */}
       <View style={styles.bedtimeRow}>
         <Text style={styles.bedtimeLabel}>{tr('noe.control.rest')}</Text>
         <Switch

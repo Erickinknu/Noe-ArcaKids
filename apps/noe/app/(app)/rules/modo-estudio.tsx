@@ -38,6 +38,8 @@ const DAYS: { key: StudyWeekday; label: string }[] = [
   { key: 'wed', label: 'Miércoles' },
   { key: 'thu', label: 'Jueves' },
   { key: 'fri', label: 'Viernes' },
+  { key: 'sat', label: 'Sábado' },
+  { key: 'sun', label: 'Domingo' },
 ];
 
 // These must stay in sync with the package names the child device actually
@@ -59,6 +61,8 @@ const DEFAULT_STUDY: StudyScheduleState = {
   wed: { enabled: true, start: '08:00', end: '14:00' },
   thu: { enabled: true, start: '08:00', end: '14:00' },
   fri: { enabled: true, start: '08:00', end: '14:00' },
+  sat: { enabled: false, start: '08:00', end: '14:00' },
+  sun: { enabled: false, start: '08:00', end: '14:00' },
 };
 
 function toMinutes(value: string): number | null {

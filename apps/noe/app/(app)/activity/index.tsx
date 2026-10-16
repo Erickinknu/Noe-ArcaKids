@@ -147,17 +147,19 @@ export default function ActivityScreen() {
     reloadAlerts();
     reloadUnlockRequests();
     reloadChildren();
-  }, [reloadUsage, reloadAlerts, reloadUnlockRequests, reloadChildren]);
+    reloadPackageUsage();
+    reloadBlockedHistory();
+  }, [reloadUsage, reloadAlerts, reloadUnlockRequests, reloadChildren, reloadPackageUsage, reloadBlockedHistory]);
 
   const handleRefresh = useCallback(() => {
     setRefreshing(true);
-    Promise.all([reloadUsage(), reloadAlerts(), reloadUnlockRequests(), reloadChildren(), reloadBlockedHistory()]).finally(() => setRefreshing(false));
-  }, [reloadUsage, reloadAlerts, reloadUnlockRequests, reloadChildren, reloadBlockedHistory]);
+    Promise.all([reloadUsage(), reloadAlerts(), reloadUnlockRequests(), reloadChildren(), reloadPackageUsage(), reloadBlockedHistory()]).finally(() => setRefreshing(false));
+  }, [reloadUsage, reloadAlerts, reloadUnlockRequests, reloadChildren, reloadPackageUsage, reloadBlockedHistory]);
 
   useFocusEffect(
     useCallback(() => {
-      Promise.all([reloadUsage(), reloadAlerts(), reloadUnlockRequests(), reloadChildren(), reloadBlockedHistory()]).catch(() => {});
-    }, [reloadUsage, reloadAlerts, reloadUnlockRequests, reloadChildren, reloadBlockedHistory])
+      Promise.all([reloadUsage(), reloadAlerts(), reloadUnlockRequests(), reloadChildren(), reloadPackageUsage(), reloadBlockedHistory()]).catch(() => {});
+    }, [reloadUsage, reloadAlerts, reloadUnlockRequests, reloadChildren, reloadPackageUsage, reloadBlockedHistory])
   );
 
   const handleResolveRequest = useCallback(async (requestId: string, status: 'approved' | 'denied') => {
@@ -213,7 +215,7 @@ export default function ActivityScreen() {
 
   const hasNoChildren = (children?.length ?? 0) === 0;
   const hasSelectedData = selectedUsage.length > 0 || selectedAlerts.length > 0 || selectedUnlockRequests.length > 0;
-  const maxPackageMinutes = packageUsage && packageUsage.packageUsages.length > 0 ? packageUsage.packageUsages[0].minutes : 0;
+  const maxPackageMinutes = Math.max(packageUsage?.packageUsages[0]?.minutes ?? 0, 1);
 
   const blockedGroups = useMemo<BlockGroup[]>(() => {
     const byDate = new Map<string, BlockedHistoryItem[]>();

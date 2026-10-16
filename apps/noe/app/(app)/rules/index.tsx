@@ -383,7 +383,6 @@ export default function RulesScreen() {
               onBedtimeTime={(field, value) => setBedtime((prev) => ({ ...prev, [field]: value }))}
               onSaveBedtime={handleSaveBedtime}
               onOpenStudy={() => router.push('/rules/modo-estudio' as any)}
-              onOpenRest={() => router.push('/rules/horarios' as any)}
             />
 
             {selectedChild ? (

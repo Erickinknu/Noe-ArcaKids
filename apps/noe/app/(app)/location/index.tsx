@@ -31,15 +31,13 @@ export default function LocationScreen() {
     try {
       const data = await deviceControlService.getChildrenLocations();
       setLocations(data);
-      if (data.length > 0 && !selectedChild) {
-        setSelectedChild(data[0].childId);
-      }
+      setSelectedChild((prev) => prev ?? data[0]?.childId ?? null);
     } catch (e: any) {
       setError(e?.message ?? 'Error al cargar ubicaciones');
     } finally {
       setLoading(false);
     }
-  }, [selectedChild]);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
