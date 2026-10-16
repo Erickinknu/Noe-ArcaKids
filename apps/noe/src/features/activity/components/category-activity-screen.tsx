@@ -13,6 +13,7 @@ import {
   type ActivityCategory,
   type ChildUsageSummary,
 } from '@/features/activity/services/activity-service';
+import { friendlyAppName } from '@/features/activity/utils/app-links';
 import { Card, useTheme, useAsyncData, spacing, typography, radius, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 interface CategoryScreenProps {
@@ -100,7 +101,7 @@ export function CategoryActivityScreen({
             <Card key={pkg.packageName} style={styles.appCard}>
               <View style={styles.appRow}>
                 <Text style={styles.appName} numberOfLines={1}>
-                  {pkg.appLabel ?? friendlyName(pkg.packageName)}
+                  {friendlyAppName(pkg.packageName, pkg.appLabel)}
                 </Text>
                 <Text style={styles.appMinutes}>{pkg.minutes} min</Text>
               </View>
@@ -124,28 +125,6 @@ export function CategoryActivityScreen({
       )}
     </ScrollView>
   );
-}
-
-function friendlyName(packageName: string): string {
-  const map: Record<string, string> = {
-    'com.android.chrome': 'Chrome',
-    'com.brave.browser': 'Brave',
-    'org.mozilla.firefox': 'Firefox',
-    'com.google.android.youtube': 'YouTube',
-    'com.instagram.android': 'Instagram',
-    'com.facebook.katana': 'Facebook',
-    'com.zhiliaoapp.musically': 'TikTok',
-    'com.snapchat.android': 'Snapchat',
-    'com.twitter.android': 'Twitter',
-    'com.whatsapp': 'WhatsApp',
-    'com.google.android.apps.messaging': 'Mensajes',
-    'com.facebook.orca': 'Messenger',
-    'com.telegram.messenger': 'Telegram',
-    'com.google.android.apps.photos': 'Fotos',
-    'com.netflix.mediaclient': 'Netflix',
-    'com.spotify.music': 'Spotify',
-  };
-  return map[packageName] ?? packageName.split('.').pop() ?? packageName;
 }
 
 const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>

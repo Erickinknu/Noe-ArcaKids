@@ -14,53 +14,6 @@ function useTimePickerSize() {
   };
 }
 
-interface DurationFieldProps {
-  totalMinutes: number;
-  onChange: (totalMinutes: number) => void;
-  label: string;
-}
-
-export function DurationField({ totalMinutes, onChange, label }: DurationFieldProps) {
-  const { colors } = useTheme();
-  const fieldStyles = makeFieldStyles(colors);
-  const { btnSize, valueMinWidth, fontSize } = useTimePickerSize();
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-
-  return (
-    <View style={fieldStyles.container}>
-      <Text style={fieldStyles.label}>{label}</Text>
-      <View style={fieldStyles.row}>
-        {/* Hours */}
-        <Pressable style={({ pressed }) => [fieldStyles.btn, { width: btnSize, height: btnSize, borderRadius: btnSize / 2 }, pressed && fieldStyles.btnPressed]} onPress={() => onChange(Math.max(0, totalMinutes - 60))}>
-          <MaterialIcons name="remove" size={20} color={colors.primary} />
-        </Pressable>
-        <View style={[fieldStyles.valueBox, { minWidth: valueMinWidth }]}>
-          <Text style={[fieldStyles.value, { fontSize }]}>{String(hours).padStart(2, '0')}</Text>
-          <Text style={fieldStyles.suffix}>h</Text>
-        </View>
-        <Pressable style={({ pressed }) => [fieldStyles.btn, { width: btnSize, height: btnSize, borderRadius: btnSize / 2 }, pressed && fieldStyles.btnPressed]} onPress={() => onChange(Math.min(720, totalMinutes + 60))}>
-          <MaterialIcons name="add" size={20} color={colors.primary} />
-        </Pressable>
-
-        <View style={{ width: spacing.md }} />
-
-        {/* Minutes */}
-        <Pressable style={({ pressed }) => [fieldStyles.btn, { width: btnSize, height: btnSize, borderRadius: btnSize / 2 }, pressed && fieldStyles.btnPressed]} onPress={() => onChange(Math.max(0, totalMinutes - 15))}>
-          <MaterialIcons name="remove" size={20} color={colors.primary} />
-        </Pressable>
-        <View style={[fieldStyles.valueBox, { minWidth: valueMinWidth }]}>
-          <Text style={[fieldStyles.value, { fontSize }]}>{String(minutes).padStart(2, '0')}</Text>
-          <Text style={fieldStyles.suffix}>min</Text>
-        </View>
-        <Pressable style={({ pressed }) => [fieldStyles.btn, { width: btnSize, height: btnSize, borderRadius: btnSize / 2 }, pressed && fieldStyles.btnPressed]} onPress={() => onChange(Math.min(720, totalMinutes + 15))}>
-          <MaterialIcons name="add" size={20} color={colors.primary} />
-        </Pressable>
-      </View>
-    </View>
-  );
-}
-
 interface TimeInputProps {
   hours: number;
   minutes: number;

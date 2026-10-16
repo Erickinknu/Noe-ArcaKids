@@ -176,7 +176,6 @@ async function getChildHeader(childId: string): Promise<ChildHeader | null> {
 
 export const controlService = {
   getCategoryLists,
-  getLimits,
   setLimit,
   blockFreeTimeNow,
   getTopFreeTime,

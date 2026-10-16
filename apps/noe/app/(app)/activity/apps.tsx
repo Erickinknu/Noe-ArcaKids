@@ -9,6 +9,7 @@ import { ErrorState } from '@/components/ui/error-state';
 import { LoadingState } from '@/components/ui/loading-state';
 import { useScreenPadding } from '@/hooks/use-screen-padding';
 import { activityService, type ChildUsageSummary } from '@/features/activity/services/activity-service';
+import { friendlyAppName } from '@/features/activity/utils/app-links';
 import { Card, useTheme, useAsyncData, spacing, typography, radius, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 export default function AppsScreen() {
@@ -79,7 +80,7 @@ export default function AppsScreen() {
             <Card key={pkg.packageName} style={styles.appCard}>
               <View style={styles.appRow}>
                 <Text style={styles.appName} numberOfLines={1}>
-                  {pkg.appLabel ?? friendlyName(pkg.packageName)}
+                  {friendlyAppName(pkg.packageName, pkg.appLabel)}
                 </Text>
                 <Text style={styles.appMinutes}>{pkg.minutes} min</Text>
               </View>
@@ -104,28 +105,6 @@ export default function AppsScreen() {
       )}
     </ScrollView>
   );
-}
-
-function friendlyName(packageName: string): string {
-  const map: Record<string, string> = {
-    'com.android.chrome': 'Chrome',
-    'com.brave.browser': 'Brave',
-    'org.mozilla.firefox': 'Firefox',
-    'com.google.android.youtube': 'YouTube',
-    'com.instagram.android': 'Instagram',
-    'com.facebook.katana': 'Facebook',
-    'com.zhiliaoapp.musically': 'TikTok',
-    'com.snapchat.android': 'Snapchat',
-    'com.twitter.android': 'Twitter',
-    'com.whatsapp': 'WhatsApp',
-    'com.google.android.apps.messaging': 'Mensajes',
-    'com.google.android.apps.photos': 'Fotos',
-    'com.netflix.mediaclient': 'Netflix',
-    'com.spotify.music': 'Spotify',
-    'com.google.android.gm': 'Gmail',
-    'com.google.android.apps.maps': 'Maps',
-  };
-  return map[packageName] ?? packageName.split('.').pop() ?? packageName;
 }
 
 const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
