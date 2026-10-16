@@ -3,6 +3,8 @@ import type { Notification } from '@noe-arcakids/types';
 
 import { notificationsRepository } from '../repositories/notifications-repository';
 
+let realtimeChannelSeq = 0;
+
 export const notificationsService = {
   async list(): Promise<Notification[]> {
     const familyId = await notificationsRepository.getFamilyId();
@@ -25,7 +27,7 @@ export const notificationsService = {
   subscribeToNotifications(onChange: () => void): () => void {
     const client = requireSupabaseClient();
     const channel = client
-      .channel('notifications-family')
+      .channel(`notifications-family-${(realtimeChannelSeq += 1)}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'notifications' },

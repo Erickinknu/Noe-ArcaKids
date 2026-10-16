@@ -20,6 +20,8 @@ export interface ChildLocation {
   isOnline: boolean;
 }
 
+let realtimeChannelSeq = 0;
+
 export const deviceControlService = {
   // ── Legacy device block (polling path, kept for backward compat) ──
   async blockChild(childId: string): Promise<void> {
@@ -130,7 +132,7 @@ export const deviceControlService = {
   subscribeToLocationUpdates(callback: () => void): () => void {
     const client = requireSupabaseClient();
     const channel = client
-      .channel('children-locations-live')
+      .channel(`children-locations-live-${(realtimeChannelSeq += 1)}`)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'device_status' },

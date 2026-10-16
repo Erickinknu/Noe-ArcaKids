@@ -2,6 +2,8 @@ import { requireSupabaseClient } from '@noe-arcakids/supabase';
 import { DatabaseError } from '@noe-arcakids/shared';
 import type { UnlockRequest } from '@noe-arcakids/types';
 
+let realtimeChannelSeq = 0;
+
 export const unlockRequestService = {
   async getPendingRequests(): Promise<UnlockRequest[]> {
     const client = requireSupabaseClient();
@@ -59,7 +61,7 @@ export const unlockRequestService = {
   ): () => void {
     const client = requireSupabaseClient();
     const channel = client
-      .channel('unlock-requests-family')
+      .channel(`unlock-requests-family-${(realtimeChannelSeq += 1)}`)
       .on(
         'postgres_changes',
         {
