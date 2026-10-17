@@ -297,7 +297,7 @@ export const en = {
       setupSubtitle: 'Finish setting up NOE',
       openProfile: 'Open profile',
       kpiOnline: 'Online',
-      kpiTime: 'Time today',
+      kpiTime: 'Today',
       kpiAlerts: 'Alerts',
       quickActions: 'Quick actions',
       actionBlock: 'Block child',

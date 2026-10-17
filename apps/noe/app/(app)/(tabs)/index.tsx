@@ -1103,9 +1103,9 @@ const makeStyles = (colors: ThemeColors) =>
     },
     kpi: {
       flex: 1,
-      minHeight: 96,
+      minHeight: 84,
       borderRadius: 16,
-      padding: 12,
+      padding: 10,
       backgroundColor: colors.surface,
       borderWidth: 1,
       borderColor: colors.border,
@@ -1114,21 +1114,21 @@ const makeStyles = (colors: ThemeColors) =>
       gap: 4,
     },
     kpiIcon: {
-      width: 30,
-      height: 30,
-      borderRadius: 15,
+      width: 28,
+      height: 28,
+      borderRadius: 14,
       alignItems: 'center',
       justifyContent: 'center',
     },
     kpiValue: {
       fontFamily: typography.fontFamily.heading,
-      fontSize: 22,
+      fontSize: 20,
       fontWeight: typography.fontWeights.semibold,
       color: colors.text,
     },
     kpiLabel: {
       fontFamily: typography.fontFamily.body,
-      fontSize: 13,
+      fontSize: 11,
       color: colors.textSoft,
     },
 
