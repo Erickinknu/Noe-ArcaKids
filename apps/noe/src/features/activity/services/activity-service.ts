@@ -128,28 +128,27 @@ export const activityService = {
 
     const { data, error } = await client
       .from('usage_reports')
-      .select('package_name, minutes, app_label')
+      .select('package_name, minutes')
       .eq('child_id', childId)
       .gte('report_date', startDateStr)
       .limit(500);
 
     if (error) throw error;
 
-    const byPackage = new Map<string, { minutes: number; appLabel?: string }>();
+    // `usage_reports` no expone `app_label`; el nombre legible se deriva del package.
+    const byPackage = new Map<string, { minutes: number }>();
     for (const row of data ?? []) {
       const pkg = (row as { package_name?: string | null }).package_name ?? 'Otras apps';
       if (!pkg || pkg.trim().length === 0) continue;
       const entry = byPackage.get(pkg) ?? { minutes: 0 };
       entry.minutes += Number(row.minutes) || 0;
-      if (row.app_label && entry.appLabel === undefined) entry.appLabel = row.app_label;
       byPackage.set(pkg, entry);
     }
 
     const packageUsages = Array.from(byPackage.entries())
-      .map(([packageName, { minutes, appLabel }]) => ({
+      .map(([packageName, { minutes }]) => ({
         packageName,
         minutes,
-        appLabel: appLabel ?? undefined,
       }))
       .filter((entry) => entry.minutes > 0)
       .sort((a, b) => b.minutes - a.minutes);
