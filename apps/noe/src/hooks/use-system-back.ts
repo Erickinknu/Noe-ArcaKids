@@ -1,16 +1,18 @@
 import { useEffect, useRef } from 'react';
 import { BackHandler, Platform, ToastAndroid } from 'react-native';
-import { useRouter, useSegments } from 'expo-router';
+import { usePathname, useRouter, useSegments } from 'expo-router';
 
 /**
  * Guardia del botón atrás del sistema (Android):
  * - Si hay historial en el Stack → retrocede un nivel con router.back().
+ * - Si está en una pestaña secundaria (la activa no es Inicio) → vuelve a Inicio.
  * - Si ya está en la raíz de la app → pide doble pulsación para salir (toast).
  * - Las rutas bloqueadas (p. ej. PIN gate, bloqueo total) consumen el evento.
  */
 export function useSystemBackGuard(options?: { blockedRoutes?: string[] }) {
   const router = useRouter();
   const segments = useSegments();
+  const pathname = usePathname();
   const lastPress = useRef(0);
   const blockedKey = (options?.blockedRoutes ?? []).join('|');
 
@@ -22,6 +24,11 @@ export function useSystemBackGuard(options?: { blockedRoutes?: string[] }) {
       if (blocked.some((b) => b.length > 0 && route.includes(b))) return true;
       if (router.canGoBack()) {
         router.back();
+        return true;
+      }
+      // Pestaña secundaria activa: el atrás vuelve a Inicio (raíz de las pestañas).
+      if (pathname !== '/') {
+        router.replace('/');
         return true;
       }
       const now = Date.now();
@@ -36,5 +43,5 @@ export function useSystemBackGuard(options?: { blockedRoutes?: string[] }) {
     };
     const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
     return () => sub.remove();
-  }, [router, segments, blockedKey]);
+  }, [router, segments, pathname, blockedKey]);
 }
