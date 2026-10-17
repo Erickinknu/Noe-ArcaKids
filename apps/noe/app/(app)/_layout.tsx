@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Redirect, Tabs } from 'expo-router';
-import { AppState, Pressable, StyleSheet, Text, TextInput, View, type ColorValue } from 'react-native';
+import { Redirect, Stack } from 'expo-router';
+import { AppState, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -15,11 +15,8 @@ import { useContentMode } from '@/features/family/hooks/use-content-mode';
 import { biometricService } from '@/features/security/services/biometric-service';
 import { lockService } from '@/features/security/services/lock-service';
 import { FirstSteps } from '@/features/onboarding/components/first-steps';
-import { useUnreadNotificationCount } from '@/features/notifications/hooks/use-notifications';
-import { unlockRequestService } from '@/features/unlock-request/services/unlock-request-service';
 import { useSystemBackGuard } from '@/hooks/use-system-back';
 
-const TAB_BAR_BASE_HEIGHT = 54;
 const PIN_MIN_LENGTH = 4;
 const PIN_MAX_LENGTH = 6;
 
@@ -38,38 +35,8 @@ export default function AppLayout() {
   const [bioSupported, setBioSupported] = useState(false);
   const pinVerse = useRandomVerse(['hope']);
   const { mode: contentMode, loaded: contentLoaded } = useContentMode();
-  // Botón atrás del sistema: vuelve en la pila, doble-tap para salir en raíz.
+  // Botón atrás del sistema: vuelve en la pila (Stack); doble-tap para salir en la raíz.
   useSystemBackGuard();
-  const unreadCount = useUnreadNotificationCount();
-  const [pendingUnlockCount, setPendingUnlockCount] = useState(0);
-
-  // Novedades de Actividad = notificaciones sin leer O solicitudes de desbloqueo pendientes.
-  // Suscripción barata: una carga al montar + realtime, sin polling.
-  useEffect(() => {
-    let mounted = true;
-    let unsubscribe: (() => void) | undefined;
-    (async () => {
-      try {
-        const requests = await unlockRequestService.getPendingRequests();
-        if (mounted) setPendingUnlockCount(requests.length);
-      } catch {
-        /* sin novedades si falla la carga */
-      }
-      try {
-        unsubscribe = unlockRequestService.subscribeToPendingRequests((requests) => {
-          if (mounted) setPendingUnlockCount(requests.length);
-        });
-      } catch {
-        /* sin suscripción si falla el canal */
-      }
-    })();
-    return () => {
-      mounted = false;
-      unsubscribe?.();
-    };
-  }, []);
-
-  const hasActivityNews = unreadCount > 0 || pendingUnlockCount > 0;
 
   useEffect(() => {
     let mounted = true;
@@ -234,169 +201,11 @@ export default function AppLayout() {
     return <FirstSteps onDone={finishSetup} />;
   }
 
-  return (
-    <Tabs
-      initialRouteName="index"
-      backBehavior="none"
-      screenOptions={{
-        headerShown: false,
-        tabBarActiveTintColor: colors.primary,
-        tabBarInactiveTintColor: colors.textMuted,
-        tabBarStyle: {
-          backgroundColor: colors.background,
-          borderTopColor: colors.borderLight,
-          borderTopWidth: 1,
-          height: TAB_BAR_BASE_HEIGHT + insets.bottom,
-          paddingBottom: insets.bottom,
-          paddingTop: spacing.xs,
-        },
-        tabBarLabel: ({ focused, color, children }) =>
-          focused ? null : (
-            <Text style={[styles.tabBarLabel, { color }]}>{children}</Text>
-          ),
-      }}
-    >
-      {/* ── Tab order: Hijos, Control, Inicio (center), Actividad, Otros ── */}
-      <Tabs.Screen
-        name="children"
-        options={{
-          title: tr('noe.tabs.children'),
-          tabBarAccessibilityLabel: tr('noe.tabs.children'),
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="family-restroom" color={color} focused={focused} styles={styles} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="rules"
-        options={{
-          title: tr('noe.tabs.control'),
-          tabBarAccessibilityLabel: tr('noe.tabs.control'),
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="shield" color={color} focused={focused} styles={styles} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: tr('noe.tabs.home'),
-          tabBarAccessibilityLabel: tr('noe.tabs.home'),
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="home" color={color} focused={focused} styles={styles} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="activity"
-        options={{
-          title: tr('noe.tabs.activity'),
-          tabBarAccessibilityLabel: tr('noe.tabs.activity'),
-          tabBarIcon: ({ color, focused }) => (
-            <View style={styles.tabIconWrap}>
-              <TabIcon name="bar-chart" color={color} focused={focused} styles={styles} />
-              {hasActivityNews ? <View style={styles.activityDot} /> : null}
-            </View>
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: 'Otros',
-          tabBarAccessibilityLabel: 'Otros',
-          tabBarIcon: ({ color, focused }) => (
-            <TabIcon name="more-horiz" color={color} focused={focused} styles={styles} />
-          ),
-        }}
-      />
-
-      <Tabs.Screen name="linking" options={{ href: null }} />
-      <Tabs.Screen name="notifications" options={{ href: null }} />
-      <Tabs.Screen name="children/[childId]" options={{ href: null }} />
-      <Tabs.Screen name="children/[childId]/devices" options={{ href: null }} />
-      {/* Control sub-screens */}
-      <Tabs.Screen name="rules/modo-estudio" options={{ href: null }} />
-      <Tabs.Screen name="rules/filtrado-web" options={{ href: null }} />
-      <Tabs.Screen name="rules/apps" options={{ href: null }} />
-      {/* Profile sub-screens */}
-      <Tabs.Screen name="profile/familia" options={{ href: null }} />
-      <Tabs.Screen name="profile/cuenta" options={{ href: null }} />
-      <Tabs.Screen name="profile/notifications" options={{ href: null }} />
-      <Tabs.Screen name="profile/pin" options={{ href: null }} />
-      <Tabs.Screen name="profile/seguridad" options={{ href: null }} />
-      <Tabs.Screen name="profile/unirme" options={{ href: null }} />
-      <Tabs.Screen name="profile/config" options={{ href: null }} />
-      <Tabs.Screen name="profile/ayuda" options={{ href: null }} />
-      <Tabs.Screen name="profile/sugerir" options={{ href: null }} />
-      <Tabs.Screen name="profile/compartir" options={{ href: null }} />
-      <Tabs.Screen name="profile/privacidad" options={{ href: null }} />
-      <Tabs.Screen name="profile/terminos" options={{ href: null }} />
-      <Tabs.Screen name="profile/suscripcion" options={{ href: null }} />
-      <Tabs.Screen name="profile/deuna" options={{ href: null }} />
-      {/* Activity sub-screens */}
-      <Tabs.Screen name="activity/web" options={{ href: null }} />
-      <Tabs.Screen name="activity/youtube" options={{ href: null }} />
-      <Tabs.Screen name="activity/apps" options={{ href: null }} />
-      <Tabs.Screen name="activity/social" options={{ href: null }} />
-      <Tabs.Screen name="activity/media" options={{ href: null }} />
-      <Tabs.Screen name="activity/conversations" options={{ href: null }} />
-      <Tabs.Screen name="activity/sitios" options={{ href: null }} />
-      <Tabs.Screen name="activity/alertas" options={{ href: null }} />
-      <Tabs.Screen name="location/index" options={{ href: null }} />
-    </Tabs>
-  );
-}
-
-function TabIcon({
-  name,
-  color,
-  focused,
-  styles,
-}: {
-  name: string;
-  color: ColorValue;
-  focused: boolean;
-  styles: ReturnType<typeof makeStyles>;
-}) {
-  if (focused) {
-    return (
-      <View style={styles.tabIconActive}>
-        <MaterialIcons name={name as any} size={24} color={color} />
-      </View>
-    );
-  }
-  return <MaterialIcons name={name as any} size={22} color={color} />;
+  return <Stack screenOptions={{ headerShown: false }} />;
 }
 
 const makeStyles = (colors: ThemeColors) =>
   StyleSheet.create({
-  tabBarLabel: {
-    fontSize: 11,
-    fontWeight: typography.fontWeights.semibold,
-  },
-  tabIconWrap: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  tabIconActive: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  activityDot: {
-    position: 'absolute',
-    top: -2,
-    right: -6,
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: colors.danger,
-  },
   pinGateWrap: {
     flex: 1,
     backgroundColor: colors.surface,
