@@ -51,6 +51,7 @@ const config: ExpoConfig = {
   plugins: [
     'expo-router',
     'expo-local-authentication',
+    'expo-sharing',
     [
       'expo-notifications',
       {

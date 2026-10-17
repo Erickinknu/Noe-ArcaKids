@@ -1,5 +1,7 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import {
+  ActivityIndicator,
+  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -10,13 +12,23 @@ import { useRouter } from 'expo-router';
 import { MaterialIcons } from '@expo/vector-icons';
 
 import { useScreenPadding } from '@/hooks/use-screen-padding';
-import { Card, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
+import { appDistributionService } from '@/features/profile/services/app-distribution-service';
+import { Card, errorMessage, useTheme, radius, spacing, typography, type ThemeColors, type ThemeShadows } from '@noe-arcakids/shared';
 
 export default function CompartirScreen() {
   const router = useRouter();
   const screenPadding = useScreenPadding();
   const { colors, shadows } = useTheme();
   const styles = useMemo(() => makeStyles(colors, shadows), [colors, shadows]);
+  const [sendingArca, setSendingArca] = useState(false);
+
+  const goBack = () => {
+    if (router.canGoBack()) {
+      router.back();
+      return;
+    }
+    router.replace('/(app)/profile');
+  };
 
   async function handleShare() {
     try {
@@ -28,14 +40,50 @@ export default function CompartirScreen() {
     } catch {}
   }
 
+  async function handleShareArca() {
+    if (sendingArca) return;
+    setSendingArca(true);
+    try {
+      await appDistributionService.shareArcaKids();
+    } catch (cause) {
+      Alert.alert('No se pudo enviar', errorMessage(cause));
+    } finally {
+      setSendingArca(false);
+    }
+  }
+
   return (
     <ScrollView
       contentContainerStyle={[styles.screen, { paddingTop: screenPadding.paddingTop }]}
     >
-      <Pressable style={styles.headerRow} onPress={() => router.replace('/(app)/profile')}>
+      <Pressable style={styles.headerRow} onPress={goBack}>
         <MaterialIcons name="arrow-back" size={24} color={colors.text} />
         <Text style={styles.headerTitle}>Compartir app</Text>
       </Pressable>
+
+      <Card style={styles.centerCard}>
+        <MaterialIcons name="child-care" size={48} color={colors.success} />
+        <Text style={styles.title}>Instala ARCA KIDS en el teléfono de tu hijo</Text>
+        <Text style={styles.description}>
+          Envía la app ARCA KIDS al teléfono de tu hijo por WhatsApp, Bluetooth o
+          cualquier app de mensajería. Luego vincula el dispositivo desde NOE con
+          el código de vinculación.
+        </Text>
+        <Pressable
+          style={[styles.shareButton, styles.arcaButton, sendingArca && styles.buttonDisabled]}
+          onPress={handleShareArca}
+          disabled={sendingArca}
+        >
+          {sendingArca ? (
+            <ActivityIndicator color={colors.onPrimary} />
+          ) : (
+            <MaterialIcons name="send" size={20} color={colors.onPrimary} />
+          )}
+          <Text style={styles.shareButtonText}>
+            {sendingArca ? 'Preparando...' : 'Enviar ARCA KIDS'}
+          </Text>
+        </Pressable>
+      </Card>
 
       <Card style={styles.centerCard}>
         <MaterialIcons name="share" size={48} color={colors.primary} />
@@ -98,6 +146,13 @@ const makeStyles = (colors: ThemeColors, shadows: ThemeShadows) =>
     borderRadius: radius.lg,
     gap: spacing.sm,
     marginTop: spacing.sm,
+    minWidth: 200,
+  },
+  arcaButton: {
+    backgroundColor: colors.success,
+  },
+  buttonDisabled: {
+    opacity: 0.7,
   },
   shareButtonText: {
     fontSize: typography.fontSizes.body,
