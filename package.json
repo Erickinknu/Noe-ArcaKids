@@ -31,7 +31,7 @@
                             "@react-native/jest-preset":  "^0.86.3",
                             "@types/jest":  "^30.0.0",
                             "@types/node":  "^26.2.0",
-                            "expo-doctor":  "^1.18.0",
+                            "expo-doctor":  "^1.21.4",
                             "jest":  "^30.5.1",
                             "jest-expo":  "~57.0.0",
                             "react":  "19.2.3",
